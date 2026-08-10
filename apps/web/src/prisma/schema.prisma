@@ -1,0 +1,304 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  PROJECT_MANAGER
+  SITE_ENGINEER
+  STORE_MANAGER
+}
+
+enum VentureStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  TERMINATED
+  ON_LEAVE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FULFILLED
+}
+
+enum TransactionType {
+  STOCK_IN
+  STOCK_OUT
+  STOCK_TRANSFER
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         UserRole      @default(SITE_ENGINEER)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  employee     Employee?
+  auditLogs    AuditLog[]
+  transactions MaterialTransaction[]
+  chatMembers  ChatMember[]
+  messages     ChatMessage[]
+  messageReads MessageRead[]
+  notifications Notification[]
+  approvedRequests MaterialRequest[] @relation("ApprovedRequests")
+  createdRequests  MaterialRequest[] @relation("CreatedRequests")
+
+  @@map("users")
+}
+
+model Venture {
+  id          String        @id @default(uuid())
+  name        String
+  code        String        @unique
+  location    String
+  status      VentureStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  assignments EmployeeVentureAssignment[]
+  stocks      MaterialStock[]
+  transactions MaterialTransaction[]
+  requests    MaterialRequest[]
+  chatRooms   ChatRoom[]
+  auditLogs   AuditLog[]
+
+  @@map("ventures")
+}
+
+model Employee {
+  id           String         @id @default(uuid())
+  employeeId   String         @unique
+  userId       String?        @unique
+  user         User?          @relation(fields: [userId], references: [id])
+  firstName    String
+  lastName     String
+  designation  String
+  department   String
+  status       EmployeeStatus @default(ACTIVE)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  documents    EmployeeDocument[]
+  assignments  EmployeeVentureAssignment[]
+
+  @@map("employees")
+}
+
+model EmployeeDocument {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  name       String
+  fileUrl    String
+  fileType   String
+  createdAt  DateTime @default(now())
+
+  @@map("employee_documents")
+}
+
+model EmployeeVentureAssignment {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  ventureId  String
+  venture    Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  roleAtSite String?
+  assignedAt DateTime @default(now())
+
+  @@unique([employeeId, ventureId])
+  @@map("employee_venture_assignments")
+}
+
+model MaterialCategory {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  materials Material[]
+
+  @@map("material_categories")
+}
+
+model UnitOfMeasure {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  materials Material[]
+
+  @@map("units_of_measure")
+}
+
+model Material {
+  id               String           @id @default(uuid())
+  name             String
+  code             String           @unique
+  categoryId       String
+  category         MaterialCategory @relation(fields: [categoryId], references: [id])
+  unitOfMeasureId  String
+  unitOfMeasure    UnitOfMeasure    @relation(fields: [unitOfMeasureId], references: [id])
+  description      String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  stocks           MaterialStock[]
+  transactions     MaterialTransaction[]
+  requestItems     MaterialRequestItem[]
+
+  @@map("materials")
+}
+
+model MaterialStock {
+  id         String   @id @default(uuid())
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  ventureId  String
+  venture    Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  quantity   Float    @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([materialId, ventureId])
+  @@map("material_stocks")
+}
+
+model MaterialTransaction {
+  id          String          @id @default(uuid())
+  materialId  String
+  material    Material        @relation(fields: [materialId], references: [id])
+  ventureId   String
+  venture     Venture         @relation(fields: [ventureId], references: [id])
+  quantity    Float
+  type        TransactionType
+  referenceId String?
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  remarks     String?
+  createdAt   DateTime        @default(now())
+
+  @@map("material_transactions")
+}
+
+model MaterialRequest {
+  id          String               @id @default(uuid())
+  ventureId   String
+  venture     Venture              @relation(fields: [ventureId], references: [id])
+  status      RequestStatus        @default(PENDING)
+  remarks     String?
+  createdById String
+  createdBy   User                 @relation("CreatedRequests", fields: [createdById], references: [id])
+  approvedById String?
+  approvedBy  User?                @relation("ApprovedRequests", fields: [approvedById], references: [id])
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  items       MaterialRequestItem[]
+
+  @@map("material_requests")
+}
+
+model MaterialRequestItem {
+  id         String          @id @default(uuid())
+  requestId  String
+  request    MaterialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  materialId String
+  material   Material        @relation(fields: [materialId], references: [id])
+  quantity   Float
+
+  @@map("material_request_items")
+}
+
+model ChatRoom {
+  id        String       @id @default(uuid())
+  ventureId String       @unique
+  venture   Venture      @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime     @default(now())
+  members   ChatMember[]
+  messages  ChatMessage[]
+
+  @@map("chat_rooms")
+}
+
+model ChatMember {
+  id         String   @id @default(uuid())
+  roomId     String
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime @default(now())
+
+  @@unique([roomId, userId])
+  @@map("chat_members")
+}
+
+model ChatMessage {
+  id          String              @id @default(uuid())
+  roomId      String
+  room        ChatRoom            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId    String
+  sender      User                @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content     String
+  createdAt   DateTime            @default(now())
+  attachments MessageAttachment[]
+  reads       MessageRead[]
+
+  @@map("chat_messages")
+}
+
+model MessageAttachment {
+  id        String      @id @default(uuid())
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileName  String
+  fileUrl   String
+  fileType  String
+  fileSize  Int
+
+  @@map("message_attachments")
+}
+
+model MessageRead {
+  id        String      @id @default(uuid())
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt    DateTime    @default(now())
+
+  @@unique([messageId, userId])
+  @@map("message_reads")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String
+  ventureId String?
+  venture   Venture? @relation(fields: [ventureId], references: [id])
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
