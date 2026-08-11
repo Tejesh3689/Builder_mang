@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: builder-postgres
+    environment:
+      POSTGRES_USER: builder_admin
+      POSTGRES_PASSWORD: builder_password
+      POSTGRES_DB: builder_management
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - builder-network
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: builder-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - builder-network
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  builder-network:
+    driver: bridge
