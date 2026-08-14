@@ -15,10 +15,26 @@ enum UserRole {
 }
 
 enum VentureStatus {
+  DRAFT
   PLANNING
   ACTIVE
-  COMPLETED
   ON_HOLD
+  COMPLETED
+  CANCELLED
+  ARCHIVED
+}
+
+enum VentureType {
+  RESIDENTIAL
+  COMMERCIAL
+  VILLA
+  APARTMENT
+  PLOT_DEVELOPMENT
+  INDUSTRIAL
+  INFRASTRUCTURE
+  RENOVATION
+  MIXED_USE
+  OTHER
 }
 
 enum EmployeeStatus {
@@ -40,60 +56,144 @@ enum TransactionType {
   STOCK_TRANSFER
 }
 
+enum DocumentCategory {
+  LEGAL
+  DRAWINGS
+  APPROVALS
+  CONTRACTS
+  MATERIAL_DOCS
+  SITE_PHOTOS
+  REPORTS
+  OTHER
+}
+
+enum AnnouncementPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  passwordHash String
-  name         String
-  role         UserRole      @default(SITE_ENGINEER)
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  employee     Employee?
-  auditLogs    AuditLog[]
-  transactions MaterialTransaction[]
-  chatMembers  ChatMember[]
-  messages     ChatMessage[]
-  messageReads MessageRead[]
-  notifications Notification[]
-  approvedRequests MaterialRequest[] @relation("ApprovedRequests")
-  createdRequests  MaterialRequest[] @relation("CreatedRequests")
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String
+  name             String
+  role             UserRole          @default(SITE_ENGINEER)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  employee         Employee?
+  auditLogs        AuditLog[]
+  transactions     MaterialTransaction[]
+  chatMembers      ChatMember[]
+  messages         ChatMessage[]
+  messageReads     MessageRead[]
+  notifications    Notification[]
+  approvedRequests MaterialRequest[]  @relation("ApprovedRequests")
+  createdRequests  MaterialRequest[]  @relation("CreatedRequests")
 
   @@map("users")
 }
 
 model Venture {
-  id          String        @id @default(uuid())
-  name        String
-  code        String        @unique
-  location    String
-  status      VentureStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  assignments EmployeeVentureAssignment[]
-  stocks      MaterialStock[]
-  transactions MaterialTransaction[]
-  requests    MaterialRequest[]
-  chatRooms   ChatRoom[]
-  auditLogs   AuditLog[]
+  id                      String            @id @default(uuid())
+  name                    String
+  code                    String            @unique
+  type                    VentureType       @default(RESIDENTIAL)
+  description             String?
+  status                  VentureStatus     @default(ACTIVE)
+  
+  // Registered Address
+  regAddressLine1         String?
+  regAddressLine2         String?
+  regCity                 String?
+  regDistrict             String?
+  regState                String?
+  regCountry              String?           @default("India")
+  regPincode              String?
+
+  // Construction Site Address
+  siteAddressLine1        String?
+  siteAddressLine2        String?
+  siteCity                String?
+  siteDistrict            String?
+  siteState               String?
+  siteCountry             String?           @default("India")
+  sitePincode             String?
+  latitude                Float?
+  longitude               Float?
+  mapUrl                  String?
+
+  // Timeline
+  planningStartDate       DateTime?
+  startDate               DateTime?
+  expectedCompletionDate  DateTime?
+  actualCompletionDate    DateTime?
+  handoverDate            DateTime?
+
+  // Finance / Budget Summary
+  estimatedBudget         Float?            @default(0)
+  budgetCurrency          String            @default("INR")
+  progressPercentage      Float             @default(0)
+
+  // Leadership Foreign Keys (Optional references to Employee)
+  projectDirectorId       String?
+  projectDirector         Employee?         @relation("ProjectDirector", fields: [projectDirectorId], references: [id], onDelete: SetNull)
+  projectManagerId        String?
+  projectManager          Employee?         @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  siteManagerId           String?
+  siteManager             Employee?         @relation("SiteManager", fields: [siteManagerId], references: [id], onDelete: SetNull)
+  constructionManagerId   String?
+  constructionManager     Employee?         @relation("ConstructionManager", fields: [constructionManagerId], references: [id], onDelete: SetNull)
+  financeManagerId        String?
+  financeManager          Employee?         @relation("FinanceManager", fields: [financeManagerId], references: [id], onDelete: SetNull)
+  purchaseManagerId       String?
+  purchaseManager         Employee?         @relation("PurchaseManager", fields: [purchaseManagerId], references: [id], onDelete: SetNull)
+
+  // Archival
+  archivedAt              DateTime?
+  archivedBy              String?
+
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  // Relations
+  assignments             EmployeeVentureAssignment[]
+  stocks                  MaterialStock[]
+  transactions            MaterialTransaction[]
+  requests                MaterialRequest[]
+  chatRooms               ChatRoom[]
+  auditLogs               AuditLog[]
+  documents               VentureDocument[]
+  announcements           VentureAnnouncement[]
+  settings                VentureSetting?
 
   @@map("ventures")
 }
 
 model Employee {
-  id           String         @id @default(uuid())
-  employeeId   String         @unique
-  userId       String?        @unique
-  user         User?          @relation(fields: [userId], references: [id])
-  firstName    String
-  lastName     String
-  designation  String
-  department   String
-  status       EmployeeStatus @default(ACTIVE)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  documents    EmployeeDocument[]
-  assignments  EmployeeVentureAssignment[]
+  id                     String                      @id @default(uuid())
+  employeeId             String                      @unique
+  userId                 String?                     @unique
+  user                   User?                       @relation(fields: [userId], references: [id])
+  firstName              String
+  lastName               String
+  designation            String
+  department             String
+  status                 EmployeeStatus              @default(ACTIVE)
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+  documents              EmployeeDocument[]
+  assignments            EmployeeVentureAssignment[]
+
+  // Leadership relations
+  directedVentures       Venture[]                   @relation("ProjectDirector")
+  managedVentures        Venture[]                   @relation("ProjectManager")
+  siteManagedVentures    Venture[]                   @relation("SiteManager")
+  constructionManagedVentures Venture[]               @relation("ConstructionManager")
+  financeManagedVentures Venture[]                   @relation("FinanceManager")
+  purchaseManagedVentures Venture[]                  @relation("PurchaseManager")
 
   @@map("employees")
 }
@@ -111,16 +211,69 @@ model EmployeeDocument {
 }
 
 model EmployeeVentureAssignment {
-  id         String   @id @default(uuid())
-  employeeId String
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  ventureId  String
-  venture    Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
-  roleAtSite String?
-  assignedAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  ventureId   String
+  venture     Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  roleAtSite  String?
+  accessLevel String   @default("STANDARD") // e.g. FULL_ACCESS, OPERATIONS, MATERIALS_ONLY, READ_ONLY
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  status      String   @default("ACTIVE")
+  assignedAt  DateTime @default(now())
 
   @@unique([employeeId, ventureId])
   @@map("employee_venture_assignments")
+}
+
+model VentureDocument {
+  id           String           @id @default(uuid())
+  ventureId    String
+  venture      Venture          @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  title        String
+  category     DocumentCategory @default(OTHER)
+  fileUrl      String
+  fileType     String
+  fileSize     Int              @default(0)
+  uploadedById String?
+  version      String           @default("1.0")
+  visibility   String           @default("ALL") // e.g. ALL, MANAGEMENT, SITE_TEAM
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@map("venture_documents")
+}
+
+model VentureAnnouncement {
+  id          String               @id @default(uuid())
+  ventureId   String
+  venture     Venture              @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  priority    AnnouncementPriority @default(NORMAL)
+  audience    String               @default("ALL") // e.g. ALL, MANAGEMENT, SITE_STAFF
+  createdById String?
+  publishDate DateTime             @default(now())
+  expiryDate  DateTime?
+  createdAt   DateTime             @default(now())
+
+  @@map("venture_announcements")
+}
+
+model VentureSetting {
+  id                           String   @id @default(uuid())
+  ventureId                    String   @unique
+  venture                      Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  minStockThresholdDefault     Float    @default(50)
+  requireMaterialApproval      Boolean  @default(true)
+  allowEmployeeSelfAssignment  Boolean  @default(false)
+  allowFileUploadInChat        Boolean  @default(true)
+  notifyOnLowStock             Boolean  @default(true)
+  notifyOnMaterialRequests     Boolean  @default(true)
+  updatedAt                    DateTime @updatedAt
+
+  @@map("venture_settings")
 }
 
 model MaterialCategory {
@@ -188,18 +341,18 @@ model MaterialTransaction {
 }
 
 model MaterialRequest {
-  id          String               @id @default(uuid())
-  ventureId   String
-  venture     Venture              @relation(fields: [ventureId], references: [id])
-  status      RequestStatus        @default(PENDING)
-  remarks     String?
-  createdById String
-  createdBy   User                 @relation("CreatedRequests", fields: [createdById], references: [id])
+  id           String               @id @default(uuid())
+  ventureId    String
+  venture      Venture              @relation(fields: [ventureId], references: [id])
+  status       RequestStatus        @default(PENDING)
+  remarks      String?
+  createdById  String
+  createdBy    User                 @relation("CreatedRequests", fields: [createdById], references: [id])
   approvedById String?
-  approvedBy  User?                @relation("ApprovedRequests", fields: [approvedById], references: [id])
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  items       MaterialRequestItem[]
+  approvedBy   User?                @relation("ApprovedRequests", fields: [approvedById], references: [id])
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  items        MaterialRequestItem[]
 
   @@map("material_requests")
 }
@@ -217,8 +370,8 @@ model MaterialRequestItem {
 
 model ChatRoom {
   id        String       @id @default(uuid())
-  ventureId String       @unique
-  venture   Venture      @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  ventureId String?
+  venture   Venture?     @relation(fields: [ventureId], references: [id], onDelete: Cascade)
   name      String
   createdAt DateTime     @default(now())
   members   ChatMember[]
@@ -302,3 +455,4 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+

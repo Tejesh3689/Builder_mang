@@ -1,9 +1,9 @@
-import { PrismaClient, UserRole, VentureStatus } from '@prisma/client';
+import { PrismaClient, UserRole, VentureStatus, VentureType, DocumentCategory, AnnouncementPriority } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('Seeding database with Production Venture data...');
 
   // 1. Create Units of Measure
   const bags = await prisma.unitOfMeasure.upsert({
@@ -12,10 +12,16 @@ async function main() {
     create: { name: 'Bags' },
   });
 
-  const kg = await prisma.unitOfMeasure.upsert({
-    where: { name: 'Kg' },
+  const tons = await prisma.unitOfMeasure.upsert({
+    where: { name: 'Tons' },
     update: {},
-    create: { name: 'Kg' },
+    create: { name: 'Tons' },
+  });
+
+  const boxes = await prisma.unitOfMeasure.upsert({
+    where: { name: 'Boxes' },
+    update: {},
+    create: { name: 'Boxes' },
   });
 
   // 2. Create Material Categories
@@ -25,51 +31,58 @@ async function main() {
     create: { name: 'Structural' },
   });
 
+  const finishing = await prisma.materialCategory.upsert({
+    where: { name: 'Finishing' },
+    update: {},
+    create: { name: 'Finishing' },
+  });
+
   // 3. Create Sample Materials
   const cement = await prisma.material.upsert({
-    where: { code: 'MAT-CEM' },
+    where: { code: 'MAT-CEM-53' },
     update: {},
     create: {
       name: 'OPC Cement 53 Grade',
-      code: 'MAT-CEM',
+      code: 'MAT-CEM-53',
       categoryId: structural.id,
       unitOfMeasureId: bags.id,
-      description: 'Standard Portland Cement',
+      description: 'Ultratech 53 Grade High Strength Cement',
     },
   });
 
-  // 4. Create Ventures
-  const ventureA = await prisma.venture.upsert({
-    where: { code: 'VEN-A' },
+  const steel = await prisma.material.upsert({
+    where: { code: 'MAT-STL-12' },
     update: {},
     create: {
-      name: 'Venture Heights Phase 1',
-      code: 'VEN-A',
-      location: 'Downtown City Center',
-      status: VentureStatus.ACTIVE,
+      name: 'TMT Steel Rebars 12mm',
+      code: 'MAT-STL-12',
+      categoryId: structural.id,
+      unitOfMeasureId: tons.id,
+      description: 'Fe 550D High Ductility Steel Bars',
     },
   });
 
-  // 5. Create Users
+  const tiles = await prisma.material.upsert({
+    where: { code: 'MAT-TIL-VIT' },
+    update: {},
+    create: {
+      name: 'Vitrified Floor Tiles 600x600',
+      code: 'MAT-TIL-VIT',
+      categoryId: finishing.id,
+      unitOfMeasureId: boxes.id,
+      description: 'Kajaria Glossy Finish Premium Tiles',
+    },
+  });
+
+  // 4. Create Users & Employees
   const admin = await prisma.user.upsert({
     where: { email: 'admin@builder.com' },
     update: {},
     create: {
       email: 'admin@builder.com',
-      passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.', // mock hash
-      name: 'Super Admin',
-      role: UserRole.ADMIN,
-    },
-  });
-
-  const engineer = await prisma.user.upsert({
-    where: { email: 'engineer@builder.com' },
-    update: {},
-    create: {
-      email: 'engineer@builder.com',
       passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.',
-      name: 'John Site Engineer',
-      role: UserRole.SITE_ENGINEER,
+      name: 'Rajesh Kumar',
+      role: UserRole.ADMIN,
     },
   });
 
@@ -79,77 +92,334 @@ async function main() {
     create: {
       email: 'manager@builder.com',
       passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.',
-      name: 'Sarah Project Manager',
+      name: 'Suresh Verma',
       role: UserRole.PROJECT_MANAGER,
     },
   });
 
-  // 6. Create Employee records
-  const empA = await prisma.employee.upsert({
+  const engineer = await prisma.user.upsert({
+    where: { email: 'engineer@builder.com' },
+    update: {},
+    create: {
+      email: 'engineer@builder.com',
+      passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.',
+      name: 'Ajay Site Engineer',
+      role: UserRole.SITE_ENGINEER,
+    },
+  });
+
+  const storeUser = await prisma.user.upsert({
+    where: { email: 'store@builder.com' },
+    update: {},
+    create: {
+      email: 'store@builder.com',
+      passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.',
+      name: 'Vikram Storekeeper',
+      role: UserRole.STORE_MANAGER,
+    },
+  });
+
+  const emp1 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-001' },
     update: {},
     create: {
       employeeId: 'EMP-001',
-      userId: engineer.id,
-      firstName: 'John',
-      lastName: 'Doe',
-      designation: 'Site Engineer',
-      department: 'Operations',
+      userId: admin.id,
+      firstName: 'Rajesh',
+      lastName: 'Kumar',
+      designation: 'Project Director',
+      department: 'Management',
     },
   });
 
-  const empB = await prisma.employee.upsert({
+  const emp2 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-002' },
     update: {},
     create: {
       employeeId: 'EMP-002',
       userId: manager.id,
-      firstName: 'Sarah',
-      lastName: 'Smith',
-      designation: 'Project Manager',
-      department: 'Management',
+      firstName: 'Suresh',
+      lastName: 'Verma',
+      designation: 'Senior Project Manager',
+      department: 'Construction',
     },
   });
 
-  // 7. Assign Employees to Ventures
+  const emp3 = await prisma.employee.upsert({
+    where: { employeeId: 'EMP-003' },
+    update: {},
+    create: {
+      employeeId: 'EMP-003',
+      userId: engineer.id,
+      firstName: 'Ajay',
+      lastName: 'Rao',
+      designation: 'Lead Site Engineer',
+      department: 'Engineering',
+    },
+  });
+
+  const emp4 = await prisma.employee.upsert({
+    where: { employeeId: 'EMP-004' },
+    update: {},
+    create: {
+      employeeId: 'EMP-004',
+      userId: storeUser.id,
+      firstName: 'Vikram',
+      lastName: 'Singh',
+      designation: 'Store & Materials Manager',
+      department: 'Logistics',
+    },
+  });
+
+  // 5. Create Ventures with Full Operational Fields
+  const greenHeights = await prisma.venture.upsert({
+    where: { code: 'VNT-2026-001' },
+    update: {},
+    create: {
+      name: 'Green Heights Luxury Apartments',
+      code: 'VNT-2026-001',
+      type: VentureType.RESIDENTIAL,
+      description: 'Modern 14-storey residential towers with underground parking and rooftop gardens.',
+      status: VentureStatus.ACTIVE,
+      regAddressLine1: 'Plot 45, Commercial Complex',
+      regCity: 'Vijayawada',
+      regDistrict: 'Krishna',
+      regState: 'Andhra Pradesh',
+      regPincode: '520008',
+      siteAddressLine1: 'Beside National Highway 16, Benz Circle',
+      siteCity: 'Vijayawada',
+      siteDistrict: 'Krishna',
+      siteState: 'Andhra Pradesh',
+      sitePincode: '520010',
+      latitude: 16.5062,
+      longitude: 80.6480,
+      planningStartDate: new Date('2025-10-01'),
+      startDate: new Date('2026-01-15'),
+      expectedCompletionDate: new Date('2027-12-31'),
+      estimatedBudget: 82000000, // Rs. 8.2 Crore
+      progressPercentage: 68,
+      projectDirectorId: emp1.id,
+      projectManagerId: emp2.id,
+      siteManagerId: emp3.id,
+      purchaseManagerId: emp4.id,
+    },
+  });
+
+  const skylineVillas = await prisma.venture.upsert({
+    where: { code: 'VNT-2026-002' },
+    update: {},
+    create: {
+      name: 'Skyline Gated Villas',
+      code: 'VNT-2026-002',
+      type: VentureType.VILLA,
+      description: 'Exclusive 40-unit duplex villa community featuring smart home automation.',
+      status: VentureStatus.ACTIVE,
+      regAddressLine1: 'Tower B, Corporate Park',
+      regCity: 'Guntur',
+      regState: 'Andhra Pradesh',
+      siteAddressLine1: 'Inner Ring Road, Phase 2',
+      siteCity: 'Guntur',
+      siteState: 'Andhra Pradesh',
+      sitePincode: '522002',
+      latitude: 16.3067,
+      longitude: 80.4365,
+      startDate: new Date('2026-02-01'),
+      expectedCompletionDate: new Date('2027-08-30'),
+      estimatedBudget: 54000000, // Rs. 5.4 Crore
+      progressPercentage: 42,
+      projectManagerId: emp2.id,
+      siteManagerId: emp3.id,
+    },
+  });
+
+  // 6. Venture Settings
+  await prisma.ventureSetting.upsert({
+    where: { ventureId: greenHeights.id },
+    update: {},
+    create: {
+      ventureId: greenHeights.id,
+      minStockThresholdDefault: 50,
+      requireMaterialApproval: true,
+      allowFileUploadInChat: true,
+      notifyOnLowStock: true,
+    },
+  });
+
+  // 7. Venture Team Assignments
   await prisma.employeeVentureAssignment.upsert({
-    where: { employeeId_ventureId: { employeeId: empA.id, ventureId: ventureA.id } },
+    where: { employeeId_ventureId: { employeeId: emp2.id, ventureId: greenHeights.id } },
     update: {},
     create: {
-      employeeId: empA.id,
-      ventureId: ventureA.id,
-      roleAtSite: 'Lead Engineer',
+      employeeId: emp2.id,
+      ventureId: greenHeights.id,
+      roleAtSite: 'Project Manager',
+      accessLevel: 'FULL_PROJECT_ACCESS',
     },
   });
 
-  // 8. Create Chat Rooms and add members
-  const chatRoomA = await prisma.chatRoom.upsert({
-    where: { ventureId: ventureA.id },
+  await prisma.employeeVentureAssignment.upsert({
+    where: { employeeId_ventureId: { employeeId: emp3.id, ventureId: greenHeights.id } },
     update: {},
     create: {
-      ventureId: ventureA.id,
-      name: 'Venture Heights Chat Room',
+      employeeId: emp3.id,
+      ventureId: greenHeights.id,
+      roleAtSite: 'Site Engineer',
+      accessLevel: 'OPERATIONS_ACCESS',
     },
   });
 
-  await prisma.chatMember.upsert({
-    where: { roomId_userId: { roomId: chatRoomA.id, userId: engineer.id } },
+  await prisma.employeeVentureAssignment.upsert({
+    where: { employeeId_ventureId: { employeeId: emp4.id, ventureId: greenHeights.id } },
     update: {},
-    create: { roomId: chatRoomA.id, userId: engineer.id },
+    create: {
+      employeeId: emp4.id,
+      ventureId: greenHeights.id,
+      roleAtSite: 'Store Manager',
+      accessLevel: 'MATERIAL_ACCESS',
+    },
   });
 
-  // 9. Initial Material Stock
+  // 8. Material Stocks
   await prisma.materialStock.upsert({
-    where: { materialId_ventureId: { materialId: cement.id, ventureId: ventureA.id } },
-    update: {},
+    where: { materialId_ventureId: { materialId: cement.id, ventureId: greenHeights.id } },
+    update: { quantity: 420 },
     create: {
       materialId: cement.id,
-      ventureId: ventureA.id,
-      quantity: 100, // 100 bags opening
+      ventureId: greenHeights.id,
+      quantity: 420, // 420 bags
     },
   });
 
-  console.log('Seeding completed successfully!');
+  await prisma.materialStock.upsert({
+    where: { materialId_ventureId: { materialId: steel.id, ventureId: greenHeights.id } },
+    update: { quantity: 8.4 },
+    create: {
+      materialId: steel.id,
+      ventureId: greenHeights.id,
+      quantity: 8.4, // 8.4 tons
+    },
+  });
+
+  await prisma.materialStock.upsert({
+    where: { materialId_ventureId: { materialId: tiles.id, ventureId: greenHeights.id } },
+    update: { quantity: 320 },
+    create: {
+      materialId: tiles.id,
+      ventureId: greenHeights.id,
+      quantity: 320, // 320 boxes
+    },
+  });
+
+  // 9. Documents & Announcements
+  await prisma.ventureDocument.createMany({
+    skipDuplicates: true,
+    data: [
+      {
+        ventureId: greenHeights.id,
+        title: 'Municipal Building Approval Plan.pdf',
+        category: DocumentCategory.APPROVALS,
+        fileUrl: '/documents/green-heights-approval.pdf',
+        fileType: 'application/pdf',
+        fileSize: 4500000,
+        version: '2.1',
+      },
+      {
+        ventureId: greenHeights.id,
+        title: 'Structural Design & Foundation Blueprints.dwg',
+        category: DocumentCategory.DRAWINGS,
+        fileUrl: '/documents/structural-blueprints.dwg',
+        fileType: 'image/vnd.dwg',
+        fileSize: 12400000,
+        version: '1.0',
+      },
+      {
+        ventureId: greenHeights.id,
+        title: 'Environmental Impact Certificate.pdf',
+        category: DocumentCategory.LEGAL,
+        fileUrl: '/documents/env-certificate.pdf',
+        fileType: 'application/pdf',
+        fileSize: 2100000,
+        version: '1.0',
+      },
+    ],
+  });
+
+  await prisma.ventureAnnouncement.createMany({
+    skipDuplicates: true,
+    data: [
+      {
+        ventureId: greenHeights.id,
+        title: 'Safety Audit & Crane Inspection Scheduled',
+        message: 'Third-party heavy machinery inspection will take place on Friday 9:00 AM. Ensure site clearance.',
+        priority: AnnouncementPriority.HIGH,
+        audience: 'ALL',
+      },
+      {
+        ventureId: greenHeights.id,
+        title: 'TMT Steel Bulk Dispatch Arriving Tomorrow',
+        message: 'Logistics team to prepare bay 3 for 15-ton offloading at 7:00 AM.',
+        priority: AnnouncementPriority.NORMAL,
+        audience: 'SITE_STAFF',
+      },
+    ],
+  });
+
+  // 10. Scoped Chat Rooms
+  const chatGeneral = await prisma.chatRoom.create({
+    data: {
+      ventureId: greenHeights.id,
+      name: 'General Discussion',
+    },
+  });
+
+  const chatSiteTeam = await prisma.chatRoom.create({
+    data: {
+      ventureId: greenHeights.id,
+      name: 'Site Engineers & Ops',
+    },
+  });
+
+  await prisma.chatMessage.create({
+    data: {
+      roomId: chatGeneral.id,
+      senderId: manager.id,
+      content: 'Welcome everyone! Tower B slab casting is scheduled for this Thursday.',
+    },
+  });
+
+  await prisma.chatMessage.create({
+    data: {
+      roomId: chatSiteTeam.id,
+      senderId: engineer.id,
+      content: 'Cement stock verified (420 bags). Ready for morning batching operation.',
+    },
+  });
+
+  // 11. Audit Activity Log
+  await prisma.auditLog.createMany({
+    data: [
+      {
+        userId: manager.id,
+        ventureId: greenHeights.id,
+        action: 'MATERIAL_REQUEST_APPROVED',
+        details: 'Approved Material Request MR-1024 for 100 bags OPC Cement',
+      },
+      {
+        userId: engineer.id,
+        ventureId: greenHeights.id,
+        action: 'STOCK_ISSUED',
+        details: 'Issued 50 bags Cement to Tower A Phase 2 Slab',
+      },
+      {
+        userId: admin.id,
+        ventureId: greenHeights.id,
+        action: 'EMPLOYEE_ASSIGNED',
+        details: 'Assigned Vikram Singh as Store Manager to Green Heights',
+      },
+    ],
+  });
+
+  console.log('Production Venture data seeded successfully!');
 }
 
 main()
@@ -160,3 +430,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
