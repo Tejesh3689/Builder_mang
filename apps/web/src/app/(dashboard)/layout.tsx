@@ -1,66 +1,266 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  const navGroups = [
+    {
+      group: null,
+      items: [
+        { href: '/dashboard', label: 'Dashboard', icon: 'home' },
+      ],
+    },
+    {
+      group: 'Ventures',
+      items: [
+        { href: '/ventures', label: 'All Ventures', icon: 'layers', count: 5 },
+        { href: '/ventures?status=active', label: 'Active Ventures', icon: 'activity' },
+        { href: '/ventures?status=completed', label: 'Completed Ventures', icon: 'check' },
+      ],
+    },
+    {
+      group: 'People',
+      items: [
+        { href: '/employees', label: 'Employees', icon: 'users', count: 12 },
+        { href: '/employees?role=manager', label: 'Managers', icon: 'briefcase', count: 2 },
+        { href: '/employees?role=supervisor', label: 'Supervisors', icon: 'shield', count: 4 },
+        { href: '/employees/assignments', label: 'Employee Assignments', icon: 'flag' },
+      ],
+    },
+    {
+      group: 'Inventory',
+      items: [
+        { href: '/materials', label: 'Inventory Overview', icon: 'box' },
+        { href: '/materials', label: 'Materials', icon: 'cube', count: 9 },
+        { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
+        { href: '/materials/requests', label: 'Material Requests', icon: 'file', count: 2, alert: true },
+        { href: '/materials/transfers', label: 'Stock Transfers', icon: 'truck' },
+        { href: '/materials/warehouses', label: 'Warehouses / Sites', icon: 'building' },
+        { href: '/materials/alerts', label: 'Inventory Alerts', icon: 'alert', count: 3, alert: true },
+      ],
+    },
+    {
+      group: 'Procurement',
+      items: [
+        { href: '/procurement/vendors', label: 'Vendors', icon: 'truck', count: 7 },
+        { href: '/procurement/requests', label: 'Purchase Requests', icon: 'file' },
+        { href: '/procurement/orders', label: 'Purchase Orders', icon: 'package', count: 4 },
+        { href: '/procurement/deliveries', label: 'Deliveries', icon: 'truck' },
+        { href: '/procurement/invoices', label: 'Invoices', icon: 'file' },
+      ],
+    },
+    {
+      group: 'Operations',
+      items: [
+        { href: '/operations/tasks', label: 'Tasks', icon: 'tasks', count: 5 },
+        { href: '/operations/issues', label: 'Issues', icon: 'alert', count: 3, alert: true },
+        { href: '/operations/daily-reports', label: 'Daily Reports', icon: 'file' },
+        { href: '/operations/activity', label: 'Site Activity', icon: 'activity' },
+      ],
+    },
+    {
+      group: 'Documents',
+      items: [
+        { href: '/documents', label: 'All Documents', icon: 'file', count: 8 },
+        { href: '/documents?type=venture', label: 'Venture Documents', icon: 'layers' },
+        { href: '/documents?type=employee', label: 'Employee Documents', icon: 'users' },
+      ],
+    },
+    {
+      group: 'Communication',
+      items: [
+        { href: '/chat', label: 'Venture Chat', icon: 'chat' },
+        { href: '/announcements', label: 'Announcements', icon: 'bell' },
+        { href: '/notifications', label: 'Notifications', icon: 'bell', count: 4, alert: true },
+      ],
+    },
+    {
+      group: 'Reports',
+      items: [
+        { href: '/reports/projects', label: 'Project Reports', icon: 'file' },
+        { href: '/reports/employees', label: 'Employee Reports', icon: 'users' },
+        { href: '/reports/inventory', label: 'Inventory Reports', icon: 'box' },
+        { href: '/reports/consumption', label: 'Material Consumption', icon: 'cube' },
+        { href: '/reports/vendors', label: 'Vendor Reports', icon: 'truck' },
+        { href: '/reports/operational', label: 'Operational Reports', icon: 'activity' },
+      ],
+    },
+    {
+      group: 'Administration',
+      items: [
+        { href: '/admin/users', label: 'Users', icon: 'users', count: 9 },
+        { href: '/admin/roles', label: 'Roles & Permissions', icon: 'shield' },
+        { href: '/admin/branches', label: 'Branches / Locations', icon: 'pin' },
+        { href: '/admin/audit-logs', label: 'Audit Logs', icon: 'list' },
+        { href: '/admin/settings', label: 'Company Settings', icon: 'settings' },
+      ],
+    },
+  ];
+
+  function renderIcon(name: string) {
+    const iconClass = "w-4 h-4 text-zinc-500 shrink-0";
+    switch (name) {
+      case 'home':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V9.5"/></svg>;
+      case 'layers':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>;
+      case 'activity':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 12h4l2 7 4-14 2 7h6"/></svg>;
+      case 'check':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>;
+      case 'users':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15 14.6c2.6.4 5 2 5 5.4"/></svg>;
+      case 'briefcase':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>;
+      case 'shield':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 5-3.2 7.5-7 9-3.8-1.5-7-4-7-9V6l7-3z"/></svg>;
+      case 'flag':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M6 3v18"/><path d="M6 4h11l-2.5 3.5L17 11H6"/></svg>;
+      case 'box':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5v-9z"/><path d="M3.5 7.5 12 12l8.5-4.5"/><path d="M12 12v9"/></svg>;
+      case 'cube':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5 12 12l8-4.5"/><path d="M12 12v9"/></svg>;
+      case 'stack':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>;
+      case 'file':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/></svg>;
+      case 'truck':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M2 7h11v9H2z"/><path d="M13 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>;
+      case 'building':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M4 21V6a1 1 0 0 1 1-1h6v16"/><path d="M11 21V10h8a1 1 0 0 1 1 1v10"/></svg>;
+      case 'alert':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4"/><circle cx="12" cy="16.6" r=".4" fill="currentColor"/></svg>;
+      case 'package':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M20 8V7a1 1 0 0 0-.5-.87L13 3l-6.5 3.13A1 1 0 0 0 6 7v10a1 1 0 0 0 .5.87L13 21l6.5-3.13A1 1 0 0 0 20 17v-1"/><path d="M13 3v18"/></svg>;
+      case 'tasks':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8.5 10.5l1.8 1.8L14.5 8"/><path d="M8 16h8"/></svg>;
+      case 'chat':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M4 4h16v11H8l-4 4V4z"/></svg>;
+      case 'bell':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0v5l1.5 3H4.5L6 14V9z"/><path d="M9.5 20a2.5 2.5 0 0 0 5 0"/></svg>;
+      case 'pin':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>;
+      case 'list':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>;
+      case 'settings':
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L15 3.5h-4l-.3 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.3 2.6h4l.3-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2-1.5z"/></svg>;
+      default:
+        return <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>;
+    }
+  }
+
   return (
-    <div className="flex h-screen bg-slate-900 text-white overflow-hidden">
+    <div className="flex h-screen bg-[#EAEAEA] text-black overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between p-6">
-        <div className="space-y-8">
-          {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg">B</div>
-            <span className="font-bold text-lg tracking-wide">Builder Portal</span>
+      <aside className="w-[260px] bg-white border-r border-zinc-200/80 flex flex-col justify-between h-full shrink-0 shadow-sm z-30">
+        <div>
+          {/* Brand Header */}
+          <div className="flex items-center gap-3 px-6 py-5 border-b border-zinc-100">
+            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-sm shadow-md shadow-black/10">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-base tracking-tight text-black leading-none">Naprocs</span>
+              <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase mt-1">Builder Management</span>
+            </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-2">
-            <Link href="/dashboard" className="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-900 text-slate-300 hover:text-white transition-all font-medium">
-              <span>📊</span>
-              <span>Dashboard</span>
-            </Link>
-            <Link href="/ventures" className="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-900 text-slate-300 hover:text-white transition-all font-medium">
-              <span>🏗️</span>
-              <span>Ventures</span>
-            </Link>
-            <Link href="/materials" className="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-900 text-slate-300 hover:text-white transition-all font-medium">
-              <span>📦</span>
-              <span>Materials</span>
-            </Link>
-            <Link href="/employees" className="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-900 text-slate-300 hover:text-white transition-all font-medium">
-              <span>👥</span>
-              <span>Employees</span>
-            </Link>
-            <Link href="/chat" className="flex items-center space-x-3 px-4 py-2.5 rounded-lg hover:bg-slate-900 text-slate-300 hover:text-white transition-all font-medium">
-              <span>💬</span>
-              <span>Chat Rooms</span>
-            </Link>
-          </nav>
+          <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
+            {navGroups.map((group, gIdx) => (
+              <div key={gIdx} className="space-y-1">
+                {group.group && (
+                  <div className="px-3 py-1.5 text-[10px] font-mono font-bold tracking-widest text-zinc-400 uppercase">
+                    {group.group}
+                  </div>
+                )}
+                {group.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href + item.label}
+                      href={item.href}
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-full text-xs font-medium transition-all duration-150 ${
+                        isActive
+                          ? 'bg-[#FBEFDB] text-[#855B14] font-semibold shadow-sm'
+                          : 'text-zinc-700 hover:bg-zinc-100 hover:text-black'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={isActive ? 'text-[#855B14]' : 'text-zinc-500'}>
+                          {renderIcon(item.icon)}
+                        </span>
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {(item as any).count !== undefined && (
+                        <span
+                          className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            (item as any).alert
+                              ? 'bg-red-100 text-red-700'
+                              : isActive
+                              ? 'bg-[#F2D7B4] text-[#704808]'
+                              : 'bg-zinc-200/70 text-zinc-700'
+                          }`}
+                        >
+                          {(item as any).count}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Footer Profile info */}
-        <div className="border-t border-slate-800 pt-4 flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-sm font-semibold">SA</div>
-          <div>
-            <div className="font-semibold text-sm">Super Admin</div>
-            <div className="text-xs text-slate-400">admin@builder.com</div>
+        {/* Footer Profile Chip */}
+        <div className="p-4 border-t border-zinc-100">
+          <div className="flex items-center gap-3 p-2 rounded-full hover:bg-zinc-100 cursor-pointer transition-colors">
+            <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs">
+              MI
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-xs text-black truncate">Meera Iyer</div>
+              <div className="text-[11px] text-zinc-500 truncate">Admin · Naprocs</div>
+            </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 border-b border-slate-800 bg-slate-950 flex items-center justify-between px-8">
-          <h2 className="text-xl font-bold">Workspace</h2>
-          <div className="flex items-center space-x-4">
-            <button className="px-4 py-1.5 rounded-lg text-sm bg-slate-800 border border-slate-700 hover:bg-slate-700">Notifications</button>
-            <Link href="/login" className="text-sm text-slate-400 hover:text-white">Logout</Link>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Topbar Header */}
+        <header className="h-16 glass-topbar flex items-center justify-between px-8 sticky top-0 z-20">
+          <div className="flex flex-col">
+            <h1 className="text-lg font-extrabold tracking-tight text-black leading-tight">
+              {pathname === '/dashboard' ? 'Dashboard Overview' : pathname.replace('/', '').toUpperCase()}
+            </h1>
+            <span className="text-[11px] font-mono text-zinc-500">Live Workspace Status</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Search Box */}
+            <div className="flex items-center gap-2 bg-zinc-100 border border-zinc-200/80 rounded-full px-4 py-1.5 w-64 text-xs text-zinc-500">
+              <svg className="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <span>Search ventures, materials...</span>
+            </div>
+
+            {/* Notification Button */}
+            <button className="w-9 h-9 rounded-full border border-zinc-200 bg-white flex items-center justify-center relative hover:bg-zinc-100 transition-colors">
+              <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              <span className="absolute -top-0.5 -right-0.5 bg-black text-white text-[9px] font-bold font-mono rounded-full w-4 h-4 flex items-center justify-center border-2 border-white">
+                3
+              </span>
+            </button>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-8 bg-slate-900">
+        {/* Dynamic Page Children */}
+        <main className="flex-1 overflow-y-auto p-8 bg-[#EAEAEA]">
           {children}
         </main>
       </div>

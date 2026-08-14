@@ -1,0 +1,2754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naprocs Builder Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EAEAEA;
+  --surface:#FFFFFF;
+  --ink:#000000;
+  --ink-soft:#71717A;
+  --border:#E4E4E7;
+  --amber:#000000;
+  --amber-ink:#000000;
+  --amber-soft:#F4F4F5;
+  --terracotta:#000000;
+  --terracotta-soft:#F4F4F5;
+  --success:#16A34A;
+  --success-soft:#F0FDF4;
+  --critical:#DC2626;
+  --critical-soft:#FEF2F2;
+  --info:#2563EB;
+  --info-soft:#EFF6FF;
+  --radius:24px;
+  --radius-sm:14px;
+  --shadow-sm: 0 8px 24px -4px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.02);
+  --shadow-md: 0 20px 40px -8px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.03);
+  --sidebar-w:260px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'IBM Plex Mono',monospace;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:#D4D4D8;border-radius:9999px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+/* ===== APP SHELL ===== */
+#app{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+#sidebar{
+  width:var(--sidebar-w);
+  background:var(--surface);
+  border-right:1px solid rgba(0,0,0,0.06);
+  height:100vh;
+  position:sticky;top:0;
+  display:flex;flex-direction:column;
+  flex-shrink:0;
+  overflow-y:auto;
+}
+.brand{
+  display:flex;align-items:center;gap:12px;
+  padding:22px 24px 18px 24px;
+  border-bottom:1px solid #F4F4F6;
+}
+.brand-mark{
+  width:36px;height:36px;border-radius:10px;
+  background:#000000;color:#FFFFFF;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;flex-shrink:0;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+.brand-mark svg{width:18px;height:18px;}
+.brand-text{display:flex;flex-direction:column;line-height:1.1;}
+.brand-text .name{font-weight:800;font-size:16px;letter-spacing:-0.02em;color:#000000;}
+.brand-text .sub{font-size:10px;color:var(--ink-soft);letter-spacing:.05em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+
+.nav-scroll{flex:1;padding:16px 14px;overflow-y:auto;}
+.nav-group{margin-bottom:8px;}
+.nav-group-label{
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  color:#909097;text-transform:uppercase;
+  padding:14px 12px 6px 12px;
+  font-family:'IBM Plex Mono',monospace;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;margin:2px 0;
+  border-radius:9999px;
+  font-size:13.5px;font-weight:500;color:#52525B;
+  position:relative;transition:all 0.15s ease;
+}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;color:#71717A;transition:color 0.15s ease;}
+.nav-item:hover{background:#F4F4F6;color:#000000;}
+.nav-item:hover svg{color:#000000;}
+.nav-item.active{background:#000000;color:#FFFFFF;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,0.18);}
+.nav-item.active svg{color:#FFFFFF;}
+.nav-item .count{
+  margin-left:auto;font-size:11px;font-weight:600;
+  background:#EBEBEB;color:#52525B;
+  padding:2px 8px;border-radius:9999px;font-family:'IBM Plex Mono',monospace;
+}
+.nav-item.active .count{background:#333333;color:#FFFFFF;}
+.nav-item.alert-count .count{background:#FEF2F2;color:#DC2626;}
+.nav-item.active.alert-count .count{background:#DC2626;color:#FFFFFF;}
+
+.sidebar-footer{
+  border-top:1px solid #F4F4F6;
+  padding:14px 16px;
+}
+.profile-chip{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:9999px;cursor:pointer;
+  transition:background 0.15s ease;
+}
+.profile-chip:hover{background:#F4F4F6;}
+.avatar{
+  width:34px;height:34px;border-radius:9999px;background:#000000;
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:12px;flex-shrink:0;
+}
+.profile-chip .who{line-height:1.15;flex:1;min-width:0;}
+.profile-chip .who .n{font-weight:600;font-size:13px;color:#000000;}
+.profile-chip .who .r{font-size:11px;color:var(--ink-soft);}
+
+/* MAIN */
+#main-col{flex:1;display:flex;flex-direction:column;min-width:0;}
+#topbar{
+  height:68px;background:rgba(255,255,255,0.88);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,0.06);
+  display:flex;align-items:center;gap:16px;padding:0 28px;
+  position:sticky;top:0;z-index:20;
+}
+.page-title-wrap{display:flex;flex-direction:column;line-height:1.15;margin-right:auto;}
+.page-title{font-size:18px;font-weight:800;letter-spacing:-0.02em;color:#000000;}
+.page-context{font-size:11.5px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+.search-box{
+  display:flex;align-items:center;gap:10px;
+  background:#F4F4F6;border:1px solid #E4E4E7;
+  border-radius:9999px;padding:8px 16px;width:300px;
+  color:var(--ink-soft);font-size:13px;
+}
+.search-box svg{width:15px;height:15px;flex-shrink:0;color:#71717A;}
+.icon-btn{
+  width:38px;height:38px;border-radius:9999px;border:1px solid #E4E4E7;
+  background:var(--surface);display:flex;align-items:center;justify-content:center;
+  position:relative;flex-shrink:0;transition:all 0.15s ease;
+}
+.icon-btn:hover{background:#F4F4F6;border-color:#D4D4D8;}
+.icon-btn svg{width:17px;height:17px;color:var(--ink);}
+.dot-badge{
+  position:absolute;top:-2px;right:-2px;background:#000000;color:#fff;
+  font-size:10px;font-weight:700;border-radius:9999px;min-width:16px;height:16px;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;
+  border:2px solid var(--surface);font-family:'IBM Plex Mono',monospace;
+}
+
+#content{flex:1;padding:28px;overflow-y:auto;}
+
+/* ===== COMPONENTS ===== */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 18px;border-radius:9999px;font-size:13px;font-weight:600;
+  border:1px solid #E4E4E7;background:var(--surface);color:#000000;
+  white-space:nowrap;transition:all 0.15s ease;
+}
+.btn svg{width:14px;height:14px;}
+.btn:hover{background:#F4F4F6;border-color:#D4D4D8;}
+.btn-primary, .btn-amber{background:#000000;border-color:#000000;color:#FFFFFF;}
+.btn-primary:hover, .btn-amber:hover{background:#222222;border-color:#222222;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.btn-danger{background:var(--surface);border-color:#FCA5A5;color:#DC2626;}
+.btn-danger:hover{background:#FEF2F2;}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:9999px;}
+.btn-ghost{border-color:transparent;background:transparent;color:#52525B;}
+.btn-ghost:hover{background:#F4F4F6;color:#000000;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-block{width:100%;justify-content:center;}
+
+.card{
+  background:var(--surface);border:1px solid rgba(0,0,0,0.05);
+  border-radius:var(--radius);box-shadow:var(--shadow-sm);
+}
+.card-pad{padding:22px 26px;}
+.card-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:18px 26px;border-bottom:1px solid #F4F4F6;
+}
+.card-title{font-size:15px;font-weight:800;letter-spacing:-0.01em;color:#000000;}
+.card-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+.kpi{
+  background:var(--surface);border:1px solid rgba(0,0,0,0.04);border-radius:var(--radius);
+  padding:20px 22px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);
+}
+.kpi .klabel{font-size:11.5px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.kpi .kval{font-size:28px;font-weight:800;margin-top:8px;letter-spacing:-0.03em;color:#000000;}
+.kpi .kdelta{font-size:11.5px;margin-top:6px;font-weight:600;display:flex;align-items:center;gap:4px;}
+.kpi .kdelta.up{color:#16A34A;}
+.kpi .kdelta.down{color:#DC2626;}
+.kpi .kdelta.warn{color:#000000;}
+
+.grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.stack{display:flex;flex-direction:column;gap:16px;}
+.row{display:flex;gap:16px;}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+thead th{
+  text-align:left;font-size:11px;font-weight:700;color:#8E8E93;
+  text-transform:uppercase;letter-spacing:.04em;padding:12px 16px;
+  border-bottom:1px solid #F4F4F6;white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+}
+tbody td{padding:14px 16px;border-bottom:1px solid #F4F4F6;vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr.clickable:hover{background:#F9F9FB;cursor:pointer;}
+.cell-title{font-weight:600;color:#000000;}
+.cell-sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+.cell-id{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);}
+
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11.5px;font-weight:600;padding:4px 12px;border-radius:9999px;
+  white-space:nowrap;
+}
+.badge-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.badge-success{background:#F4F4F5;color:#000000;}
+.badge-success .badge-dot{background:#16A34A;}
+.badge-warn{background:#F4F4F5;color:#18181B;}
+.badge-warn .badge-dot{background:#000000;}
+.badge-critical{background:#FEF2F2;color:#DC2626;}
+.badge-critical .badge-dot{background:#DC2626;}
+.badge-info{background:#F4F4F5;color:#18181B;}
+.badge-info .badge-dot{background:#2563EB;}
+.badge-neutral{background:#F4F4F5;color:#3F3F46;}
+.badge-neutral .badge-dot{background:#71717A;}
+.badge-terracotta{background:#F4F4F5;color:#000000;}
+.badge-terracotta .badge-dot{background:#000000;}
+
+.progress-track{height:8px;background:#F4F4F6;border-radius:9999px;overflow:hidden;width:100%;}
+.progress-fill{height:100%;border-radius:9999px;background:#000000;}
+.progress-fill.success{background:#16A34A;}
+.progress-fill.critical{background:#DC2626;}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid #F4F4F6;padding:0 6px;}
+.tab{
+  padding:12px 18px;font-size:13px;font-weight:600;color:var(--ink-soft);
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;
+}
+.tab:hover{color:#000000;}
+.tab.active{color:#000000;border-color:#000000;font-weight:700;}
+
+.filters-bar{display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #F4F4F6;flex-wrap:wrap;}
+.filter-select{
+  padding:8px 14px;border:1px solid #E4E4E7;border-radius:9999px;
+  font-size:12.5px;font-weight:500;background:var(--surface);color:#000000;
+}
+.search-inline{
+  display:flex;align-items:center;gap:8px;border:1px solid #E4E4E7;
+  border-radius:9999px;padding:7px 14px;background:#F4F4F6;flex:1;max-width:280px;
+  color:var(--ink-soft);font-size:12.5px;
+}
+.search-inline svg{width:14px;height:14px;}
+.search-inline input{border:none;background:transparent;outline:none;font-size:12.5px;width:100%;color:#000000;font-family:inherit;}
+
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:56px 24px;text-align:center;color:var(--ink-soft);
+}
+.empty-state .eicon{
+  width:56px;height:56px;border-radius:9999px;background:#F4F4F6;
+  display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+  border:1px solid #E4E4E7;
+}
+.empty-state .eicon svg{width:24px;height:24px;color:var(--ink-soft);}
+.empty-state .etitle{font-size:15px;font-weight:800;color:#000000;margin-bottom:4px;}
+.empty-state .edesc{font-size:12.5px;max-width:320px;margin-bottom:14px;}
+
+.skeleton{background:linear-gradient(90deg,#E4E4E7 25%,#F4F4F6 37%,#E4E4E7 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:9999px;}
+@keyframes sk{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+.form-group{margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:700;color:#000000;margin-bottom:6px;display:block;}
+.form-label .req{color:#DC2626;}
+.form-hint{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+.form-input, .form-select{
+  width:100%;padding:10px 14px;border:1px solid #E4E4E7;border-radius:9999px;
+  font-size:13px;font-family:inherit;color:#000000;background:var(--surface);
+}
+.form-textarea{
+  width:100%;padding:12px 16px;border:1px solid #E4E4E7;border-radius:18px;
+  font-size:13px;font-family:inherit;color:#000000;background:var(--surface);resize:vertical;min-height:80px;
+}
+.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.form-section-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#000000;margin:22px 0 12px 0;font-family:'IBM Plex Mono',monospace;}
+.form-section-title:first-child{margin-top:0;}
+
+/* Modal / Drawer / Toast */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:90;
+  display:flex;align-items:center;justify-content:center;
+  animation:fadein .15s ease;
+}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--surface);border-radius:24px;width:480px;max-width:90vw;
+  box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,0.06);
+  animation:popin .16s ease;overflow:hidden;
+}
+@keyframes popin{from{transform:translateY(8px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.modal-head{padding:20px 24px;border-bottom:1px solid #F4F4F6;display:flex;align-items:center;gap:12px;}
+.modal-head .micon{width:36px;height:36px;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#F4F4F6;}
+.modal-body{padding:20px 24px;font-size:13px;color:var(--ink-soft);}
+.modal-foot{padding:16px 24px;border-top:1px solid #F4F4F6;display:flex;justify-content:flex-end;gap:10px;}
+
+.drawer-wrap{position:fixed;inset:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(3px);z-index:80;display:flex;justify-content:flex-end;animation:fadein .15s ease;}
+.drawer{
+  width:480px;max-width:92vw;height:100vh;background:var(--surface);
+  border-left:1px solid rgba(0,0,0,0.06);overflow-y:auto;
+  animation:slidein .18s ease;box-shadow:-12px 0 32px rgba(0,0,0,.08);
+}
+@keyframes slidein{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
+.drawer-head{padding:20px 24px;border-bottom:1px solid #F4F4F6;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:2;}
+.drawer-body{padding:24px;}
+
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:100;display:flex;flex-direction:column;gap:10px;}
+.toast{
+  background:#000000;color:#fff;padding:12px 20px;border-radius:9999px;
+  font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;
+  box-shadow:var(--shadow-md);animation:toastin .18s ease;min-width:240px;
+}
+@keyframes toastin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.toast.success .tdot{background:#16A34A;}
+.toast.error .tdot{background:#DC2626;}
+.toast .tdot{width:8px;height:8px;border-radius:50%;background:#FFFFFF;flex-shrink:0;}
+
+.detail-header{
+  background:var(--surface);border:1px solid rgba(0,0,0,0.05);border-radius:var(--radius);
+  padding:24px;margin-bottom:20px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);
+}
+.detail-header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:relative;z-index:1;}
+.detail-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;position:relative;z-index:1;}
+.detail-meta .m{display:flex;flex-direction:column;gap:2px;}
+.detail-meta .m .l{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;font-family:'IBM Plex Mono',monospace;}
+.detail-meta .m .v{font-size:13.5px;font-weight:700;color:#000000;}
+
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+.breadcrumb a:hover{color:#000000;text-decoration:underline;}
+.breadcrumb svg{width:11px;height:11px;}
+
+.checklist-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F4F4F6;font-size:13px;}
+.checklist-item:last-child{border-bottom:none;}
+.timeline-item{display:flex;gap:14px;padding-bottom:18px;position:relative;}
+.timeline-item::before{content:'';position:absolute;left:5px;top:20px;bottom:0;width:2px;background:#F4F4F6;}
+.timeline-item:last-child::before{display:none;}
+.timeline-dot{width:12px;height:12px;border-radius:50%;background:var(--surface);border:3px solid #000000;flex-shrink:0;margin-top:3px;}
+.timeline-content{flex:1;}
+.timeline-content .tt{font-size:13.5px;font-weight:600;color:#000000;}
+.timeline-content .ts{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+
+.section-title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.section-title-row h3{font-size:15px;font-weight:800;margin:0;color:#000000;}
+
+/* Chat */
+.chat-shell{display:grid;grid-template-columns:220px 1fr 280px;gap:0;height:calc(100vh - 160px);background:var(--surface);border:1px solid rgba(0,0,0,0.05);border-radius:var(--radius);overflow:hidden;}
+.chat-col{border-right:1px solid #F4F4F6;overflow-y:auto;}
+.chat-col:last-child{border-right:none;}
+.chat-channel-head{padding:16px;border-bottom:1px solid #F4F4F6;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;}
+.chan-item{padding:10px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;border-radius:9999px;margin:2px 8px;}
+.chan-item:hover{background:#F4F4F6;cursor:pointer;}
+.chan-item.active{background:#000000;color:#FFFFFF;font-weight:700;}
+.chan-item.active .hash{color:#FFFFFF;}
+.chan-item .hash{color:var(--ink-soft);font-weight:400;}
+.chat-messages{padding:20px;overflow-y:auto;height:calc(100% - 130px);display:flex;flex-direction:column;gap:16px;}
+.msg{display:flex;gap:12px;}
+.msg-body{flex:1;min-width:0;}
+.msg-head{display:flex;align-items:baseline;gap:8px;}
+.msg-head .n{font-weight:700;font-size:13px;color:#000000;}
+.msg-head .t{font-size:11px;color:var(--ink-soft);}
+.msg-text{font-size:13px;margin-top:3px;}
+.msg-ref{
+  margin-top:6px;display:inline-flex;align-items:center;gap:6px;
+  background:#F4F4F6;border:1px solid #E4E4E7;border-radius:9999px;
+  padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;
+}
+.msg-ref:hover{background:#000000;color:#FFFFFF;border-color:#000000;}
+.msg-photo{margin-top:6px;width:180px;height:110px;border-radius:14px;background:#F4F4F6;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);border:1px solid #E4E4E7;font-size:11px;}
+.chat-input-bar{padding:16px;border-top:1px solid #F4F4F6;display:flex;gap:10px;align-items:center;}
+.chat-input-bar input{flex:1;border:1px solid #E4E4E7;border-radius:9999px;padding:10px 16px;font-size:13px;font-family:inherit;}
+.chat-context{padding:20px;}
+.chat-context h4{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin:18px 0 8px 0;font-family:'IBM Plex Mono',monospace;}
+.chat-context h4:first-child{margin-top:0;}
+
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.kanban-col-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);margin-bottom:12px;display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;}
+.kanban-card{background:var(--surface);border:1px solid rgba(0,0,0,0.05);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
+.kanban-card .kt{font-size:13.5px;font-weight:700;margin-bottom:8px;color:#000000;}
+.kanban-card .kmeta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--ink-soft);}
+
+.avatar-sm{width:26px;height:26px;border-radius:9999px;background:#000000;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.avatar-md{width:60px;height:60px;border-radius:9999px;background:#000000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;}
+
+.perm-matrix td, .perm-matrix th{text-align:center;}
+.perm-matrix td:first-child, .perm-matrix th:first-child{text-align:left;}
+.perm-check{width:18px;height:18px;border-radius:9999px;background:#F4F4F5;color:#000000;display:inline-flex;align-items:center;justify-content:center;}
+.perm-cross{width:18px;height:18px;border-radius:9999px;background:#F4F4F6;color:#909097;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
+
+.doc-card{border:1px solid rgba(0,0,0,0.05);border-radius:18px;padding:16px;background:var(--surface);box-shadow:var(--shadow-sm);}
+.doc-thumb{height:96px;border-radius:12px;background:#F4F4F6;border:1px solid #E4E4E7;display:flex;align-items:center;justify-content:center;margin-bottom:12px;color:var(--ink-soft);}
+.doc-thumb svg{width:28px;height:28px;}
+.doc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+
+@media (max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .grid-2{grid-template-columns:1fr;}
+  .grid-3{grid-template-columns:1fr;}
+  .doc-grid{grid-template-columns:repeat(2,1fr);}
+  .kanban{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:820px){
+  #sidebar{position:fixed;left:-280px;z-index:60;transition:left .2s ease;box-shadow:var(--shadow-md);}
+  #sidebar.open{left:0;}
+  .search-box{display:none;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .chat-shell{grid-template-columns:1fr;height:auto;}
+  .chat-col:first-child, .chat-col:last-child{display:none;}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============================================================
+   NAPROCS BUILDER MANAGEMENT — ADMIN PROTOTYPE
+   Single-file SPA. In-memory mock data. No external deps.
+============================================================ */
+
+/* ---------- ICONS (lucide-style inline svg, stroke-based) ---------- */
+function icon(name, cls){
+  const map = {
+    home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V9.5"/>',
+    layers:'<path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
+    users:'<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15 14.6c2.6.4 5 2 5 5.4"/>',
+    box:'<path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5v-9z"/><path d="M3.5 7.5 12 12l8.5-4.5"/><path d="M12 12v9"/>',
+    truck:'<path d="M2 7h11v9H2z"/><path d="M13 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/>',
+    tasks:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8.5 10.5l1.8 1.8L14.5 8"/><path d="M8 16h8"/>',
+    alert:'<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4"/><circle cx="12" cy="16.6" r=".4" fill="currentColor"/>',
+    file:'<path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/>',
+    chat:'<path d="M4 4h16v11H8l-4 4V4z"/>',
+    bell:'<path d="M6 9a6 6 0 1 1 12 0v5l1.5 3H4.5L6 14V9z"/><path d="M9.5 20a2.5 2.5 0 0 0 5 0"/>',
+    shield:'<path d="M12 3l7 3v6c0 5-3.2 7.5-7 9-3.8-1.5-7-4-7-9V6l7-3z"/>',
+    list:'<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
+    settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L15 3.5h-4l-.3 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.3 2.6h4l.3-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2-1.5z"/>',
+    search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/>',
+    plus:'<path d="M12 5v14"/><path d="M5 12h14"/>',
+    chevronRight:'<path d="M9 18l6-6-6-6"/>',
+    chevronDown:'<path d="M6 9l6 6 6-6"/>',
+    check:'<path d="M20 6 9 17l-5-5"/>',
+    x:'<path d="M18 6 6 18"/><path d="M6 6l12 12"/>',
+    download:'<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/>',
+    upload:'<path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/>',
+    dots:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    pin:'<path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/>',
+    edit:'<path d="M4 20h4L20 8l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
+    trash:'<path d="M4 7h16"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1L18 7"/><path d="M9 7V4h6v3"/>',
+    eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+    logout:'<path d="M9 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    building:'<path d="M4 21V6a1 1 0 0 1 1-1h6v16"/><path d="M11 21V10h8a1 1 0 0 1 1 1v10"/><path d="M7 9h.01M7 12h.01M7 15h.01M7 18h.01M15 13h.01M15 16h.01M18 13h.01M18 16h.01"/>',
+    cube:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5 12 12l8-4.5"/><path d="M12 12v9"/>',
+    stack:'<path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+    package:'<path d="M20 8V7a1 1 0 0 0-.5-.87L13 3l-6.5 3.13A1 1 0 0 0 6 7v10a1 1 0 0 0 .5.87L13 21l6.5-3.13A1 1 0 0 0 20 17v-1"/><path d="M13 3v18"/>',
+    briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/>',
+    flag:'<path d="M6 3v18"/><path d="M6 4h11l-2.5 3.5L17 11H6"/>',
+    image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/>',
+    activity:'<path d="M3 12h4l2 7 4-14 2 7h6"/>',
+    star:'<path d="M12 2l3 6.5 7 .9-5 5 1.3 7-6.3-3.7-6.3 3.7 1.3-7-5-5 7-.9L12 2z"/>',
+    filter:'<path d="M4 5h16M7 12h10M10 19h4"/>',
+    arrowLeft:'<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',
+    ext:'<path d="M14 5h5v5"/><path d="M19 5 10 14"/><path d="M14 19H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>',
+  };
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="${cls||''}">${map[name]||''}</svg>`;
+}
+
+/* ---------- MOCK DATABASE ---------- */
+const DB = {
+  admin: {name:'Meera Iyer', role:'Admin', initials:'MI'},
+
+  ventures: [
+    {id:'V-01', name:'Green Valley Residency', code:'GVR-2024-01', location:'Kondapur, Hyderabad', type:'Residential — G+14', manager:'Arjun Reddy', supervisor:'Krishna Rao', progress:68, status:'on-track', team:24, openIssues:2, materialStatus:'ok', budget:'₹18.4 Cr', spent:'₹11.9 Cr', start:'12 Jan 2024', end:'30 Nov 2025', lastActivity:'14 min ago', phase:'Structural — Floor 9 Slab'},
+    {id:'V-02', name:'Skyline Heights', code:'SKH-2024-02', location:'Whitefield, Bengaluru', type:'Residential — G+20', manager:'Priya Nair', supervisor:'Suresh Kumar', progress:42, status:'at-risk', team:31, openIssues:5, materialStatus:'low', budget:'₹27.1 Cr', spent:'₹12.6 Cr', start:'03 Mar 2024', end:'28 Feb 2026', lastActivity:'1 hr ago', phase:'Structural — Floor 5 Columns'},
+    {id:'V-03', name:'Riverfront Towers', code:'RFT-2023-11', location:'OMR, Chennai', type:'Commercial — Mixed Use', manager:'Arjun Reddy', supervisor:'Manoj Verma', progress:91, status:'on-track', team:19, openIssues:0, materialStatus:'ok', budget:'₹34.6 Cr', spent:'₹31.8 Cr', start:'20 Jun 2023', end:'15 Sep 2025', lastActivity:'3 hr ago', phase:'Finishing — Interior Fitout'},
+    {id:'V-04', name:'Sunrise Villas', code:'SRV-2024-05', location:'Baner, Pune', type:'Residential — Villas (18 units)', manager:'Priya Nair', supervisor:'Ravi Teja', progress:15, status:'delayed', team:12, openIssues:3, materialStatus:'critical', budget:'₹9.8 Cr', spent:'₹1.9 Cr', start:'02 May 2024', end:'30 Apr 2026', lastActivity:'2 days ago', phase:'Foundation — Excavation'},
+    {id:'V-05', name:'Coastal Breeze Apartments', code:'CBA-2022-07', location:'ECR, Chennai', type:'Residential — G+8', manager:'Arjun Reddy', supervisor:'Manoj Verma', progress:100, status:'completed', team:0, openIssues:0, materialStatus:'ok', budget:'₹14.2 Cr', spent:'₹13.9 Cr', start:'10 Feb 2022', end:'18 Jul 2024', lastActivity:'2 months ago', phase:'Handover Complete'},
+  ],
+
+  employees: [
+    {id:'EMP-1001', name:'Krishna Rao', role:'Supervisor', venture:'Green Valley Residency', supervisor:'—', status:'active', attendance:96, task:'Site walk — Floor 9', joined:'04 Feb 2021', phone:'+91 98450 11234', email:'krishna.rao@naprocs-site.in'},
+    {id:'EMP-1002', name:'Suresh Kumar', role:'Supervisor', venture:'Skyline Heights', supervisor:'—', status:'active', attendance:92, task:'Column inspection — Floor 5', joined:'18 Jun 2020', phone:'+91 98450 11235', email:'suresh.kumar@naprocs-site.in'},
+    {id:'EMP-1003', name:'Manoj Verma', role:'Supervisor', venture:'Riverfront Towers', supervisor:'—', status:'active', attendance:98, task:'Fitout QA — Tower B', joined:'22 Sep 2019', phone:'+91 98450 11236', email:'manoj.verma@naprocs-site.in'},
+    {id:'EMP-1004', name:'Ravi Teja', role:'Supervisor', venture:'Sunrise Villas', supervisor:'—', status:'active', attendance:88, task:'Excavation monitoring', joined:'11 Jan 2023', phone:'+91 98450 11237', email:'ravi.teja@naprocs-site.in'},
+    {id:'EMP-1010', name:'Ramesh Babu', role:'Mason', venture:'Green Valley Residency', supervisor:'Krishna Rao', status:'active', attendance:94, task:'Block work — Floor 9', joined:'14 Mar 2022', phone:'+91 90001 22101', email:'—'},
+    {id:'EMP-1011', name:'Lakshmi Devi', role:'Electrician', venture:'Green Valley Residency', supervisor:'Krishna Rao', status:'active', attendance:90, task:'Conduit laying — Floor 8', joined:'02 Aug 2022', phone:'+91 90001 22102', email:'—'},
+    {id:'EMP-1012', name:'Vijay Kumar', role:'Plumber', venture:'Skyline Heights', supervisor:'Suresh Kumar', status:'on-leave', attendance:81, task:'—', joined:'19 Nov 2021', phone:'+91 90001 22103', email:'—'},
+    {id:'EMP-1013', name:'Anitha Reddy', role:'Site Engineer', venture:'Skyline Heights', supervisor:'Suresh Kumar', status:'active', attendance:97, task:'Column reinforcement check', joined:'05 May 2023', phone:'+91 90001 22104', email:'anitha.reddy@naprocs-site.in'},
+    {id:'EMP-1014', name:'Naveen Chowdary', role:'Carpenter', venture:'Riverfront Towers', supervisor:'Manoj Verma', status:'active', attendance:93, task:'Formwork — Tower B', joined:'27 Jul 2020', phone:'+91 90001 22105', email:'—'},
+    {id:'EMP-1015', name:'Deepak Sharma', role:'Mason', venture:'Sunrise Villas', supervisor:'Ravi Teja', status:'active', attendance:85, task:'Foundation shuttering', joined:'09 May 2024', phone:'+91 90001 22106', email:'—'},
+    {id:'EMP-1016', name:'Fatima Sheikh', role:'Safety Officer', venture:'Skyline Heights', supervisor:'Suresh Kumar', status:'active', attendance:99, task:'Daily safety audit', joined:'15 Feb 2022', phone:'+91 90001 22107', email:'fatima.sheikh@naprocs-site.in'},
+    {id:'EMP-1017', name:'Rahul Menon', role:'Steel Fixer', venture:'Green Valley Residency', supervisor:'Krishna Rao', status:'inactive', attendance:0, task:'—', joined:'12 Oct 2021', phone:'+91 90001 22108', email:'—'},
+  ],
+
+  managers: [
+    {id:'MGR-01', name:'Arjun Reddy', ventures:['Green Valley Residency','Riverfront Towers','Coastal Breeze Apartments'], supervisors:2, employeeCount:43, openIssues:2, pendingRequests:1, joined:'11 Apr 2018', phone:'+91 98220 33001', email:'arjun.reddy@naprocs.in'},
+    {id:'MGR-02', name:'Priya Nair', ventures:['Skyline Heights','Sunrise Villas'], supervisors:2, employeeCount:43, openIssues:8, pendingRequests:3, joined:'02 Sep 2019', phone:'+91 98220 33002', email:'priya.nair@naprocs.in'},
+  ],
+
+  supervisors: [
+    {id:'SUP-01', name:'Krishna Rao', venture:'Green Valley Residency', site:'GVR — Tower A', employees:8, dailyReports:212, openTasks:4, openIssues:1, phone:'+91 98450 11234'},
+    {id:'SUP-02', name:'Suresh Kumar', venture:'Skyline Heights', site:'SKH — Block C', employees:11, dailyReports:178, openTasks:7, openIssues:5, phone:'+91 98450 11235'},
+    {id:'SUP-03', name:'Manoj Verma', venture:'Riverfront Towers', site:'RFT — Tower B', employees:9, dailyReports:301, openTasks:2, openIssues:0, phone:'+91 98450 11236'},
+    {id:'SUP-04', name:'Ravi Teja', venture:'Sunrise Villas', site:'SRV — Villa Block 1-6', employees:6, dailyReports:34, openTasks:5, openIssues:3, phone:'+91 98450 11237'},
+  ],
+
+  materials: [
+    {id:'MAT-001', name:'Cement — OPC 53 Grade', sku:'CEM-OPC53', category:'Cement', unit:'Bags (50kg)', available:1240, reserved:180, min:800, max:3000, location:'GVR Central Store', status:'ok', lastMovement:'2 hr ago', price:'₹385/bag'},
+    {id:'MAT-002', name:'Steel — TMT Bars 12mm', sku:'STL-TMT12', category:'Steel', unit:'MT', available:14.2, reserved:6.5, min:20, max:80, location:'SKH Yard', status:'low', lastMovement:'40 min ago', price:'₹62,400/MT'},
+    {id:'MAT-003', name:'Steel — TMT Bars 16mm', sku:'STL-TMT16', category:'Steel', unit:'MT', available:22.8, reserved:4.0, min:15, max:60, location:'SKH Yard', status:'ok', lastMovement:'Yesterday', price:'₹61,800/MT'},
+    {id:'MAT-004', name:'River Sand', sku:'SND-RIV01', category:'Sand', unit:'Cu.m', available:340, reserved:60, min:150, max:600, location:'GVR Central Store', status:'ok', lastMovement:'3 hr ago', price:'₹2,150/cu.m'},
+    {id:'MAT-005', name:'Red Clay Bricks', sku:'BRK-CLY01', category:'Bricks', unit:'Nos (thousand)', available:48, reserved:12, min:60, max:200, location:'RFT Store', status:'low', lastMovement:'5 hr ago', price:'₹6,800/1000'},
+    {id:'MAT-006', name:'Coarse Aggregate 20mm', sku:'AGG-20MM', category:'Aggregate', unit:'Cu.m', available:210, reserved:40, min:100, max:400, location:'SRV Store', status:'ok', lastMovement:'Yesterday', price:'₹1,650/cu.m'},
+    {id:'MAT-007', name:'Exterior Emulsion Paint', sku:'PNT-EXT01', category:'Paint', unit:'Litres', available:6, reserved:0, min:80, max:400, location:'RFT Store', status:'critical', lastMovement:'2 days ago', price:'₹310/litre'},
+    {id:'MAT-008', name:'Copper Wiring 2.5sqmm', sku:'ELE-CU25', category:'Electrical', unit:'Coils (90m)', available:64, reserved:8, min:30, max:150, location:'GVR Central Store', status:'ok', lastMovement:'Today', price:'₹4,150/coil'},
+    {id:'MAT-009', name:'CPVC Pipes 1 inch', sku:'PLM-CPVC1', category:'Plumbing', unit:'Lengths (3m)', available:410, reserved:50, min:150, max:800, location:'SKH Yard', status:'ok', lastMovement:'Today', price:'₹285/length'},
+  ],
+
+  transactions: [
+    {date:'11 Aug 2026, 09:12', type:'received', material:'Cement — OPC 53 Grade', qty:'+500 bags', from:'UltraTech Distributors', to:'GVR Central Store', by:'Krishna Rao', ref:'PO-3341'},
+    {date:'10 Aug 2026, 15:40', type:'issued', material:'Cement — OPC 53 Grade', qty:'-120 bags', from:'GVR Central Store', to:'GVR Tower A — Floor 9', by:'Ramesh Babu', ref:'MR-1039'},
+    {date:'09 Aug 2026, 11:02', type:'transferred', material:'Cement — OPC 53 Grade', qty:'80 bags', from:'RFT Store', to:'GVR Central Store', by:'Arjun Reddy', ref:'TRF-0091'},
+    {date:'08 Aug 2026, 08:55', type:'adjusted', material:'Cement — OPC 53 Grade', qty:'-6 bags', from:'GVR Central Store', to:'Damaged / Write-off', by:'Krishna Rao', ref:'ADJ-0021'},
+    {date:'07 Aug 2026, 16:20', type:'received', material:'Cement — OPC 53 Grade', qty:'+400 bags', from:'UltraTech Distributors', to:'GVR Central Store', by:'Krishna Rao', ref:'PO-3318'},
+  ],
+
+  materialRequests: [
+    {id:'MR-1042', venture:'Green Valley Residency', site:'Tower A — Floor 9', requestedBy:'Krishna Rao', material:'Cement — OPC 53 Grade', qty:'250 bags', currentStock:'1,240 bags', prevConsumption:'~180 bags/week', requiredDate:'14 Aug 2026', priority:'high', status:'pending', created:'11 Aug 2026, 08:20', notes:'Required for Floor 9 slab pour scheduled Thursday. Current buffer will run out by Wed evening.'},
+    {id:'MR-1041', venture:'Skyline Heights', site:'Block C — Floor 5', requestedBy:'Suresh Kumar', material:'Steel — TMT Bars 12mm', qty:'8 MT', currentStock:'14.2 MT', prevConsumption:'~5 MT/week', requiredDate:'13 Aug 2026', priority:'critical', status:'pending', created:'11 Aug 2026, 07:45', notes:'Column reinforcement for Floor 5 — stock will breach minimum after this week\'s pour.'},
+    {id:'MR-1040', venture:'Sunrise Villas', site:'Villa Block 2', requestedBy:'Ravi Teja', material:'Coarse Aggregate 20mm', qty:'60 cu.m', currentStock:'210 cu.m', prevConsumption:'~25 cu.m/week', requiredDate:'18 Aug 2026', priority:'medium', status:'approved', created:'09 Aug 2026, 14:10', notes:'Foundation backfill for Villas 7-12.'},
+    {id:'MR-1039', venture:'Green Valley Residency', site:'Tower A — Floor 9', requestedBy:'Krishna Rao', material:'Cement — OPC 53 Grade', qty:'120 bags', currentStock:'1,360 bags', prevConsumption:'~180 bags/week', requiredDate:'10 Aug 2026', priority:'high', status:'issued', created:'08 Aug 2026, 09:30', notes:'Floor 9 column casting.'},
+    {id:'MR-1038', venture:'Riverfront Towers', site:'Tower B — Interior', requestedBy:'Manoj Verma', material:'Exterior Emulsion Paint', qty:'150 litres', currentStock:'6 litres', prevConsumption:'~40 litres/week', requiredDate:'12 Aug 2026', priority:'critical', status:'rejected', created:'07 Aug 2026, 12:00', notes:'Fitout painting — Tower B common areas.', rejectionReason:'Duplicate of MR-1035 already approved and in transit from vendor. Please track existing PO-3299 instead.'},
+    {id:'MR-1037', venture:'Skyline Heights', site:'Block C — Floor 4', requestedBy:'Suresh Kumar', material:'CPVC Pipes 1 inch', qty:'200 lengths', currentStock:'410 lengths', prevConsumption:'~90 lengths/week', requiredDate:'15 Aug 2026', priority:'low', status:'completed', created:'02 Aug 2026, 10:15', notes:'Plumbing rough-in Floor 4.'},
+  ],
+
+  vendors: [
+    {id:'VEN-01', name:'UltraTech Cement Suppliers', category:'Cement', materials:'Cement — OPC 53 Grade', contact:'Sanjay Malhotra · +91 98200 11001', activeOrders:2, totalPurchases:'₹4.8 Cr', rating:4.6, status:'active'},
+    {id:'VEN-02', name:'Tata Steel Distributors', category:'Steel', materials:'TMT Bars 12mm / 16mm', contact:'Rekha Ghosh · +91 98200 11002', activeOrders:1, totalPurchases:'₹6.2 Cr', rating:4.8, status:'active'},
+    {id:'VEN-03', name:'Balaji Sand & Aggregates', category:'Sand / Aggregate', materials:'River Sand, Aggregate 20mm', contact:'Balaji Naidu · +91 98200 11003', activeOrders:0, totalPurchases:'₹1.1 Cr', rating:4.1, status:'active'},
+    {id:'VEN-04', name:'ABC Brick Works', category:'Bricks', materials:'Red Clay Bricks', contact:'Chandran K · +91 98200 11004', activeOrders:1, totalPurchases:'₹64.2 L', rating:3.9, status:'active'},
+    {id:'VEN-05', name:'Asian Paints Distributor — South', category:'Paint', materials:'Exterior Emulsion Paint', contact:'Divya Menon · +91 98200 11005', activeOrders:1, totalPurchases:'₹38.6 L', rating:4.3, status:'active'},
+    {id:'VEN-06', name:'Havells Electrical Supplies', category:'Electrical', materials:'Copper Wiring, Switchgear', contact:'Ismail Khan · +91 98200 11006', activeOrders:0, totalPurchases:'₹92.4 L', rating:4.5, status:'on-hold'},
+    {id:'VEN-07', name:'Astral Plumbing Supplies', category:'Plumbing', materials:'CPVC Pipes, Fittings', contact:'Ravi Shankar · +91 98200 11007', activeOrders:0, totalPurchases:'₹41.8 L', rating:4.0, status:'active'},
+  ],
+
+  purchaseOrders: [
+    {id:'PO-3341', vendor:'UltraTech Cement Suppliers', material:'Cement — OPC 53 Grade', qty:'500 bags', value:'₹1.93 L', status:'delivered', created:'05 Aug 2026', eta:'11 Aug 2026'},
+    {id:'PO-3350', vendor:'Tata Steel Distributors', material:'TMT Bars 12mm', qty:'8 MT', value:'₹4.99 L', status:'in-transit', created:'09 Aug 2026', eta:'13 Aug 2026'},
+    {id:'PO-3352', vendor:'Asian Paints Distributor — South', material:'Exterior Emulsion Paint', qty:'150 L', value:'₹46,500', status:'processing', created:'11 Aug 2026', eta:'16 Aug 2026'},
+    {id:'PO-3318', vendor:'UltraTech Cement Suppliers', material:'Cement — OPC 53 Grade', qty:'400 bags', value:'₹1.54 L', status:'delivered', created:'02 Aug 2026', eta:'07 Aug 2026'},
+  ],
+
+  tasks: [
+    {id:'TSK-201', title:'Foundation excavation — Villa Block 2', venture:'Sunrise Villas', assignedTo:'Deepak Sharma', priority:'high', status:'in-progress', due:'13 Aug 2026', createdBy:'Ravi Teja'},
+    {id:'TSK-202', title:'Column casting — Block A, Floor 9', venture:'Green Valley Residency', assignedTo:'Ramesh Babu', priority:'high', status:'todo', due:'14 Aug 2026', createdBy:'Krishna Rao'},
+    {id:'TSK-203', title:'Electrical conduit laying — Floor 3', venture:'Skyline Heights', assignedTo:'Anitha Reddy', priority:'medium', status:'in-progress', due:'15 Aug 2026', createdBy:'Suresh Kumar'},
+    {id:'TSK-204', title:'Plastering — Tower B, 2nd floor', venture:'Riverfront Towers', assignedTo:'Naveen Chowdary', priority:'low', status:'completed', due:'09 Aug 2026', createdBy:'Manoj Verma'},
+    {id:'TSK-205', title:'Guardrail installation — Floor 5', venture:'Skyline Heights', assignedTo:'Suresh Kumar', priority:'critical', status:'blocked', due:'12 Aug 2026', createdBy:'Priya Nair'},
+    {id:'TSK-206', title:'Waterproofing — Terrace slab', venture:'Green Valley Residency', assignedTo:'Lakshmi Devi', priority:'medium', status:'todo', due:'18 Aug 2026', createdBy:'Krishna Rao'},
+  ],
+
+  issues: [
+    {id:'ISS-501', title:'Missing guardrails at Floor 5 edge', venture:'Skyline Heights', category:'Safety', severity:'critical', status:'open', reportedBy:'Fatima Sheikh', date:'11 Aug 2026', desc:'No temporary guardrails installed along the east edge of Floor 5 slab after formwork removal. Immediate fall hazard for ongoing column work.'},
+    {id:'ISS-502', title:'Concrete honeycombing — Block A column C4', venture:'Green Valley Residency', category:'Quality', severity:'high', status:'in-progress', reportedBy:'Krishna Rao', date:'10 Aug 2026', desc:'Visible honeycombing on column C4 after formwork strike. Needs structural engineer review before further loading.'},
+    {id:'ISS-503', title:'Cement delivery delayed by 2 days', venture:'Riverfront Towers', category:'Material', severity:'medium', status:'resolved', reportedBy:'Manoj Verma', date:'06 Aug 2026', desc:'UltraTech delivery slipped due to transport strike. Resolved — alternate local supplier used for interim.'},
+    {id:'ISS-504', title:'Labour shortage — Mason team, Villa Block 1', venture:'Sunrise Villas', category:'Labour', severity:'medium', status:'open', reportedBy:'Ravi Teja', date:'11 Aug 2026', desc:'3 masons on Team 2 unavailable this week, foundation shuttering pace at risk.'},
+    {id:'ISS-505', title:'Concrete mixer breakdown — Unit 2', venture:'Skyline Heights', category:'Equipment', severity:'high', status:'open', reportedBy:'Suresh Kumar', date:'11 Aug 2026', desc:'Mixer unit 2 hydraulic failure. Pour schedule for Floor 5 columns needs rework.'},
+    {id:'ISS-506', title:'Drawing mismatch — beam sizing Floor 9', venture:'Green Valley Residency', category:'Design', severity:'low', status:'closed', reportedBy:'Krishna Rao', date:'02 Aug 2026', desc:'Structural drawing rev A did not match site beam sizing. Rev B issued and reconciled.'},
+  ],
+
+  dailyReports: [
+    {id:'DR-9021', venture:'Green Valley Residency', site:'Tower A', date:'11 Aug 2026', supervisor:'Krishna Rao', workersPresent:22, workCompleted:'Column shuttering Floor 9 (60% complete), rebar tying for 4 columns.', progress:'+1.2%', materialsReceived:'500 bags Cement (PO-3341)', materialsUsed:'120 bags Cement, 40 coils copper wiring', equipment:'Tower crane TC-2, 2x concrete mixers', issues:'None reported today.', safety:'Toolbox talk conducted. All PPE compliance verified.'},
+    {id:'DR-9020', venture:'Skyline Heights', site:'Block C', date:'11 Aug 2026', supervisor:'Suresh Kumar', workersPresent:28, workCompleted:'Column reinforcement Floor 5 — 8 of 14 columns tied.', progress:'+0.8%', materialsReceived:'None', materialsUsed:'6.5 MT TMT 12mm', equipment:'Mixer unit 2 (breakdown reported), Mixer unit 1', issues:'Mixer unit 2 hydraulic failure (ISS-505). Guardrail gap flagged (ISS-501).', safety:'Guardrail gap identified — cordoned off, escalated to supervisor.'},
+    {id:'DR-9019', venture:'Riverfront Towers', site:'Tower B', date:'11 Aug 2026', supervisor:'Manoj Verma', workersPresent:16, workCompleted:'Interior fitout — plastering 2nd floor complete, tiling started.', progress:'+0.5%', materialsReceived:'None', materialsUsed:'2 bags tile adhesive, minor paint touch-up', equipment:'Standard hand tools', issues:'None reported today.', safety:'No incidents.'},
+    {id:'DR-9018', venture:'Sunrise Villas', site:'Villa Block 1-6', date:'10 Aug 2026', supervisor:'Ravi Teja', workersPresent:9, workCompleted:'Foundation excavation Villa 2 continued, shuttering Villa 1 started.', progress:'+0.3%', materialsReceived:'None', materialsUsed:'Minor aggregate for leveling', equipment:'Excavator (rented), hand tools', issues:'Mason team short-staffed (ISS-504).', safety:'No incidents.'},
+  ],
+
+  documents: [
+    {id:'DOC-1', name:'GVR — Structural Drawings Rev B.pdf', category:'Drawings', venture:'Green Valley Residency', uploadedBy:'Krishna Rao', date:'02 Aug 2026', version:'v2'},
+    {id:'DOC-2', name:'SKH — Vendor Contract (UltraTech).pdf', category:'Contracts', venture:'Skyline Heights', uploadedBy:'Priya Nair', date:'28 Jul 2026', version:'v1'},
+    {id:'DOC-3', name:'RFT — Fire Safety NOC.pdf', category:'Safety', venture:'Riverfront Towers', uploadedBy:'Manoj Verma', date:'15 Jun 2026', version:'v1'},
+    {id:'DOC-4', name:'GVR — Daily Progress Photos (Aug W2).zip', category:'Photos', venture:'Green Valley Residency', uploadedBy:'Krishna Rao', date:'11 Aug 2026', version:'v1'},
+    {id:'DOC-5', name:'SRV — Site Layout Plan.pdf', category:'Site Documents', venture:'Sunrise Villas', uploadedBy:'Ravi Teja', date:'20 May 2026', version:'v3'},
+    {id:'DOC-6', name:'SKH — Invoice PO-3350.pdf', category:'Invoices', venture:'Skyline Heights', uploadedBy:'Priya Nair', date:'09 Aug 2026', version:'v1'},
+    {id:'DOC-7', name:'GVR — Weekly Progress Report.pdf', category:'Reports', venture:'Green Valley Residency', uploadedBy:'Arjun Reddy', date:'08 Aug 2026', version:'v1'},
+    {id:'DOC-8', name:'Krishna Rao — Site Safety Certificate.pdf', category:'Employee Documents', venture:'—', uploadedBy:'HR Admin', date:'04 Feb 2021', version:'v1'},
+  ],
+
+  chatChannels: ['General','Site Operations','Materials','Safety','Management'],
+  chatMessages: {
+    'General':[
+      {who:'Krishna Rao', time:'09:02', text:'Morning team — Floor 9 column shuttering is on schedule for tomorrow\'s pour.'},
+      {who:'Arjun Reddy', time:'09:10', text:'Good. Make sure MR-1042 clears today so we don\'t lose the slot.', ref:{type:'mr', id:'MR-1042', label:'Material Request #MR-1042'}},
+    ],
+    'Site Operations':[
+      {who:'Krishna Rao', time:'08:15', text:'Rebar tying for 4 columns done. Photo attached.', photo:true},
+      {who:'Ramesh Babu', time:'08:40', text:'Formwork team ready to move to Floor 10 staging once slab pour clears.'},
+    ],
+    'Materials':[
+      {who:'Krishna Rao', time:'08:20', text:'Raised a request — buffer runs out by Wednesday evening.', ref:{type:'mr', id:'MR-1042', label:'Material Request #MR-1042'}},
+      {who:'Meera Iyer', time:'08:55', text:'Reviewing now, will confirm approval shortly.'},
+    ],
+    'Safety':[
+      {who:'Fatima Sheikh', time:'07:50', text:'Flagging a guardrail gap on Floor 5 east edge at Skyline Heights — cordoned off, needs urgent fix.', ref:{type:'issue', id:'ISS-501', label:'Issue #ISS-501 — Missing guardrails'}},
+    ],
+    'Management':[
+      {who:'Priya Nair', time:'09:30', text:'Mixer breakdown at Skyline is impacting the Floor 5 pour schedule — logged as ISS-505, need a rental unit by tomorrow.', ref:{type:'issue', id:'ISS-505', label:'Issue #ISS-505 — Mixer breakdown'}},
+    ],
+  },
+
+  notifications: [
+    {id:'N-1', category:'Approvals', title:'Material Request MR-1042 needs approval', desc:'Krishna Rao requested 250 bags of Cement — required by 14 Aug.', time:'12 min ago', unread:true, priority:'high', venture:'Green Valley Residency'},
+    {id:'N-2', category:'Approvals', title:'Material Request MR-1041 needs approval', desc:'Suresh Kumar requested 8 MT TMT Bars 12mm — critical priority.', time:'48 min ago', unread:true, priority:'critical', venture:'Skyline Heights'},
+    {id:'N-3', category:'Inventory Alerts', title:'Exterior Emulsion Paint below critical level', desc:'Only 6 litres remaining at Riverfront Towers store.', time:'2 hr ago', unread:true, priority:'critical', venture:'Riverfront Towers'},
+    {id:'N-4', category:'Issues', title:'New critical issue: Missing guardrails', desc:'Reported by Fatima Sheikh at Skyline Heights, Floor 5.', time:'3 hr ago', unread:true, priority:'critical', venture:'Skyline Heights'},
+    {id:'N-5', category:'Project Updates', title:'Daily report submitted', desc:'Krishna Rao submitted the daily site report for Tower A.', time:'5 hr ago', unread:false, priority:'low', venture:'Green Valley Residency'},
+    {id:'N-6', category:'Tasks', title:'Task overdue: Guardrail installation', desc:'TSK-205 was due yesterday and is currently blocked.', time:'6 hr ago', unread:false, priority:'high', venture:'Skyline Heights'},
+    {id:'N-7', category:'Documents', title:'New document uploaded', desc:'Weekly Progress Report added by Arjun Reddy.', time:'1 day ago', unread:false, priority:'low', venture:'Green Valley Residency'},
+    {id:'N-8', category:'System', title:'Weekly backup completed', desc:'Automated backup completed successfully at 02:00.', time:'1 day ago', unread:false, priority:'low', venture:'—'},
+  ],
+
+  users: [
+    {id:'U-01', name:'Meera Iyer', role:'Admin', email:'meera.iyer@naprocs.in', status:'active', lastLogin:'Today, 08:41'},
+    {id:'U-02', name:'Arjun Reddy', role:'Manager', email:'arjun.reddy@naprocs.in', status:'active', lastLogin:'Today, 07:55'},
+    {id:'U-03', name:'Priya Nair', role:'Manager', email:'priya.nair@naprocs.in', status:'active', lastLogin:'Today, 08:02'},
+    {id:'U-04', name:'Krishna Rao', role:'Supervisor', email:'krishna.rao@naprocs-site.in', status:'active', lastLogin:'Today, 07:10'},
+    {id:'U-05', name:'Suresh Kumar', role:'Supervisor', email:'suresh.kumar@naprocs-site.in', status:'active', lastLogin:'Today, 06:58'},
+    {id:'U-06', name:'Manoj Verma', role:'Supervisor', email:'manoj.verma@naprocs-site.in', status:'active', lastLogin:'Yesterday, 18:20'},
+    {id:'U-07', name:'Ravi Teja', role:'Supervisor', email:'ravi.teja@naprocs-site.in', status:'active', lastLogin:'Today, 07:30'},
+    {id:'U-08', name:'Ramesh Babu', role:'Employee', email:'—', status:'active', lastLogin:'Today, 07:00'},
+    {id:'U-09', name:'Rahul Menon', role:'Employee', email:'—', status:'inactive', lastLogin:'22 Jul 2026'},
+  ],
+
+  auditLogs: [
+    {time:'11 Aug 2026, 09:41', user:'Meera Iyer', role:'Admin', action:'Approved Material Request', module:'Inventory', entity:'MR-1039', ip:'10.22.4.11', status:'success'},
+    {time:'11 Aug 2026, 09:12', user:'Krishna Rao', role:'Supervisor', action:'Submitted Daily Report', module:'Daily Reports', entity:'DR-9021', ip:'49.207.11.4', status:'success'},
+    {time:'10 Aug 2026, 16:05', user:'Meera Iyer', role:'Admin', action:'Updated Employee', module:'Employees', entity:'EMP-1017', ip:'10.22.4.11', status:'success'},
+    {time:'10 Aug 2026, 15:40', user:'Krishna Rao', role:'Supervisor', action:'Issued Stock', module:'Inventory', entity:'MR-1039', ip:'49.207.11.4', status:'success'},
+    {time:'09 Aug 2026, 18:22', user:'Priya Nair', role:'Manager', action:'Rejected Material Request', module:'Inventory', entity:'MR-1038', ip:'103.44.9.2', status:'success'},
+    {time:'09 Aug 2026, 11:02', user:'Arjun Reddy', role:'Manager', action:'Transferred Stock', module:'Inventory', entity:'TRF-0091', ip:'103.44.9.7', status:'success'},
+    {time:'08 Aug 2026, 22:14', user:'Unknown', role:'—', action:'Failed login attempt', module:'Authentication', entity:'meera.iyer@naprocs.in', ip:'185.220.101.4', status:'failed'},
+  ],
+};
+
+/* ---------- STATE ---------- */
+const state = {
+  route:'dashboard',
+  params:{},
+  ventureTab:'overview',
+  employeeTab:'overview',
+  materialTab:'overview',
+  filters:{},
+  modal:null,
+  drawer:null,
+  toasts:[],
+  sidebarOpen:false,
+  loading:false,
+};
+
+function navigate(route, params={}){
+  state.route = route;
+  state.params = params;
+  state.ventureTab = params.tab || 'overview';
+  state.employeeTab = 'overview';
+  state.materialTab = 'overview';
+  state.loading = true;
+  state.sidebarOpen = false;
+  render();
+  setTimeout(()=>{ state.loading=false; render(); }, 380);
+  window.scrollTo(0,0);
+}
+function setVentureTab(t){ state.ventureTab = t; render(); }
+function setEmployeeTab(t){ state.employeeTab = t; render(); }
+function setMaterialTab(t){ state.materialTab = t; render(); }
+function openModal(m){ state.modal = m; render(); }
+function closeModal(){ state.modal = null; render(); }
+function openDrawer(d){ state.drawer = d; render(); }
+function closeDrawer(){ state.drawer = null; render(); }
+function toast(msg, type='success'){
+  const t = {id:Date.now(), msg, type};
+  state.toasts.push(t);
+  render();
+  setTimeout(()=>{ state.toasts = state.toasts.filter(x=>x.id!==t.id); render(); }, 3200);
+}
+function toggleSidebar(){ state.sidebarOpen = !state.sidebarOpen; render(); }
+
+function findVenture(id){ return DB.ventures.find(v=>v.id===id) || DB.ventures.find(v=>v.name===id); }
+function findMaterial(id){ return DB.materials.find(m=>m.id===id); }
+function findRequest(id){ return DB.materialRequests.find(r=>r.id===id); }
+function findEmployee(id){ return DB.employees.find(e=>e.id===id); }
+
+/* ---------- HELPERS ---------- */
+function initials(name){ return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+function statusBadge(status){
+  const map = {
+    'on-track':['success','On Track'], 'at-risk':['warn','At Risk'], 'delayed':['critical','Delayed'], 'completed':['neutral','Completed'],
+    'active':['success','Active'], 'inactive':['neutral','Inactive'], 'on-leave':['warn','On Leave'],
+    'ok':['success','Healthy'], 'low':['warn','Low Stock'], 'critical':['critical','Critical'],
+    'pending':['warn','Pending'], 'approved':['success','Approved'], 'rejected':['critical','Rejected'],
+    'issued':['info','Issued'], 'completed-req':['neutral','Completed'],
+    'todo':['neutral','To Do'], 'in-progress':['info','In Progress'], 'blocked':['critical','Blocked'],
+    'open':['critical','Open'], 'resolved':['success','Resolved'], 'closed':['neutral','Closed'],
+    'delivered':['success','Delivered'], 'in-transit':['info','In Transit'], 'processing':['warn','Processing'],
+    'on-hold':['warn','On Hold'], 'success':['success','Success'], 'failed':['critical','Failed'],
+    'draft':['neutral','Draft'], 'partially-approved':['warn','Partially Approved'],
+  };
+  const [cls,label] = map[status] || ['neutral', status];
+  return `<span class="badge badge-${cls}"><span class="badge-dot"></span>${label}</span>`;
+}
+function priorityBadge(p){
+  const map = {critical:['critical','Critical'], high:['warn','High'], medium:['info','Medium'], low:['neutral','Low']};
+  const [cls,label] = map[p] || ['neutral', p];
+  return `<span class="badge badge-${cls}"><span class="badge-dot"></span>${label}</span>`;
+}
+function progressBar(pct, tone){
+  const cls = tone==='critical' ? 'critical' : tone==='success' ? 'success' : '';
+  return `<div class="progress-track"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>`;
+}
+function ventureStatusTone(status){ return status==='delayed'?'critical':status==='completed'?'success':''; }
+function avatarChip(name){ return `<span class="avatar-sm" title="${name}">${initials(name)}</span>`; }
+function skeletonRows(cols, rows=5){
+  let html='';
+  for(let r=0;r<rows;r++){
+    html += '<tr>'+Array.from({length:cols}).map(()=>`<td><div class="skeleton" style="height:14px;width:${60+Math.random()*30}%"></div></td>`).join('')+'</tr>';
+  }
+  return html;
+}
+function emptyState(title, desc, iconName='box', actionHtml=''){
+  return `<div class="empty-state">
+    <div class="eicon">${icon(iconName)}</div>
+    <div class="etitle">${title}</div>
+    <div class="edesc">${desc}</div>
+    ${actionHtml}
+  </div>`;
+}
+
+/* ---------- NAV STRUCTURE ---------- */
+const NAV = [
+  {group:null, items:[
+    {route:'dashboard', label:'Dashboard', icon:'home'},
+  ]},
+  {group:'Ventures', items:[
+    {route:'ventures', label:'All Ventures', icon:'layers', count:DB.ventures.length},
+    {route:'ventures-active', label:'Active Ventures', icon:'activity'},
+    {route:'ventures-completed', label:'Completed Ventures', icon:'check'},
+  ]},
+  {group:'People', items:[
+    {route:'employees', label:'Employees', icon:'users', count:DB.employees.length},
+    {route:'managers', label:'Managers', icon:'briefcase', count:DB.managers.length},
+    {route:'supervisors', label:'Supervisors', icon:'shield', count:DB.supervisors.length},
+    {route:'assignments', label:'Employee Assignments', icon:'flag'},
+  ]},
+  {group:'Inventory', items:[
+    {route:'inventory', label:'Inventory Overview', icon:'box'},
+    {route:'materials', label:'Materials', icon:'cube', count:DB.materials.length},
+    {route:'stock-movements', label:'Stock Movements', icon:'stack'},
+    {route:'material-requests', label:'Material Requests', icon:'file', count:DB.materialRequests.filter(r=>r.status==='pending').length, alert:true},
+    {route:'stock-transfers', label:'Stock Transfers', icon:'truck'},
+    {route:'warehouses', label:'Warehouses / Sites', icon:'building'},
+    {route:'inventory-alerts', label:'Inventory Alerts', icon:'alert', count:DB.materials.filter(m=>m.status!=='ok').length, alert:true},
+  ]},
+  {group:'Procurement', items:[
+    {route:'vendors', label:'Vendors', icon:'truck', count:DB.vendors.length},
+    {route:'purchase-requests', label:'Purchase Requests', icon:'file'},
+    {route:'purchase-orders', label:'Purchase Orders', icon:'package', count:DB.purchaseOrders.length},
+    {route:'deliveries', label:'Deliveries', icon:'truck'},
+    {route:'invoices', label:'Invoices', icon:'file'},
+  ]},
+  {group:'Operations', items:[
+    {route:'tasks', label:'Tasks', icon:'tasks', count:DB.tasks.filter(t=>t.status!=='completed').length},
+    {route:'issues', label:'Issues', icon:'alert', count:DB.issues.filter(i=>i.status==='open').length, alert:true},
+    {route:'daily-reports', label:'Daily Reports', icon:'file'},
+    {route:'site-activity', label:'Site Activity', icon:'activity'},
+  ]},
+  {group:'Documents', items:[
+    {route:'documents', label:'All Documents', icon:'file', count:DB.documents.length},
+    {route:'venture-documents', label:'Venture Documents', icon:'layers'},
+    {route:'employee-documents', label:'Employee Documents', icon:'users'},
+  ]},
+  {group:'Communication', items:[
+    {route:'chat', label:'Venture Chat', icon:'chat'},
+    {route:'announcements', label:'Announcements', icon:'bell'},
+    {route:'notifications', label:'Notifications', icon:'bell', count:DB.notifications.filter(n=>n.unread).length, alert:true},
+  ]},
+  {group:'Reports', items:[
+    {route:'reports', label:'Project Reports', icon:'file'},
+    {route:'reports-employee', label:'Employee Reports', icon:'users'},
+    {route:'reports-inventory', label:'Inventory Reports', icon:'box'},
+    {route:'reports-consumption', label:'Material Consumption', icon:'cube'},
+    {route:'reports-vendor', label:'Vendor Reports', icon:'truck'},
+    {route:'reports-operational', label:'Operational Reports', icon:'activity'},
+  ]},
+  {group:'Administration', items:[
+    {route:'users', label:'Users', icon:'users', count:DB.users.length},
+    {route:'roles', label:'Roles & Permissions', icon:'shield'},
+    {route:'branches', label:'Branches / Locations', icon:'pin'},
+    {route:'audit-logs', label:'Audit Logs', icon:'list'},
+    {route:'settings', label:'Company Settings', icon:'settings'},
+  ]},
+];
+
+const PAGE_META = {}; // filled by title() calls at render
+
+function pageTitle(route){
+  const titles = {
+    dashboard:['Dashboard','Overview across all ventures'],
+    ventures:['All Ventures','4 active · 1 completed'],
+    'ventures-active':['Active Ventures',''],
+    'ventures-completed':['Completed Ventures',''],
+    'venture-create':['Create Venture','New construction venture'],
+    'venture-workspace':['Venture Workspace',''],
+    employees:['Employees','Directory'],
+    'employee-profile':['Employee Profile',''],
+    'employee-add':['Add Employee','New team member'],
+    managers:['Managers','Directory'],
+    'manager-detail':['Manager Profile',''],
+    supervisors:['Supervisors','Directory'],
+    'supervisor-detail':['Supervisor Profile',''],
+    assignments:['Employee Assignments',''],
+    inventory:['Inventory Overview','All sites'],
+    materials:['Materials','Master list'],
+    'material-detail':['Material Detail',''],
+    'material-add':['Add Material',''],
+    'receive-stock':['Receive Stock',''],
+    'issue-stock':['Issue Stock',''],
+    'transfer-stock':['Transfer Stock',''],
+    'stock-movements':['Stock Movements','Transaction ledger'],
+    'material-requests':['Material Requests',''],
+    'material-request-detail':['Material Request',''],
+    'stock-transfers':['Stock Transfers',''],
+    warehouses:['Warehouses / Sites',''],
+    'inventory-alerts':['Inventory Alerts',''],
+    vendors:['Vendors','Directory'],
+    'vendor-detail':['Vendor Profile',''],
+    'purchase-requests':['Purchase Requests',''],
+    'purchase-orders':['Purchase Orders',''],
+    'po-detail':['Purchase Order',''],
+    deliveries:['Deliveries','Tracking'],
+    invoices:['Invoices',''],
+    tasks:['Tasks','All ventures'],
+    'task-detail':['Task Detail',''],
+    issues:['Issues','All ventures'],
+    'issue-detail':['Issue Detail',''],
+    'daily-reports':['Daily Reports','All ventures'],
+    'daily-report-detail':['Daily Report',''],
+    'daily-report-create':['Create Daily Report',''],
+    'site-activity':['Site Activity','Live feed'],
+    documents:['All Documents',''],
+    'venture-documents':['Venture Documents',''],
+    'employee-documents':['Employee Documents',''],
+    chat:['Venture Chat',''],
+    announcements:['Announcements',''],
+    notifications:['Notifications',''],
+    reports:['Project Reports',''],
+    'reports-employee':['Employee Reports',''],
+    'reports-inventory':['Inventory Reports',''],
+    'reports-consumption':['Material Consumption Report',''],
+    'reports-vendor':['Vendor Reports',''],
+    'reports-operational':['Operational Reports',''],
+    users:['Users',''],
+    'user-detail':['User Detail',''],
+    roles:['Roles & Permissions',''],
+    branches:['Branches / Locations',''],
+    'audit-logs':['Audit Logs',''],
+    settings:['Company Settings',''],
+    profile:['My Profile',''],
+  };
+  return titles[route] || ['Naprocs',''];
+}
+
+/* ---------- MAIN RENDER ---------- */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    ${renderSidebar()}
+    <div id="main-col">
+      ${renderTopbar()}
+      <div id="content">${renderRoute()}</div>
+    </div>
+    ${state.modal ? renderModal() : ''}
+    ${state.drawer ? renderDrawerWrap() : ''}
+    ${renderToasts()}
+  `;
+}
+
+function renderSidebar(){
+  return `
+  <div id="sidebar" class="${state.sidebarOpen?'open':''}">
+    <div class="brand">
+      <div class="brand-mark">${icon('building','')}</div>
+      <div class="brand-text">
+        <span class="name">Naprocs</span>
+        <span class="sub">Builder Management</span>
+      </div>
+    </div>
+    <div class="nav-scroll">
+      ${NAV.map(group => `
+        ${group.group ? `<div class="nav-group-label">${group.group}</div>` : ''}
+        <div class="nav-group">
+          ${group.items.map(item => `
+            <a class="nav-item ${item.alert?'alert-count':''} ${state.route===item.route?'active':''}" onclick="navigate('${item.route}')">
+              ${icon(item.icon)}
+              <span>${item.label}</span>
+              ${item.count!==undefined && item.count>0 ? `<span class="count">${item.count}</span>` : ''}
+            </a>
+          `).join('')}
+        </div>
+      `).join('')}
+    </div>
+    <div class="sidebar-footer">
+      <div class="profile-chip" onclick="navigate('profile')">
+        <span class="avatar">${DB.admin.initials}</span>
+        <div class="who">
+          <div class="n">${DB.admin.name}</div>
+          <div class="r">${DB.admin.role}</div>
+        </div>
+        ${icon('dots','')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderTopbar(){
+  const [title, ctx] = pageTitle(state.route);
+  const unread = DB.notifications.filter(n=>n.unread).length;
+  return `
+  <div id="topbar">
+    <button class="icon-btn" style="display:none" onclick="toggleSidebar()">${icon('list')}</button>
+    <div class="page-title-wrap">
+      <div class="page-title">${title}</div>
+      ${ctx ? `<div class="page-context">${ctx}</div>` : ''}
+    </div>
+    <div class="search-box">${icon('search')}<span>Search ventures, employees, materials…</span></div>
+    <button class="icon-btn" onclick="navigate('notifications')">
+      ${icon('bell')}
+      ${unread>0?`<span class="dot-badge">${unread}</span>`:''}
+    </button>
+    <div class="profile-chip" onclick="navigate('profile')" style="padding:4px 6px;">
+      <span class="avatar" style="width:32px;height:32px;font-size:11.5px;">${DB.admin.initials}</span>
+    </div>
+  </div>`;
+}
+
+function renderToasts(){
+  if(!state.toasts.length) return '';
+  return `<div class="toast-wrap">
+    ${state.toasts.map(t=>`<div class="toast ${t.type}"><span class="tdot"></span>${t.msg}</div>`).join('')}
+  </div>`;
+}
+
+function renderModal(){
+  return `<div class="overlay" onclick="if(event.target===this) closeModal()">${state.modal.render()}</div>`;
+}
+function renderDrawerWrap(){
+  return `<div class="drawer-wrap" onclick="if(event.target===this) closeDrawer()">
+    <div class="drawer">${state.drawer.render()}</div>
+  </div>`;
+}
+
+/* ---------- ROUTER ---------- */
+function renderRoute(){
+  if(state.loading) return renderLoadingScreen();
+  const r = state.route;
+  const fn = ROUTES[r];
+  if(fn) return fn(state.params);
+  return emptyState('Screen not found', 'This route has not been wired up yet.', 'alert');
+}
+
+function renderLoadingScreen(){
+  return `
+  <div class="kpi-grid">
+    ${Array.from({length:4}).map(()=>`<div class="kpi"><div class="skeleton" style="height:11px;width:50%;margin-bottom:10px;"></div><div class="skeleton" style="height:24px;width:40%;"></div></div>`).join('')}
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="skeleton" style="height:14px;width:160px;"></div></div>
+    <div class="card-pad">
+      <div class="skeleton" style="height:220px;width:100%;border-radius:10px;"></div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   ROUTES
+============================================================ */
+const ROUTES = {};
+
+/* ---------- DASHBOARD ---------- */
+ROUTES['dashboard'] = () => {
+  const pending = DB.materialRequests.filter(r=>r.status==='pending');
+  const alerts = DB.materials.filter(m=>m.status!=='ok');
+  const openIssues = DB.issues.filter(i=>i.status==='open');
+  const activeVentures = DB.ventures.filter(v=>v.status!=='completed');
+  return `
+  <div class="kpi-grid">
+    <div class="kpi"><div class="klabel">Active Ventures</div><div class="kval">${activeVentures.length}</div><div class="kdelta up">${icon('activity')} 1 completed this quarter</div></div>
+    <div class="kpi"><div class="klabel">Total Employees</div><div class="kval">${DB.employees.length}</div><div class="kdelta up">${icon('users')} 96% attendance avg</div></div>
+    <div class="kpi"><div class="klabel">Active Sites</div><div class="kval">${DB.ventures.filter(v=>v.status!=='completed').length}</div><div class="kdelta warn">${icon('pin')} 3 states</div></div>
+    <div class="kpi"><div class="klabel">Low Stock Materials</div><div class="kval">${alerts.length}</div><div class="kdelta down">${icon('alert')} Needs reorder</div></div>
+    <div class="kpi"><div class="klabel">Pending Material Requests</div><div class="kval">${pending.length}</div><div class="kdelta warn">${icon('clock')} Awaiting approval</div></div>
+    <div class="kpi"><div class="klabel">Open Issues</div><div class="kval">${openIssues.length}</div><div class="kdelta down">${icon('alert')} 1 critical</div></div>
+    <div class="kpi"><div class="klabel">Active Vendors</div><div class="kval">${DB.vendors.filter(v=>v.status==='active').length}</div><div class="kdelta up">${icon('truck')} 4 open POs</div></div>
+    <div class="kpi"><div class="klabel">Monthly Operational Expense</div><div class="kval">₹2.14 Cr</div><div class="kdelta down">${icon('activity')} +6.2% vs last month</div></div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Venture Progress</div><div class="card-sub">Completion by venture</div></div>
+        <a class="btn btn-sm btn-ghost" onclick="navigate('ventures')">View all ${icon('chevronRight')}</a>
+      </div>
+      <div class="card-pad stack" style="gap:14px;">
+        ${DB.ventures.filter(v=>v.status!=='completed').map(v=>`
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+              <span style="font-weight:600;cursor:pointer;" onclick="navigate('venture-workspace',{id:'${v.id}'})">${v.name}</span>
+              <span class="mono" style="color:var(--ink-soft);">${v.progress}%</span>
+            </div>
+            ${progressBar(v.progress, ventureStatusTone(v.status))}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">Venture Status</div></div></div>
+      <div class="card-pad stack" style="gap:10px;">
+        ${['on-track','at-risk','delayed','completed'].map(s=>{
+          const n = DB.ventures.filter(v=>v.status===s).length;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">${statusBadge(s)}</div>
+            <span class="mono" style="font-weight:700;font-size:15px;">${n}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Pending Approvals</div><div class="card-sub">${pending.length} material requests awaiting decision</div></div>
+        <a class="btn btn-sm btn-ghost" onclick="navigate('material-requests')">View all ${icon('chevronRight')}</a>
+      </div>
+      <table>
+        <thead><tr><th>Request</th><th>Venture</th><th>Requested By</th><th>Type</th><th>Date</th><th>Priority</th><th>Status</th></tr></thead>
+        <tbody>
+          ${pending.map(r=>`
+            <tr class="clickable" onclick="navigate('material-request-detail',{id:'${r.id}'})">
+              <td class="cell-id">${r.id}</td>
+              <td>${r.venture}</td>
+              <td>${r.requestedBy}</td>
+              <td>${r.material.split(' — ')[0]}</td>
+              <td>${r.created.split(',')[0]}</td>
+              <td>${priorityBadge(r.priority)}</td>
+              <td>${statusBadge(r.status)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">Material Consumption</div><div class="card-sub">This week, by category</div></div></div>
+      <div class="card-pad stack" style="gap:12px;">
+        ${[['Cement','78%','#000000'],['Steel','54%','#333333'],['Sand','40%','#555555'],['Bricks','61%','#777777'],['Other','22%','#A1A1AA']].map(([label,pct,color])=>`
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span style="font-weight:600;">${label}</span><span class="mono" style="color:var(--ink-soft);">${pct}</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:${pct};background:${color};"></div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">Site Activity</div><div class="card-sub">Across all ventures</div></div></div>
+      <div class="card-pad">
+        ${[
+          {icon:'file', t:'Krishna Rao submitted the daily report for Green Valley Residency — Tower A', ts:'14 min ago'},
+          {icon:'box', t:'500 bags of Cement received at Green Valley Residency (PO-3341)', ts:'2 hr ago'},
+          {icon:'truck', t:'80 bags of Cement transferred from Riverfront Towers to Green Valley Residency', ts:'2 hr ago'},
+          {icon:'alert', t:'New critical issue raised at Skyline Heights — missing guardrails', ts:'3 hr ago'},
+          {icon:'users', t:'Anitha Reddy assigned to Skyline Heights — Block C', ts:'5 hr ago'},
+          {icon:'file', t:'Weekly Progress Report uploaded for Green Valley Residency', ts:'1 day ago'},
+        ].map(a=>`
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content"><div class="tt">${a.t}</div><div class="ts">${a.ts}</div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><div class="card-title">Inventory Alerts</div></div>
+        <a class="btn btn-sm btn-ghost" onclick="navigate('inventory-alerts')">View all ${icon('chevronRight')}</a>
+      </div>
+      <table>
+        <thead><tr><th>Material</th><th>Location</th><th>Status</th></tr></thead>
+        <tbody>
+          ${alerts.map(m=>`
+            <tr class="clickable" onclick="navigate('material-detail',{id:'${m.id}'})">
+              <td class="cell-title">${m.name}</td>
+              <td class="cell-sub">${m.location}</td>
+              <td>${statusBadge(m.status)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Recent Ventures</div></div>
+      <a class="btn btn-sm btn-ghost" onclick="navigate('ventures')">View all ${icon('chevronRight')}</a>
+    </div>
+    ${renderVentureTable(DB.ventures)}
+  </div>
+  `;
+};
+
+/* ---------- VENTURES ---------- */
+function renderVentureTable(list){
+  if(!list.length){
+    return emptyState('No ventures found', 'Try adjusting your filters, or create a new venture to get started.', 'layers',
+      `<button class="btn btn-amber" onclick="navigate('venture-create')">${icon('plus')} Create Venture</button>`);
+  }
+  return `
+  <table>
+    <thead><tr><th>Venture</th><th>Project Code</th><th>Location</th><th>Manager</th><th>Supervisor</th><th>Team</th><th>Progress</th><th>Material</th><th>Issues</th><th>Status</th><th>Last Activity</th></tr></thead>
+    <tbody>
+      ${list.map(v=>`
+        <tr class="clickable" onclick="navigate('venture-workspace',{id:'${v.id}'})">
+          <td><div class="cell-title">${v.name}</div><div class="cell-sub">${v.type}</div></td>
+          <td class="cell-id">${v.code}</td>
+          <td class="cell-sub">${v.location}</td>
+          <td>${v.manager}</td>
+          <td>${v.supervisor}</td>
+          <td class="mono">${v.team}</td>
+          <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:8px;">${progressBar(v.progress, ventureStatusTone(v.status))}<span class="mono" style="font-size:11.5px;color:var(--ink-soft);">${v.progress}%</span></div></td>
+          <td>${statusBadge(v.materialStatus)}</td>
+          <td>${v.openIssues>0 ? `<span class="badge badge-critical"><span class="badge-dot"></span>${v.openIssues}</span>` : `<span class="badge badge-neutral"><span class="badge-dot"></span>0</span>`}</td>
+          <td>${statusBadge(v.status)}</td>
+          <td class="cell-sub">${v.lastActivity}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>`;
+}
+
+function ventureListScreen(filterFn, label){
+  let list = DB.ventures;
+  if(filterFn) list = list.filter(filterFn);
+  return `
+  <div class="card">
+    <div class="filters-bar">
+      <div class="search-inline">${icon('search')}<input placeholder="Search ventures…" oninput="filterVentures(this.value)"></div>
+      <select class="filter-select"><option>All Statuses</option><option>On Track</option><option>At Risk</option><option>Delayed</option><option>Completed</option></select>
+      <select class="filter-select"><option>All Managers</option><option>Arjun Reddy</option><option>Priya Nair</option></select>
+      <select class="filter-select"><option>All Locations</option><option>Hyderabad</option><option>Bengaluru</option><option>Chennai</option><option>Pune</option></select>
+      <button class="btn btn-sm">${icon('filter')} More Filters</button>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="navigate('venture-create')">${icon('plus')} Create Venture</button>
+    </div>
+    ${renderVentureTable(list)}
+  </div>`;
+}
+function filterVentures(q){
+  const rows = document.querySelectorAll('#content tbody tr');
+  rows.forEach(r=>{ r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'; });
+}
+
+ROUTES['ventures'] = () => ventureListScreen(null);
+ROUTES['ventures-active'] = () => ventureListScreen(v=>v.status!=='completed');
+ROUTES['ventures-completed'] = () => ventureListScreen(v=>v.status==='completed');
+
+ROUTES['venture-create'] = () => `
+  <div class="breadcrumb"><a onclick="navigate('ventures')">Ventures</a> ${icon('chevronRight')} <span>Create Venture</span></div>
+  <div class="card" style="max-width:820px;">
+    <div class="card-head"><div><div class="card-title">Create Venture</div><div class="card-sub">Set up a new construction project</div></div></div>
+    <div class="card-pad">
+      <div class="form-section-title">Basic Information</div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Venture Name <span class="req">*</span></label><input class="form-input" placeholder="e.g. Emerald Meadows Phase 2"></div>
+        <div class="form-group"><label class="form-label">Project Code <span class="req">*</span></label><input class="form-input mono" placeholder="e.g. EMD-2026-01"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Project Type <span class="req">*</span></label>
+        <select class="form-select"><option>Residential — Apartments</option><option>Residential — Villas</option><option>Commercial — Mixed Use</option><option>Industrial</option></select>
+      </div>
+
+      <div class="form-section-title">Location</div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Site Address <span class="req">*</span></label><input class="form-input" placeholder="Plot / street / area"></div>
+        <div class="form-group"><label class="form-label">City <span class="req">*</span></label><input class="form-input" placeholder="e.g. Hyderabad"></div>
+      </div>
+
+      <div class="form-section-title">Project Details</div>
+      <div class="form-row3">
+        <div class="form-group"><label class="form-label">Total Units</label><input class="form-input" placeholder="e.g. 128"></div>
+        <div class="form-group"><label class="form-label">Floors / Towers</label><input class="form-input" placeholder="e.g. G+14, 2 towers"></div>
+        <div class="form-group"><label class="form-label">Built-up Area (sq.ft)</label><input class="form-input" placeholder="e.g. 210,000"></div>
+      </div>
+
+      <div class="form-section-title">Management</div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Assign Manager <span class="req">*</span></label>
+          <select class="form-select"><option>Arjun Reddy</option><option>Priya Nair</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Assign Supervisor <span class="req">*</span></label>
+          <select class="form-select"><option>Krishna Rao</option><option>Suresh Kumar</option><option>Manoj Verma</option><option>Ravi Teja</option></select>
+        </div>
+      </div>
+
+      <div class="form-section-title">Timeline</div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Start Date <span class="req">*</span></label><input class="form-input" type="date"></div>
+        <div class="form-group"><label class="form-label">Target Completion <span class="req">*</span></label><input class="form-input" type="date"></div>
+      </div>
+
+      <div class="form-section-title">Budget / Operational Information</div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Total Budget (₹)</label><input class="form-input" placeholder="e.g. 18,40,00,000"></div>
+        <div class="form-group"><label class="form-label">Cost Center Code</label><input class="form-input mono" placeholder="e.g. CC-GVR-01"></div>
+      </div>
+
+      <div class="form-section-title">Documents</div>
+      <div class="form-group" style="border:1.5px dashed var(--border);border-radius:10px;padding:22px;text-align:center;color:var(--ink-soft);">
+        ${icon('upload')}<div style="margin-top:6px;font-size:12.5px;">Drop approvals, land documents or drawings here, or click to browse</div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="navigate('ventures')">Cancel</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn">Save as Draft</button>
+        <button class="btn btn-amber" onclick="handleCreateVenture()">${icon('check')} Create Venture</button>
+      </div>
+    </div>
+  </div>
+`;
+function handleCreateVenture(){ navigate('ventures'); setTimeout(()=>toast('Venture created successfully','success'), 400); }
+
+/* ---------- VENTURE WORKSPACE ---------- */
+ROUTES['venture-workspace'] = (params) => {
+  const v = findVenture(params.id) || DB.ventures[0];
+  const tabs = ['overview','team','materials','tasks','issues','daily-reports','documents','activity','chat'];
+  const tabLabels = {overview:'Overview', team:'Team', materials:'Materials', tasks:'Tasks', issues:'Issues', 'daily-reports':'Daily Reports', documents:'Documents', activity:'Activity', chat:'Chat'};
+  return `
+  <div class="breadcrumb"><a onclick="navigate('ventures')">Ventures</a> ${icon('chevronRight')} <span>${v.name}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <h2 style="margin:0;font-size:19px;font-weight:800;">${v.name}</h2>
+          ${statusBadge(v.status)}
+        </div>
+        <div class="cell-sub mono">${v.code} · ${v.location}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-sm" onclick="navigate('venture-workspace',{id:'${v.id}',tab:'tasks'});setVentureTab('tasks')">${icon('plus')} Add Task</button>
+        <button class="btn btn-sm" onclick="setVentureTab('issues')">${icon('flag')} Report Issue</button>
+        <button class="btn btn-sm" onclick="openModal(materialRequestModal('${v.name}'))">${icon('box')} Request Material</button>
+        <button class="btn btn-sm" onclick="setVentureTab('daily-reports')">${icon('file')} Daily Report</button>
+        <button class="btn btn-sm" onclick="setVentureTab('documents')">${icon('upload')} Upload Doc</button>
+        <button class="btn btn-amber btn-sm" onclick="setVentureTab('chat')">${icon('chat')} Open Chat</button>
+      </div>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Progress</span><span class="v">${v.progress}%</span></div>
+      <div class="m"><span class="l">Phase</span><span class="v">${v.phase}</span></div>
+      <div class="m"><span class="l">Manager</span><span class="v">${v.manager}</span></div>
+      <div class="m"><span class="l">Supervisor</span><span class="v">${v.supervisor}</span></div>
+      <div class="m"><span class="l">Team Size</span><span class="v">${v.team}</span></div>
+      <div class="m"><span class="l">Open Issues</span><span class="v">${v.openIssues}</span></div>
+      <div class="m"><span class="l">Budget</span><span class="v">${v.budget} <span style="color:var(--ink-soft);font-weight:500;">(${v.spent} spent)</span></span></div>
+      <div class="m"><span class="l">Timeline</span><span class="v">${v.start} → ${v.end}</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="tabs">
+      ${tabs.map(t=>`<div class="tab ${state.ventureTab===t?'active':''}" onclick="setVentureTab('${t}')">${tabLabels[t]}</div>`).join('')}
+    </div>
+    <div class="card-pad">
+      ${renderVentureTabContent(v)}
+    </div>
+  </div>
+  `;
+};
+
+function renderVentureTabContent(v){
+  switch(state.ventureTab){
+    case 'overview': return ventureOverviewTab(v);
+    case 'team': return ventureTeamTab(v);
+    case 'materials': return ventureMaterialsTab(v);
+    case 'tasks': return ventureTasksTab(v);
+    case 'issues': return ventureIssuesTab(v);
+    case 'daily-reports': return ventureDailyReportsTab(v);
+    case 'documents': return ventureDocumentsTab(v);
+    case 'activity': return ventureActivityTab(v);
+    case 'chat': return ventureChatTab(v);
+    default: return '';
+  }
+}
+
+function ventureOverviewTab(v){
+  const milestones = [
+    {t:'Foundation & Excavation', done:true}, {t:'Structural — Podium', done:true},
+    {t:'Structural — Superstructure (Floors 1-14)', done:false, active:true}, {t:'MEP Rough-in', done:false},
+    {t:'Finishing & Fitout', done:false}, {t:'Handover', done:false},
+  ];
+  const vIssues = DB.issues.filter(i=>i.venture===v.name && i.status!=='closed' && i.status!=='resolved');
+  const vReq = DB.materialRequests.filter(r=>r.venture===v.name && r.status==='pending');
+  return `
+  <div class="grid-2">
+    <div class="stack" style="gap:16px;">
+      <div>
+        <div class="section-title-row"><h3>Construction Milestones</h3></div>
+        ${milestones.map(m=>`
+          <div class="checklist-item">
+            <span style="width:18px;height:18px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${m.done?'var(--success-soft)':m.active?'var(--amber-soft)':'#EEEDE9'};color:${m.done?'var(--success)':m.active?'var(--amber-ink)':'var(--ink-soft)'};">${m.done?icon('check'):''}</span>
+            <span style="${m.done?'color:var(--ink-soft);text-decoration:line-through;':m.active?'font-weight:700;':''}">${m.t}</span>
+            ${m.active?'<span class="badge badge-warn" style="margin-left:auto;"><span class="badge-dot"></span>In Progress</span>':''}
+          </div>
+        `).join('')}
+      </div>
+      <div>
+        <div class="section-title-row"><h3>Recent Activity</h3></div>
+        ${[
+          {t:'Daily report submitted by '+v.supervisor, ts:v.lastActivity},
+          {t:'Material request raised for Cement', ts:'Yesterday'},
+          {t:'Task "Column casting" moved to In Progress', ts:'Yesterday'},
+        ].map(a=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="tt">${a.t}</div><div class="ts">${a.ts}</div></div></div>`).join('')}
+      </div>
+    </div>
+    <div class="stack" style="gap:16px;">
+      <div class="card" style="box-shadow:none;">
+        <div class="card-head"><div class="card-title" style="font-size:13px;">Team Summary</div></div>
+        <div class="card-pad" style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;"><span class="cell-sub">Manager</span><b>${v.manager}</b></div>
+          <div style="display:flex;justify-content:space-between;"><span class="cell-sub">Supervisor</span><b>${v.supervisor}</b></div>
+          <div style="display:flex;justify-content:space-between;"><span class="cell-sub">Team on Site</span><b>${v.team}</b></div>
+        </div>
+      </div>
+      <div class="card" style="box-shadow:none;">
+        <div class="card-head"><div class="card-title" style="font-size:13px;">Material Status</div></div>
+        <div class="card-pad">${statusBadge(v.materialStatus)} <span class="cell-sub" style="margin-left:8px;">${vReq.length} pending request(s)</span></div>
+      </div>
+      <div class="card" style="box-shadow:none;">
+        <div class="card-head"><div class="card-title" style="font-size:13px;">Open Issues</div></div>
+        <div class="card-pad">
+          ${vIssues.length ? vIssues.map(i=>`<div style="font-size:12.5px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;"><span>${i.title}</span>${priorityBadge(i.severity)}</div>`).join('') : '<span class="cell-sub">No open issues</span>'}
+        </div>
+      </div>
+      <div class="card" style="box-shadow:none;">
+        <div class="card-head"><div class="card-title" style="font-size:13px;">Upcoming Deadlines</div></div>
+        <div class="card-pad" style="font-size:12.5px;color:var(--ink-soft);">Floor 9 slab pour — 14 Aug 2026<br>Structural review — 20 Aug 2026</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function ventureTeamTab(v){
+  const team = DB.employees.filter(e=>e.venture===v.name);
+  return `
+  <div class="section-title-row"><h3>Team — ${v.name}</h3><button class="btn btn-sm btn-amber" onclick="navigate('employee-add')">${icon('plus')} Assign Employee</button></div>
+  ${team.length ? `<table>
+    <thead><tr><th>Employee</th><th>Role</th><th>Supervisor</th><th>Attendance</th><th>Current Task</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      ${team.map(e=>`
+        <tr class="clickable" onclick="navigate('employee-profile',{id:'${e.id}'})">
+          <td><div style="display:flex;align-items:center;gap:8px;">${avatarChip(e.name)}<div><div class="cell-title">${e.name}</div><div class="cell-sub cell-id">${e.id}</div></div></div></td>
+          <td>${e.role}</td><td>${e.supervisor}</td>
+          <td class="mono">${e.attendance}%</td><td class="cell-sub">${e.task}</td><td>${statusBadge(e.status)}</td>
+          <td>${icon('chevronRight')}</td>
+        </tr>`).join('')}
+    </tbody>
+  </table>` : emptyState('No team members assigned', 'Assign employees from the directory to staff this venture.', 'users')}`;
+}
+
+function ventureMaterialsTab(v){
+  const mats = DB.materials.filter(m=>m.location.includes(v.code.split('-')[0]) || m.location.toLowerCase().includes(v.name.split(' ')[0].toLowerCase()));
+  const list = mats.length ? mats : DB.materials.slice(0,3);
+  return `
+  <div class="section-title-row"><h3>Materials at ${v.name}</h3><button class="btn btn-sm btn-amber" onclick="openModal(materialRequestModal('${v.name}'))">${icon('plus')} Request Material</button></div>
+  <table>
+    <thead><tr><th>Material</th><th>SKU</th><th>Available</th><th>Min Level</th><th>Status</th><th>Last Movement</th></tr></thead>
+    <tbody>
+      ${list.map(m=>`
+        <tr class="clickable" onclick="navigate('material-detail',{id:'${m.id}'})">
+          <td class="cell-title">${m.name}</td><td class="cell-id">${m.sku}</td>
+          <td class="mono">${m.available} ${m.unit}</td><td class="mono">${m.min}</td>
+          <td>${statusBadge(m.status)}</td><td class="cell-sub">${m.lastMovement}</td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function ventureTasksTab(v){
+  const t = DB.tasks.filter(x=>x.venture===v.name);
+  return `
+  <div class="section-title-row"><h3>Tasks — ${v.name}</h3><button class="btn btn-sm btn-amber" onclick="openModal(createTaskModal('${v.name}'))">${icon('plus')} Add Task</button></div>
+  ${renderTaskTable(t)}`;
+}
+function ventureIssuesTab(v){
+  const i = DB.issues.filter(x=>x.venture===v.name);
+  return `
+  <div class="section-title-row"><h3>Issues — ${v.name}</h3><button class="btn btn-sm btn-amber" onclick="openModal(createIssueModal('${v.name}'))">${icon('plus')} Report Issue</button></div>
+  ${renderIssueTable(i)}`;
+}
+function ventureDailyReportsTab(v){
+  const r = DB.dailyReports.filter(x=>x.venture===v.name);
+  return `
+  <div class="section-title-row"><h3>Daily Reports — ${v.name}</h3><button class="btn btn-sm btn-amber" onclick="navigate('daily-report-create',{venture:v.name})">${icon('plus')} New Report</button></div>
+  ${r.length ? `<table><thead><tr><th>Date</th><th>Site</th><th>Supervisor</th><th>Workers</th><th>Progress</th><th></th></tr></thead>
+  <tbody>${r.map(x=>`<tr class="clickable" onclick="navigate('daily-report-detail',{id:'${x.id}'})">
+    <td class="cell-title">${x.date}</td><td>${x.site}</td><td>${x.supervisor}</td><td class="mono">${x.workersPresent}</td>
+    <td><span class="badge badge-success"><span class="badge-dot"></span>${x.progress}</span></td><td>${icon('chevronRight')}</td></tr>`).join('')}</tbody></table>`
+  : emptyState('No daily reports yet','Reports submitted by the site supervisor will appear here.','file')}`;
+}
+function ventureDocumentsTab(v){
+  const d = DB.documents.filter(x=>x.venture===v.name);
+  return `
+  <div class="section-title-row"><h3>Documents — ${v.name}</h3><button class="btn btn-sm btn-amber" onclick="toast('Document uploaded successfully')">${icon('upload')} Upload Document</button></div>
+  ${d.length ? renderDocGrid(d) : emptyState('No documents uploaded', 'Upload drawings, contracts or site photos for this venture.', 'file')}`;
+}
+function ventureActivityTab(v){
+  return `<div class="section-title-row"><h3>Full Activity Log — ${v.name}</h3></div>
+  ${[
+    {t:'Daily report DR-9021 submitted', by:v.supervisor, ts:'14 min ago'},
+    {t:'500 bags Cement received (PO-3341)', by:v.supervisor, ts:'2 hr ago'},
+    {t:'Task "Column casting" status changed to In Progress', by:v.supervisor, ts:'Yesterday'},
+    {t:'Material Request MR-1042 raised', by:v.supervisor, ts:'Yesterday'},
+    {t:'Employee Ramesh Babu assigned to venture', by:v.manager, ts:'3 days ago'},
+  ].map(a=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="tt">${a.t}</div><div class="ts">${a.by} · ${a.ts}</div></div></div>`).join('')}`;
+}
+function ventureChatTab(v){
+  return renderChatShell(v.name);
+}
+
+/* ---------- EMPLOYEES ---------- */
+ROUTES['employees'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <div class="search-inline">${icon('search')}<input placeholder="Search employees…" oninput="filterVentures(this.value)"></div>
+      <select class="filter-select"><option>All Roles</option><option>Supervisor</option><option>Mason</option><option>Electrician</option><option>Plumber</option><option>Site Engineer</option></select>
+      <select class="filter-select"><option>All Ventures</option>${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select>
+      <select class="filter-select"><option>All Status</option><option>Active</option><option>On Leave</option><option>Inactive</option></select>
+      <button class="btn btn-sm">${icon('filter')} More Filters</button>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="navigate('employee-add')">${icon('plus')} Add Employee</button>
+    </div>
+    <table>
+      <thead><tr><th>Employee</th><th>Employee ID</th><th>Role</th><th>Venture</th><th>Supervisor</th><th>Attendance</th><th>Current Task</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${DB.employees.map(e=>`
+          <tr class="clickable" onclick="navigate('employee-profile',{id:'${e.id}'})">
+            <td><div style="display:flex;align-items:center;gap:8px;">${avatarChip(e.name)}<span class="cell-title">${e.name}</span></div></td>
+            <td class="cell-id">${e.id}</td><td>${e.role}</td><td class="cell-sub">${e.venture}</td><td>${e.supervisor}</td>
+            <td class="mono">${e.attendance}%</td><td class="cell-sub">${e.task}</td><td>${statusBadge(e.status)}</td><td class="cell-sub">${e.joined}</td>
+            <td onclick="event.stopPropagation()">
+              <button class="btn btn-sm btn-ghost" onclick="navigate('employee-profile',{id:'${e.id}'})">${icon('eye')}</button>
+              <button class="btn btn-sm btn-ghost" onclick="navigate('employee-profile',{id:'${e.id}',edit:true})">${icon('edit')}</button>
+              <button class="btn btn-sm btn-ghost" onclick="openModal(deactivateModal('${e.id}','${e.name}'))">${icon('trash')}</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+ROUTES['employee-add'] = () => `
+  <div class="breadcrumb"><a onclick="navigate('employees')">Employees</a> ${icon('chevronRight')} <span>Add Employee</span></div>
+  <div class="card" style="max-width:760px;">
+    <div class="card-head"><div class="card-title">Add Employee</div></div>
+    <div class="card-pad">
+      <div class="form-section-title">Personal Details</div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Full Name <span class="req">*</span></label><input class="form-input" placeholder="e.g. Sunita Rao"></div>
+        <div class="form-group"><label class="form-label">Phone Number <span class="req">*</span></label><input class="form-input" placeholder="+91"></div>
+      </div>
+      <div class="form-section-title">Role & Assignment</div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Role <span class="req">*</span></label>
+          <select class="form-select"><option>Mason</option><option>Electrician</option><option>Plumber</option><option>Carpenter</option><option>Steel Fixer</option><option>Site Engineer</option><option>Safety Officer</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Assign Venture <span class="req">*</span></label>
+          <select class="form-select">${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Reporting Supervisor <span class="req">*</span></label>
+          <select class="form-select">${DB.supervisors.map(s=>`<option>${s.name}</option>`).join('')}</select>
+        </div>
+        <div class="form-group"><label class="form-label">Joining Date <span class="req">*</span></label><input class="form-input" type="date"></div>
+      </div>
+      <div class="form-section-title">Documents</div>
+      <div class="form-group" style="border:1.5px dashed var(--border);border-radius:10px;padding:20px;text-align:center;color:var(--ink-soft);">${icon('upload')}<div style="margin-top:6px;font-size:12.5px;">ID proof, certificates, or employment documents</div></div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="navigate('employees')">Cancel</button>
+      <button class="btn btn-amber" onclick="navigate('employees');setTimeout(()=>toast('Employee added successfully'),400)">${icon('check')} Add Employee</button>
+    </div>
+  </div>`;
+
+ROUTES['employee-profile'] = (params) => {
+  const e = findEmployee(params.id) || DB.employees[0];
+  const tabs = ['overview','assignment','attendance','tasks','documents','activity'];
+  const labels = {overview:'Overview', assignment:'Work Assignment', attendance:'Attendance', tasks:'Tasks', documents:'Documents', activity:'Activity'};
+  return `
+  <div class="breadcrumb"><a onclick="navigate('employees')">Employees</a> ${icon('chevronRight')} <span>${e.name}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top">
+      <div style="display:flex;gap:14px;">
+        <div class="avatar-md">${initials(e.name)}</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;"><h2 style="margin:0;font-size:18px;font-weight:800;">${e.name}</h2>${statusBadge(e.status)}</div>
+          <div class="cell-sub mono">${e.id} · ${e.role}</div>
+          <div class="cell-sub">${e.venture} · Reports to ${e.supervisor}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm">${icon('edit')} Edit</button>
+        <button class="btn btn-sm">${icon('flag')} Transfer</button>
+        <button class="btn btn-sm btn-danger" onclick="openModal(deactivateModal('${e.id}','${e.name}'))">${icon('trash')} Deactivate</button>
+      </div>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Phone</span><span class="v">${e.phone}</span></div>
+      <div class="m"><span class="l">Email</span><span class="v">${e.email}</span></div>
+      <div class="m"><span class="l">Joined</span><span class="v">${e.joined}</span></div>
+      <div class="m"><span class="l">Attendance</span><span class="v">${e.attendance}%</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="tabs">${tabs.map(t=>`<div class="tab ${state.employeeTab===t?'active':''}" onclick="setEmployeeTab('${t}')">${labels[t]}</div>`).join('')}</div>
+    <div class="card-pad">${renderEmployeeTab(e)}</div>
+  </div>`;
+};
+function renderEmployeeTab(e){
+  switch(state.employeeTab){
+    case 'overview': return `
+      <div class="grid-2">
+        <div>
+          <div class="section-title-row"><h3>Contact</h3></div>
+          <div class="checklist-item"><span class="cell-sub" style="width:140px;">Phone</span><span>${e.phone}</span></div>
+          <div class="checklist-item"><span class="cell-sub" style="width:140px;">Email</span><span>${e.email}</span></div>
+          <div class="checklist-item"><span class="cell-sub" style="width:140px;">Emergency Contact</span><span>+91 90002 88214 (Spouse)</span></div>
+          <div class="section-title-row" style="margin-top:18px;"><h3>Employment</h3></div>
+          <div class="checklist-item"><span class="cell-sub" style="width:140px;">Joining Date</span><span>${e.joined}</span></div>
+          <div class="checklist-item"><span class="cell-sub" style="width:140px;">Employment Status</span><span>${statusBadge(e.status)}</span></div>
+          <div class="checklist-item"><span class="cell-sub" style="width:140px;">Experience</span><span>6 years</span></div>
+        </div>
+        <div>
+          <div class="section-title-row"><h3>Skills</h3></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">${['Formwork','Structural Reinforcement','Site Safety','Team Coordination'].map(s=>`<span class="badge badge-neutral">${s}</span>`).join('')}</div>
+        </div>
+      </div>`;
+    case 'assignment': return `
+      <div class="checklist-item"><span class="cell-sub" style="width:140px;">Venture</span><span style="cursor:pointer;color:var(--amber-ink);font-weight:600;" onclick="navigate('venture-workspace',{id: (findVenture('${e.venture}')||{}).id})">${e.venture}</span></div>
+      <div class="checklist-item"><span class="cell-sub" style="width:140px;">Supervisor</span><span>${e.supervisor}</span></div>
+      <div class="checklist-item"><span class="cell-sub" style="width:140px;">Current Task</span><span>${e.task}</span></div>`;
+    case 'attendance': return `
+      <div class="grid-3" style="margin-bottom:16px;">
+        <div class="kpi"><div class="klabel">Present</div><div class="kval" style="color:var(--success);">27</div></div>
+        <div class="kpi"><div class="klabel">Absent</div><div class="kval" style="color:var(--critical);">2</div></div>
+        <div class="kpi"><div class="klabel">Late</div><div class="kval" style="color:var(--amber-ink);">3</div></div>
+      </div>
+      <div class="card-sub">Calendar view — August 2026 (mock)</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px;">
+        ${Array.from({length:31}).map((_,i)=>{
+          const r = Math.random(); const c = r>0.88?'critical-soft':r>0.78?'amber-soft':'success-soft';
+          return `<div style="aspect-ratio:1;border-radius:6px;background:var(--${c});display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">${i+1}</div>`;
+        }).join('')}
+      </div>`;
+    case 'tasks': return renderTaskTable(DB.tasks.filter(t=>t.assignedTo===e.name));
+    case 'documents': return renderDocGrid([
+      {id:'d1', name:e.name+' — ID Proof.pdf', category:'ID', uploadedBy:'HR Admin', date:e.joined, version:'v1'},
+      {id:'d2', name:e.name+' — Employment Contract.pdf', category:'Employment Documents', uploadedBy:'HR Admin', date:e.joined, version:'v1'},
+    ]);
+    case 'activity': return [
+      {t:'Marked attendance', ts:'Today, 07:05'}, {t:'Task status updated to In Progress', ts:'Yesterday'}, {t:'Assigned to '+e.venture, ts:e.joined},
+    ].map(a=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="tt">${a.t}</div><div class="ts">${a.ts}</div></div></div>`).join('');
+    default: return '';
+  }
+}
+
+/* ---------- MANAGERS ---------- */
+ROUTES['managers'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <div class="search-inline">${icon('search')}<input placeholder="Search managers…"></div>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="toast('Add Manager form would open here')">${icon('plus')} Add Manager</button>
+    </div>
+    <table>
+      <thead><tr><th>Manager</th><th>Ventures Managed</th><th>Supervisors</th><th>Employees</th><th>Open Issues</th><th>Pending Requests</th><th></th></tr></thead>
+      <tbody>
+        ${DB.managers.map(m=>`
+          <tr class="clickable" onclick="navigate('manager-detail',{id:'${m.id}'})">
+            <td><div style="display:flex;align-items:center;gap:8px;">${avatarChip(m.name)}<span class="cell-title">${m.name}</span></div></td>
+            <td class="cell-sub">${m.ventures.join(', ')}</td>
+            <td class="mono">${m.supervisors}</td><td class="mono">${m.employeeCount}</td>
+            <td>${m.openIssues>0?`<span class="badge badge-critical"><span class="badge-dot"></span>${m.openIssues}</span>`:'—'}</td>
+            <td>${m.pendingRequests>0?`<span class="badge badge-warn"><span class="badge-dot"></span>${m.pendingRequests}</span>`:'—'}</td>
+            <td>${icon('chevronRight')}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+ROUTES['manager-detail'] = (params) => {
+  const m = DB.managers.find(x=>x.id===params.id) || DB.managers[0];
+  const vs = DB.ventures.filter(v=>m.ventures.includes(v.name));
+  return `
+  <div class="breadcrumb"><a onclick="navigate('managers')">Managers</a> ${icon('chevronRight')} <span>${m.name}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top">
+      <div style="display:flex;gap:14px;"><div class="avatar-md">${initials(m.name)}</div>
+        <div><h2 style="margin:0;font-size:18px;font-weight:800;">${m.name}</h2><div class="cell-sub mono">${m.id} · Manager</div><div class="cell-sub">${m.email} · ${m.phone}</div></div>
+      </div>
+      <button class="btn btn-sm">${icon('edit')} Edit</button>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Ventures</span><span class="v">${m.ventures.length}</span></div>
+      <div class="m"><span class="l">Supervisors</span><span class="v">${m.supervisors}</span></div>
+      <div class="m"><span class="l">Employees</span><span class="v">${m.employeeCount}</span></div>
+      <div class="m"><span class="l">Open Issues</span><span class="v">${m.openIssues}</span></div>
+      <div class="m"><span class="l">Pending Requests</span><span class="v">${m.pendingRequests}</span></div>
+      <div class="m"><span class="l">Joined</span><span class="v">${m.joined}</span></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-head"><div class="card-title">Ventures Managed</div></div>${renderVentureTable(vs)}</div>
+  `;
+};
+
+/* ---------- SUPERVISORS ---------- */
+ROUTES['supervisors'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <div class="search-inline">${icon('search')}<input placeholder="Search supervisors…"></div>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="toast('Add Supervisor form would open here')">${icon('plus')} Add Supervisor</button>
+    </div>
+    <table>
+      <thead><tr><th>Supervisor</th><th>Venture</th><th>Site</th><th>Employees</th><th>Daily Reports</th><th>Open Tasks</th><th>Open Issues</th><th></th></tr></thead>
+      <tbody>
+        ${DB.supervisors.map(s=>`
+          <tr class="clickable" onclick="navigate('supervisor-detail',{id:'${s.id}'})">
+            <td><div style="display:flex;align-items:center;gap:8px;">${avatarChip(s.name)}<span class="cell-title">${s.name}</span></div></td>
+            <td class="cell-sub">${s.venture}</td><td class="cell-sub">${s.site}</td>
+            <td class="mono">${s.employees}</td><td class="mono">${s.dailyReports}</td>
+            <td class="mono">${s.openTasks}</td>
+            <td>${s.openIssues>0?`<span class="badge badge-critical"><span class="badge-dot"></span>${s.openIssues}</span>`:'—'}</td>
+            <td>${icon('chevronRight')}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+ROUTES['supervisor-detail'] = (params) => {
+  const s = DB.supervisors.find(x=>x.id===params.id) || DB.supervisors[0];
+  const emp = DB.employees.filter(e=>e.supervisor===s.name);
+  const tasks = DB.tasks.filter(t=>t.venture===s.venture);
+  const issues = DB.issues.filter(i=>i.venture===s.venture);
+  const reports = DB.dailyReports.filter(r=>r.venture===s.venture);
+  return `
+  <div class="breadcrumb"><a onclick="navigate('supervisors')">Supervisors</a> ${icon('chevronRight')} <span>${s.name}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top">
+      <div style="display:flex;gap:14px;"><div class="avatar-md">${initials(s.name)}</div>
+        <div><h2 style="margin:0;font-size:18px;font-weight:800;">${s.name}</h2><div class="cell-sub mono">${s.id} · Supervisor</div><div class="cell-sub">${s.venture} — ${s.site} · ${s.phone}</div></div>
+      </div>
+      <button class="btn btn-sm">${icon('edit')} Edit</button>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Employees</span><span class="v">${s.employees}</span></div>
+      <div class="m"><span class="l">Daily Reports Filed</span><span class="v">${s.dailyReports}</span></div>
+      <div class="m"><span class="l">Open Tasks</span><span class="v">${s.openTasks}</span></div>
+      <div class="m"><span class="l">Open Issues</span><span class="v">${s.openIssues}</span></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><div class="card-head"><div class="card-title">Assigned Employees</div></div>
+      <table><thead><tr><th>Employee</th><th>Role</th><th>Status</th></tr></thead>
+        <tbody>${emp.map(e=>`<tr class="clickable" onclick="navigate('employee-profile',{id:'${e.id}'})"><td class="cell-title">${e.name}</td><td>${e.role}</td><td>${statusBadge(e.status)}</td></tr>`).join('') || '<tr><td colspan=3>'+emptyState('No employees assigned','','users')+'</td></tr>'}</tbody>
+      </table>
+    </div>
+    <div class="card"><div class="card-head"><div class="card-title">Recent Daily Reports</div></div>
+      <table><thead><tr><th>Date</th><th>Workers</th><th>Progress</th></tr></thead>
+        <tbody>${reports.map(r=>`<tr class="clickable" onclick="navigate('daily-report-detail',{id:'${r.id}'})"><td class="cell-title">${r.date}</td><td class="mono">${r.workersPresent}</td><td>${r.progress}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+};
+
+ROUTES['assignments'] = () => `
+  <div class="card">
+    <div class="card-head"><div><div class="card-title">Employee Assignments</div><div class="card-sub">Current site allocation across all ventures</div></div></div>
+    <table>
+      <thead><tr><th>Employee</th><th>Role</th><th>Venture</th><th>Supervisor</th><th>Since</th><th></th></tr></thead>
+      <tbody>
+        ${DB.employees.map(e=>`<tr class="clickable" onclick="navigate('employee-profile',{id:'${e.id}'})">
+          <td class="cell-title">${e.name}</td><td>${e.role}</td><td class="cell-sub">${e.venture}</td><td>${e.supervisor}</td><td class="cell-sub">${e.joined}</td>
+          <td><button class="btn btn-sm" onclick="event.stopPropagation();toast('Reassignment form would open here')">${icon('flag')} Reassign</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+/* ---------- INVENTORY OVERVIEW ---------- */
+ROUTES['inventory'] = () => {
+  const low = DB.materials.filter(m=>m.status==='low');
+  const crit = DB.materials.filter(m=>m.status==='critical');
+  const pending = DB.materialRequests.filter(r=>r.status==='pending');
+  return `
+  <div class="kpi-grid">
+    <div class="kpi"><div class="klabel">Total Stock Value</div><div class="kval">₹8.42 Cr</div></div>
+    <div class="kpi"><div class="klabel">Total Materials</div><div class="kval">${DB.materials.length}</div></div>
+    <div class="kpi"><div class="klabel">Low Stock</div><div class="kval" style="color:var(--amber-ink);">${low.length}</div></div>
+    <div class="kpi"><div class="klabel">Critical Stock</div><div class="kval" style="color:var(--critical);">${crit.length}</div></div>
+    <div class="kpi"><div class="klabel">Pending Requests</div><div class="kval">${pending.length}</div></div>
+    <div class="kpi"><div class="klabel">Today's Received</div><div class="kval" style="color:var(--success);">500 bags</div></div>
+    <div class="kpi"><div class="klabel">Today's Issued</div><div class="kval">120 bags</div></div>
+    <div class="kpi"><div class="klabel">Today's Transfers</div><div class="kval">80 bags</div></div>
+  </div>
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="card">
+      <div class="card-head"><div class="card-title">Low Stock Alerts</div><a class="btn btn-sm btn-ghost" onclick="navigate('inventory-alerts')">View all ${icon('chevronRight')}</a></div>
+      <table><thead><tr><th>Material</th><th>Available</th><th>Min Level</th><th>Status</th></tr></thead>
+      <tbody>${DB.materials.filter(m=>m.status!=='ok').map(m=>`
+        <tr class="clickable" onclick="navigate('material-detail',{id:'${m.id}'})">
+          <td class="cell-title">${m.name}</td><td class="mono">${m.available} ${m.unit}</td><td class="mono">${m.min}</td><td>${statusBadge(m.status)}</td>
+        </tr>`).join('')}</tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Pending Requests</div><a class="btn btn-sm btn-ghost" onclick="navigate('material-requests')">View all ${icon('chevronRight')}</a></div>
+      <table><thead><tr><th>Request</th><th>Material</th><th>Priority</th></tr></thead>
+      <tbody>${pending.map(r=>`<tr class="clickable" onclick="navigate('material-request-detail',{id:'${r.id}'})"><td class="cell-id">${r.id}</td><td class="cell-sub">${r.material.split(' — ')[0]}</td><td>${priorityBadge(r.priority)}</td></tr>`).join('')}</tbody></table>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">Recent Transactions</div><a class="btn btn-sm btn-ghost" onclick="navigate('stock-movements')">View all ${icon('chevronRight')}</a></div>
+      ${renderTransactionTable(DB.transactions.slice(0,4))}
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Site-wise Stock (Cement)</div></div>
+      <div class="card-pad stack" style="gap:12px;">
+        ${[['GVR Central Store',1240,3000],['SKH Yard',380,2000],['RFT Store',210,1500],['SRV Store',95,1000]].map(([n,v,max])=>`
+          <div><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><b>${n}</b><span class="mono cell-sub">${v} bags</span></div>${progressBar(Math.round(v/max*100))}</div>
+        `).join('')}
+      </div>
+    </div>
+  </div>`;
+};
+
+function renderTransactionTable(list){
+  const typeMap = {received:['success','Received'], issued:['warn','Issued'], transferred:['info','Transferred'], adjusted:['neutral','Adjusted']};
+  return `<table><thead><tr><th>Date</th><th>Type</th><th>Qty</th><th>From → To</th><th>By</th><th>Ref</th></tr></thead>
+  <tbody>${list.map(t=>{ const [c,l]=typeMap[t.type]; return `<tr><td class="cell-sub">${t.date}</td><td><span class="badge badge-${c}"><span class="badge-dot"></span>${l}</span></td><td class="mono">${t.qty}</td><td class="cell-sub">${t.from} → ${t.to}</td><td>${t.by}</td><td class="cell-id">${t.ref}</td></tr>`; }).join('')}</tbody></table>`;
+}
+
+ROUTES['stock-movements'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <select class="filter-select"><option>All Types</option><option>Received</option><option>Issued</option><option>Transferred</option><option>Adjusted</option></select>
+      <select class="filter-select"><option>All Materials</option>${DB.materials.map(m=>`<option>${m.name}</option>`).join('')}</select>
+      <input class="form-input" style="max-width:180px;" type="date">
+      <button class="btn btn-sm" style="margin-left:auto;">${icon('download')} Export</button>
+    </div>
+    ${renderTransactionTable(DB.transactions)}
+  </div>`;
+ROUTES['stock-transfers'] = () => ROUTES['stock-movements']();
+
+ROUTES['warehouses'] = () => `
+  <div class="doc-grid">
+    ${[['GVR Central Store','Green Valley Residency','1,240 bags Cement, 340 cu.m Sand'],['SKH Yard','Skyline Heights','14.2 MT Steel, 410 CPVC lengths'],['RFT Store','Riverfront Towers','48k Bricks, 6L Paint'],['SRV Store','Sunrise Villas','210 cu.m Aggregate']].map(([n,v,d])=>`
+      <div class="doc-card">
+        <div class="doc-thumb">${icon('building')}</div>
+        <div class="cell-title">${n}</div><div class="cell-sub" style="margin-bottom:6px;">${v}</div>
+        <div class="cell-sub">${d}</div>
+      </div>`).join('')}
+  </div>`;
+
+/* ---------- MATERIALS ---------- */
+ROUTES['materials'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <div class="search-inline">${icon('search')}<input placeholder="Search materials by name or SKU…"></div>
+      <select class="filter-select"><option>All Categories</option><option>Cement</option><option>Steel</option><option>Sand</option><option>Bricks</option><option>Aggregate</option><option>Paint</option><option>Electrical</option><option>Plumbing</option></select>
+      <select class="filter-select"><option>All Status</option><option>Healthy</option><option>Low Stock</option><option>Critical</option></select>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="navigate('material-add')">${icon('plus')} Add Material</button>
+    </div>
+    <table>
+      <thead><tr><th>Material</th><th>SKU</th><th>Category</th><th>Unit</th><th>Available</th><th>Reserved</th><th>Min Level</th><th>Location</th><th>Status</th><th>Last Movement</th><th></th></tr></thead>
+      <tbody>
+        ${DB.materials.map(m=>`
+          <tr class="clickable" onclick="navigate('material-detail',{id:'${m.id}'})">
+            <td class="cell-title">${m.name}</td><td class="cell-id">${m.sku}</td><td>${m.category}</td><td class="cell-sub">${m.unit}</td>
+            <td class="mono">${m.available}</td><td class="mono">${m.reserved}</td><td class="mono">${m.min}</td>
+            <td class="cell-sub">${m.location}</td><td>${statusBadge(m.status)}</td><td class="cell-sub">${m.lastMovement}</td>
+            <td>${icon('chevronRight')}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+ROUTES['material-add'] = () => `
+  <div class="breadcrumb"><a onclick="navigate('materials')">Materials</a> ${icon('chevronRight')} <span>Add Material</span></div>
+  <div class="card" style="max-width:640px;"><div class="card-head"><div class="card-title">Add Material</div></div>
+    <div class="card-pad">
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Material Name <span class="req">*</span></label><input class="form-input" placeholder="e.g. White Cement"></div>
+        <div class="form-group"><label class="form-label">SKU <span class="req">*</span></label><input class="form-input mono" placeholder="e.g. CEM-WHT01"></div>
+      </div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Category <span class="req">*</span></label><select class="form-select"><option>Cement</option><option>Steel</option><option>Sand</option><option>Bricks</option><option>Aggregate</option><option>Paint</option><option>Electrical</option><option>Plumbing</option></select></div>
+        <div class="form-group"><label class="form-label">Unit of Measure <span class="req">*</span></label><input class="form-input" placeholder="e.g. Bags (50kg)"></div>
+      </div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Minimum Stock Level <span class="req">*</span></label><input class="form-input" placeholder="e.g. 800"></div>
+        <div class="form-group"><label class="form-label">Maximum Stock Level</label><input class="form-input" placeholder="e.g. 3000"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Default Storage Location</label><select class="form-select">${DB.ventures.map(v=>`<option>${v.name} Store</option>`).join('')}</select></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="navigate('materials')">Cancel</button><button class="btn btn-amber" onclick="navigate('materials');setTimeout(()=>toast('Material added successfully'),400)">${icon('check')} Add Material</button></div>
+  </div>`;
+
+ROUTES['material-detail'] = (params) => {
+  const m = findMaterial(params.id) || DB.materials[0];
+  const tabs = ['overview','transactions','stock-history','requests','locations','suppliers'];
+  const labels = {overview:'Overview', transactions:'Transactions', 'stock-history':'Stock History', requests:'Requests', locations:'Locations', suppliers:'Suppliers'};
+  return `
+  <div class="breadcrumb"><a onclick="navigate('materials')">Materials</a> ${icon('chevronRight')} <span>${m.name}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top">
+      <div><div style="display:flex;align-items:center;gap:10px;"><h2 style="margin:0;font-size:18px;font-weight:800;">${m.name}</h2>${statusBadge(m.status)}</div>
+        <div class="cell-sub mono">${m.sku} · ${m.category}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="navigate('receive-stock',{id:m.id})">${icon('download')} Receive</button>
+        <button class="btn btn-sm" onclick="navigate('issue-stock',{id:m.id})">${icon('upload')} Issue</button>
+        <button class="btn btn-sm" onclick="navigate('transfer-stock',{id:m.id})">${icon('truck')} Transfer</button>
+        <button class="btn btn-sm btn-amber" onclick="navigate('material-detail',{id:m.id})">${icon('edit')} Edit</button>
+      </div>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Available</span><span class="v">${m.available} ${m.unit}</span></div>
+      <div class="m"><span class="l">Reserved</span><span class="v">${m.reserved}</span></div>
+      <div class="m"><span class="l">Minimum</span><span class="v">${m.min}</span></div>
+      <div class="m"><span class="l">Maximum</span><span class="v">${m.max}</span></div>
+      <div class="m"><span class="l">Location</span><span class="v">${m.location}</span></div>
+      <div class="m"><span class="l">Unit Price</span><span class="v">${m.price}</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="tabs">${tabs.map(t=>`<div class="tab ${state.materialTab===t?'active':''}" onclick="setMaterialTab('${t}')">${labels[t]}</div>`).join('')}</div>
+    <div class="card-pad">${renderMaterialTab(m)}</div>
+  </div>`;
+};
+function renderMaterialTab(m){
+  switch(state.materialTab){
+    case 'overview': return `
+      <div class="grid-2">
+        <div><div class="progress-track" style="height:10px;margin-bottom:6px;"><div class="progress-fill ${m.status==='critical'?'critical':m.status==='low'?'':'success'}" style="width:${Math.min(100,Math.round(m.available/m.max*100))}%"></div></div>
+        <div class="cell-sub">${m.available} of ${m.max} ${m.unit} capacity</div></div>
+        <div class="cell-sub">Reorder point: <b>${m.min} ${m.unit}</b> — ${m.available <= m.min ? 'below reorder point, request material now.' : 'within healthy range.'}</div>
+      </div>`;
+    case 'transactions': return renderTransactionTable(DB.transactions);
+    case 'stock-history': return `
+      ${DB.transactions.map(t=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="tt">${t.type[0].toUpperCase()+t.type.slice(1)} · ${t.qty}</div><div class="ts">${t.date} · by ${t.by} · ${t.ref}</div></div></div>`).join('')}`;
+    case 'requests': return renderMaterialRequestTable(DB.materialRequests.filter(r=>r.material===m.name));
+    case 'locations': return `<table><thead><tr><th>Location</th><th>Stock</th></tr></thead><tbody><tr><td class="cell-title">${m.location}</td><td class="mono">${m.available} ${m.unit}</td></tr></tbody></table>`;
+    case 'suppliers': return renderVendorTable(DB.vendors.filter(v=>v.materials.includes(m.name.split(' — ')[0])));
+    default: return '';
+  }
+}
+
+ROUTES['receive-stock'] = (params) => stockFormScreen('receive', params);
+ROUTES['issue-stock'] = (params) => stockFormScreen('issue', params);
+ROUTES['transfer-stock'] = (params) => stockFormScreen('transfer', params);
+function stockFormScreen(kind, params){
+  const m = findMaterial(params.id) || DB.materials[0];
+  const titles = {receive:'Receive Stock', issue:'Issue Stock', transfer:'Transfer Stock'};
+  return `
+  <div class="breadcrumb"><a onclick="navigate('material-detail',{id:'${m.id}'})">${m.name}</a> ${icon('chevronRight')} <span>${titles[kind]}</span></div>
+  <div class="card" style="max-width:640px;"><div class="card-head"><div class="card-title">${titles[kind]}</div><div class="card-sub">${m.name} · ${m.sku}</div></div>
+    <div class="card-pad">
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Material</label><input class="form-input" value="${m.name}" disabled></div>
+        <div class="form-group"><label class="form-label">Quantity <span class="req">*</span></label><input class="form-input" placeholder="e.g. 250"></div>
+      </div>
+      ${kind==='receive' ? `<div class="form-row2">
+        <div class="form-group"><label class="form-label">Supplier <span class="req">*</span></label><select class="form-select">${DB.vendors.map(v=>`<option>${v.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Purchase Order</label><input class="form-input mono" placeholder="e.g. PO-3341"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Destination <span class="req">*</span></label><select class="form-select">${DB.ventures.map(v=>`<option>${v.name} Store</option>`).join('')}</select></div>` : ''}
+      ${kind==='issue' ? `<div class="form-row2">
+        <div class="form-group"><label class="form-label">Venture <span class="req">*</span></label><select class="form-select">${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Site</label><input class="form-input" placeholder="e.g. Tower A — Floor 9"></div>
+      </div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Requested By</label><input class="form-input" placeholder="e.g. Krishna Rao"></div>
+        <div class="form-group"><label class="form-label">Approved By</label><input class="form-input" placeholder="e.g. Meera Iyer"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Purpose</label><input class="form-input" placeholder="e.g. Column casting Floor 9"></div>` : ''}
+      ${kind==='transfer' ? `<div class="form-row2">
+        <div class="form-group"><label class="form-label">From <span class="req">*</span></label><select class="form-select">${DB.ventures.map(v=>`<option>${v.name} Store</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">To <span class="req">*</span></label><select class="form-select">${DB.ventures.map(v=>`<option>${v.name} Store</option>`).join('')}</select></div>
+      </div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Requested By</label><input class="form-input" placeholder="e.g. Arjun Reddy"></div>
+        <div class="form-group"><label class="form-label">Transfer Date</label><input class="form-input" type="date"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Reason</label><input class="form-input" placeholder="e.g. Reallocate surplus stock"></div>` : ''}
+      <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date"></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" placeholder="Optional notes"></textarea></div>
+      ${kind==='receive' ? `<div class="form-group" style="border:1.5px dashed var(--border);border-radius:10px;padding:16px;text-align:center;color:var(--ink-soft);">${icon('upload')}<div style="font-size:12px;margin-top:4px;">Attach delivery challan / photo</div></div>` : ''}
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="navigate('material-detail',{id:'${m.id}'})">Cancel</button>
+      <button class="btn btn-amber" onclick="navigate('material-detail',{id:'${m.id}'});setTimeout(()=>toast('Stock ${kind==='receive'?'received':kind==='issue'?'issued':'transferred'} successfully'),400)">${icon('check')} Confirm</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- MATERIAL REQUESTS ---------- */
+function renderMaterialRequestTable(list){
+  if(!list.length) return emptyState('No material requests', 'Requests raised by site supervisors will appear here.', 'file');
+  return `<table><thead><tr><th>Request ID</th><th>Venture</th><th>Site</th><th>Requested By</th><th>Material</th><th>Qty</th><th>Required Date</th><th>Priority</th><th>Status</th></tr></thead>
+  <tbody>${list.map(r=>`<tr class="clickable" onclick="navigate('material-request-detail',{id:'${r.id}'})">
+    <td class="cell-id">${r.id}</td><td class="cell-sub">${r.venture}</td><td class="cell-sub">${r.site}</td><td>${r.requestedBy}</td>
+    <td>${r.material}</td><td class="mono">${r.qty}</td><td class="cell-sub">${r.requiredDate}</td><td>${priorityBadge(r.priority)}</td><td>${statusBadge(r.status)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+ROUTES['material-requests'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <select class="filter-select"><option>All Status</option><option>Draft</option><option>Pending Approval</option><option>Approved</option><option>Partially Approved</option><option>Rejected</option><option>Issued</option><option>Completed</option></select>
+      <select class="filter-select"><option>All Ventures</option>${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select>
+      <select class="filter-select"><option>All Priority</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <div class="search-inline">${icon('search')}<input placeholder="Search request ID…"></div>
+    </div>
+    ${renderMaterialRequestTable(DB.materialRequests)}
+  </div>`;
+
+ROUTES['material-request-detail'] = (params) => {
+  const r = findRequest(params.id) || DB.materialRequests[0];
+  const mat = DB.materials.find(m=>m.name===r.material);
+  return `
+  <div class="breadcrumb"><a onclick="navigate('material-requests')">Material Requests</a> ${icon('chevronRight')} <span>${r.id}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top">
+      <div><div style="display:flex;align-items:center;gap:10px;"><h2 style="margin:0;font-size:18px;font-weight:800;">${r.id}</h2>${statusBadge(r.status)}${priorityBadge(r.priority)}</div>
+        <div class="cell-sub">${r.material} · ${r.qty}</div>
+      </div>
+      ${r.status==='pending' ? `<div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="openModal(clarificationModal('${r.id}'))">${icon('chat')} Request Clarification</button>
+        <button class="btn btn-sm btn-danger" onclick="openModal(rejectRequestModal('${r.id}'))">${icon('x')} Reject</button>
+        <button class="btn btn-sm" onclick="openModal(partialApproveModal('${r.id}'))">Partially Approve</button>
+        <button class="btn btn-amber btn-sm" onclick="openModal(approveRequestModal('${r.id}'))">${icon('check')} Approve</button>
+      </div>` : ''}
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Venture</span><span class="v">${r.venture}</span></div>
+      <div class="m"><span class="l">Site</span><span class="v">${r.site}</span></div>
+      <div class="m"><span class="l">Requested By</span><span class="v">${r.requestedBy}</span></div>
+      <div class="m"><span class="l">Required Date</span><span class="v">${r.requiredDate}</span></div>
+      <div class="m"><span class="l">Current Stock</span><span class="v">${r.currentStock}</span></div>
+      <div class="m"><span class="l">Avg Consumption</span><span class="v">${r.prevConsumption}</span></div>
+      <div class="m"><span class="l">Created</span><span class="v">${r.created}</span></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><div class="card-head"><div class="card-title">Request Notes</div></div><div class="card-pad" style="font-size:13px;color:var(--ink);">${r.notes}
+      ${r.status==='rejected' ? `<div style="margin-top:14px;padding:12px;background:var(--critical-soft);border-radius:10px;"><b style="color:var(--critical);">Rejection reason:</b> ${r.rejectionReason}</div>` : ''}
+    </div></div>
+    <div class="card"><div class="card-head"><div class="card-title">Request History</div></div>
+      <div class="card-pad">
+        <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="tt">Request created by ${r.requestedBy}</div><div class="ts">${r.created}</div></div></div>
+        ${r.status!=='pending' ? `<div class="timeline-item"><div class="timeline-dot" style="border-color:var(--success);"></div><div class="timeline-content"><div class="tt">Status changed to ${r.status}</div><div class="ts">by Meera Iyer</div></div></div>` : `<div class="timeline-item"><div class="timeline-dot" style="border-color:var(--border);"></div><div class="timeline-content"><div class="tt" style="color:var(--ink-soft);">Awaiting decision</div></div></div>`}
+      </div>
+    </div>
+  </div>
+  ${mat ? `<div class="card" style="margin-top:16px;"><div class="card-head"><div class="card-title">Material Reference</div></div>
+    <div class="card-pad" style="display:flex;justify-content:space-between;align-items:center;">
+      <div><div class="cell-title">${mat.name}</div><div class="cell-sub">${mat.sku} · ${mat.location}</div></div>
+      <button class="btn btn-sm" onclick="navigate('material-detail',{id:'${mat.id}'})">View Material ${icon('chevronRight')}</button>
+    </div></div>` : ''}
+  `;
+};
+
+function approveRequestModal(id){
+  return {render:()=>`
+    <div class="modal">
+      <div class="modal-head"><div class="micon" style="background:var(--success-soft);color:var(--success);">${icon('check')}</div><div><b>Approve Material Request</b><div class="cell-sub">${id}</div></div></div>
+      <div class="modal-body">This will approve the full requested quantity and notify the requester and store team to proceed with issue. Stock will be reserved once approved.</div>
+      <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-amber" onclick="doApprove('${id}')">${icon('check')} Confirm Approval</button></div>
+    </div>`};
+}
+function doApprove(id){
+  const r = findRequest(id); if(r) r.status='approved';
+  closeModal(); navigate('material-requests'); setTimeout(()=>toast('Material Request '+id+' approved'),400);
+}
+function partialApproveModal(id){
+  return {render:()=>`
+    <div class="modal">
+      <div class="modal-head"><div class="micon" style="background:var(--amber-soft);color:var(--amber-ink);">${icon('check')}</div><div><b>Partially Approve</b><div class="cell-sub">${id}</div></div></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Approved Quantity</label><input class="form-input" placeholder="e.g. 150 of 250 bags"></div>
+        <div class="form-group"><label class="form-label">Reason</label><textarea class="form-textarea" placeholder="e.g. Remaining quantity will be released after next delivery"></textarea></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-amber" onclick="doPartial('${id}')">Confirm Partial Approval</button></div>
+    </div>`};
+}
+function doPartial(id){
+  const r = findRequest(id); if(r) r.status='partially-approved';
+  closeModal(); navigate('material-requests'); setTimeout(()=>toast('Material Request '+id+' partially approved'),400);
+}
+function rejectRequestModal(id){
+  return {render:()=>`
+    <div class="modal">
+      <div class="modal-head"><div class="micon" style="background:var(--critical-soft);color:var(--critical);">${icon('x')}</div><div><b>Reject Material Request</b><div class="cell-sub">${id}</div></div></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Rejection Reason <span class="req">*</span></label><textarea id="rejReason" class="form-textarea" placeholder="A reason is required and will be shared with the requester"></textarea></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="doReject('${id}')">${icon('x')} Confirm Rejection</button></div>
+    </div>`};
+}
+function doReject(id){
+  const reasonEl = document.getElementById('rejReason');
+  if(!reasonEl || !reasonEl.value.trim()){ reasonEl.style.borderColor='var(--critical)'; return; }
+  const r = findRequest(id); if(r){ r.status='rejected'; r.rejectionReason = reasonEl.value.trim(); }
+  closeModal(); navigate('material-requests'); setTimeout(()=>toast('Material Request '+id+' rejected','error'),400);
+}
+function clarificationModal(id){
+  return {render:()=>`
+    <div class="modal">
+      <div class="modal-head"><div class="micon" style="background:var(--info-soft);color:var(--info);">${icon('chat')}</div><div><b>Request Clarification</b><div class="cell-sub">${id}</div></div></div>
+      <div class="modal-body"><div class="form-group"><label class="form-label">Message to requester</label><textarea class="form-textarea" placeholder="e.g. Please confirm the required date, this seems earlier than the site schedule."></textarea></div></div>
+      <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-amber" onclick="closeModal();toast('Clarification request sent')">Send</button></div>
+    </div>`};
+}
+function materialRequestModal(ventureName){
+  return {render:()=>`
+    <div class="modal" style="width:480px;">
+      <div class="modal-head"><div class="micon" style="background:var(--amber-soft);color:var(--amber-ink);">${icon('box')}</div><div><b>Request Material</b><div class="cell-sub">${ventureName}</div></div></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Material <span class="req">*</span></label><select class="form-select">${DB.materials.map(m=>`<option>${m.name}</option>`).join('')}</select></div>
+        <div class="form-row2">
+          <div class="form-group"><label class="form-label">Quantity <span class="req">*</span></label><input class="form-input" placeholder="e.g. 250 bags"></div>
+          <div class="form-group"><label class="form-label">Priority <span class="req">*</span></label><select class="form-select"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Required Date <span class="req">*</span></label><input class="form-input" type="date"></div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" placeholder="Why is this needed?"></textarea></div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-amber" onclick="closeModal();toast('Material request submitted for approval')">${icon('check')} Submit Request</button></div>
+    </div>`};
+}
+
+ROUTES['inventory-alerts'] = () => `
+  <div class="card"><div class="card-head"><div class="card-title">Inventory Alerts</div><div class="card-sub">Low stock, critical stock, pending deliveries and transfers</div></div>
+  <table><thead><tr><th>Material</th><th>Location</th><th>Available</th><th>Min Level</th><th>Status</th><th></th></tr></thead>
+  <tbody>${DB.materials.filter(m=>m.status!=='ok').map(m=>`<tr class="clickable" onclick="navigate('material-detail',{id:'${m.id}'})">
+    <td class="cell-title">${m.name}</td><td class="cell-sub">${m.location}</td><td class="mono">${m.available} ${m.unit}</td><td class="mono">${m.min}</td><td>${statusBadge(m.status)}</td>
+    <td><button class="btn btn-sm btn-amber" onclick="event.stopPropagation();openModal(materialRequestModal('${m.location}'))">Request</button></td>
+  </tr>`).join('')}</tbody></table></div>`;
+
+/* ---------- VENDORS ---------- */
+function renderVendorTable(list){
+  if(!list.length) return emptyState('No vendors found', 'Add a vendor to start tracking quotations and purchase orders.', 'truck');
+  return `<table><thead><tr><th>Vendor</th><th>Category</th><th>Materials</th><th>Contact</th><th>Active Orders</th><th>Total Purchases</th><th>Status</th></tr></thead>
+  <tbody>${list.map(v=>`<tr class="clickable" onclick="navigate('vendor-detail',{id:'${v.id}'})">
+    <td><div style="display:flex;align-items:center;gap:8px;">${icon('truck')}<span class="cell-title">${v.name}</span></div></td>
+    <td>${v.category}</td><td class="cell-sub">${v.materials}</td><td class="cell-sub">${v.contact}</td>
+    <td class="mono">${v.activeOrders}</td><td class="mono">${v.totalPurchases}</td><td>${statusBadge(v.status)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+ROUTES['vendors'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <div class="search-inline">${icon('search')}<input placeholder="Search vendors…"></div>
+      <select class="filter-select"><option>All Categories</option><option>Cement</option><option>Steel</option><option>Sand / Aggregate</option><option>Bricks</option><option>Paint</option><option>Electrical</option><option>Plumbing</option></select>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="toast('Add Vendor form would open here')">${icon('plus')} Add Vendor</button>
+    </div>
+    ${renderVendorTable(DB.vendors)}
+  </div>`;
+
+ROUTES['vendor-detail'] = (params) => {
+  const v = DB.vendors.find(x=>x.id===params.id) || DB.vendors[0];
+  const pos = DB.purchaseOrders.filter(p=>p.vendor===v.name);
+  return `
+  <div class="breadcrumb"><a onclick="navigate('vendors')">Vendors</a> ${icon('chevronRight')} <span>${v.name}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top">
+      <div><div style="display:flex;align-items:center;gap:10px;"><h2 style="margin:0;font-size:18px;font-weight:800;">${v.name}</h2>${statusBadge(v.status)}</div>
+        <div class="cell-sub">${v.category} · ${v.contact}</div></div>
+      <button class="btn btn-sm">${icon('edit')} Edit</button>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Materials Supplied</span><span class="v">${v.materials}</span></div>
+      <div class="m"><span class="l">Active Orders</span><span class="v">${v.activeOrders}</span></div>
+      <div class="m"><span class="l">Total Purchases</span><span class="v">${v.totalPurchases}</span></div>
+      <div class="m"><span class="l">Performance Rating</span><span class="v">${'★'.repeat(Math.round(v.rating))}${'☆'.repeat(5-Math.round(v.rating))} (${v.rating})</span></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><div class="card-head"><div class="card-title">Purchase History</div></div>
+    <table><thead><tr><th>PO</th><th>Material</th><th>Qty</th><th>Value</th><th>Status</th></tr></thead>
+    <tbody>${pos.map(p=>`<tr class="clickable" onclick="navigate('po-detail',{id:'${p.id}'})"><td class="cell-id">${p.id}</td><td>${p.material}</td><td class="mono">${p.qty}</td><td class="mono">${p.value}</td><td>${statusBadge(p.status)}</td></tr>`).join('') || '<tr><td colspan=5>No purchase history yet</td></tr>'}</tbody></table>
+    </div>
+    <div class="card"><div class="card-head"><div class="card-title">Documents</div></div>
+      <div class="card-pad">${renderDocGrid([{id:'vd1',name:v.name+' — Vendor Agreement.pdf',category:'Contracts',uploadedBy:'Admin',date:'2024',version:'v1'}])}</div>
+    </div>
+  </div>`;
+};
+
+/* ---------- PROCUREMENT ---------- */
+function renderPOTable(list){
+  if(!list.length) return emptyState('No purchase orders', 'Purchase orders created from approved requests will appear here.', 'package');
+  return `<table><thead><tr><th>PO</th><th>Vendor</th><th>Material</th><th>Qty</th><th>Value</th><th>Created</th><th>ETA</th><th>Status</th></tr></thead>
+  <tbody>${list.map(p=>`<tr class="clickable" onclick="navigate('po-detail',{id:'${p.id}'})">
+    <td class="cell-id">${p.id}</td><td>${p.vendor}</td><td class="cell-sub">${p.material}</td><td class="mono">${p.qty}</td><td class="mono">${p.value}</td><td class="cell-sub">${p.created}</td><td class="cell-sub">${p.eta}</td><td>${statusBadge(p.status)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+ROUTES['purchase-orders'] = () => `<div class="card">
+  <div class="filters-bar"><select class="filter-select"><option>All Status</option><option>Processing</option><option>In Transit</option><option>Delivered</option></select>
+  <button class="btn btn-amber" style="margin-left:auto;" onclick="navigate('purchase-requests')">${icon('plus')} Create Purchase Order</button></div>
+  ${renderPOTable(DB.purchaseOrders)}</div>`;
+ROUTES['purchase-requests'] = () => `<div class="card"><div class="card-head"><div class="card-title">Purchase Requests</div><div class="card-sub">Approved Material Requests awaiting a Purchase Order</div></div>
+  ${renderMaterialRequestTable(DB.materialRequests.filter(r=>r.status==='approved'||r.status==='partially-approved'))}</div>`;
+ROUTES['po-detail'] = (params) => {
+  const p = DB.purchaseOrders.find(x=>x.id===params.id) || DB.purchaseOrders[0];
+  const steps = ['Request','Approval','Purchase Order','Vendor','Delivery','Inventory Receipt'];
+  const stepIdx = {processing:2, 'in-transit':4, delivered:5}[p.status] ?? 2;
+  return `
+  <div class="breadcrumb"><a onclick="navigate('purchase-orders')">Purchase Orders</a> ${icon('chevronRight')} <span>${p.id}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top"><div><h2 style="margin:0;font-size:18px;font-weight:800;">${p.id}</h2><div class="cell-sub">${p.vendor}</div></div>${statusBadge(p.status)}</div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Material</span><span class="v">${p.material}</span></div>
+      <div class="m"><span class="l">Quantity</span><span class="v">${p.qty}</span></div>
+      <div class="m"><span class="l">Value</span><span class="v">${p.value}</span></div>
+      <div class="m"><span class="l">Created</span><span class="v">${p.created}</span></div>
+      <div class="m"><span class="l">ETA</span><span class="v">${p.eta}</span></div>
+    </div>
+  </div>
+  <div class="card card-pad">
+    <div class="card-title" style="margin-bottom:16px;">Procurement Workflow</div>
+    <div style="display:flex;align-items:center;">
+      ${steps.map((s,i)=>`
+        <div style="flex:1;text-align:center;position:relative;">
+          <div style="width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:${i<stepIdx?'var(--success)':i===stepIdx-1?'var(--amber)':'#EEEDE9'};color:${i<=stepIdx-1?'#fff':'var(--ink-soft)'};">${i<stepIdx-1?icon('check'):i+1}</div>
+          <div style="font-size:11.5px;font-weight:600;color:${i<=stepIdx-1?'var(--ink)':'var(--ink-soft)'};">${s}</div>
+        </div>
+        ${i<steps.length-1?`<div style="flex:0.4;height:2px;background:${i<stepIdx-1?'var(--success)':'var(--border)'};margin-bottom:20px;"></div>`:''}
+      `).join('')}
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;"><div class="card-head"><div class="card-title">Invoice</div></div>
+    <div class="card-pad" style="display:flex;justify-content:space-between;align-items:center;">
+      <div><div class="cell-title">Invoice — ${p.id.replace('PO','INV')}</div><div class="cell-sub">${p.value} · Due in 30 days</div></div>
+      <button class="btn btn-sm" onclick="navigate('invoices')">View Invoice ${icon('chevronRight')}</button>
+    </div>
+  </div>`;
+};
+ROUTES['deliveries'] = () => `<div class="card"><div class="card-head"><div class="card-title">Deliveries</div><div class="card-sub">Tracking active vendor deliveries</div></div>
+  ${renderPOTable(DB.purchaseOrders.filter(p=>p.status!=='delivered'))}</div>`;
+ROUTES['invoices'] = () => `<div class="card"><div class="card-head"><div class="card-title">Invoices</div></div>
+  <table><thead><tr><th>Invoice</th><th>Vendor</th><th>Amount</th><th>Status</th><th>Due Date</th></tr></thead>
+  <tbody>${DB.purchaseOrders.map(p=>`<tr><td class="cell-id">${p.id.replace('PO','INV')}</td><td>${p.vendor}</td><td class="mono">${p.value}</td><td>${statusBadge(p.status==='delivered'?'success':'pending')}</td><td class="cell-sub">30 days from ${p.created}</td></tr>`).join('')}</tbody></table></div>`;
+
+/* ---------- TASKS ---------- */
+function renderTaskTable(list){
+  if(!list.length) return emptyState('No tasks found', 'Create a task to assign work to your site team.', 'tasks',
+    `<button class="btn btn-amber" onclick="openModal(createTaskModal(''))">${icon('plus')} Add Task</button>`);
+  return `<table><thead><tr><th>Task</th><th>Venture</th><th>Assigned To</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
+  <tbody>${list.map(t=>`<tr class="clickable" onclick="navigate('task-detail',{id:'${t.id}'})">
+    <td><div class="cell-title">${t.title}</div><div class="cell-sub cell-id">${t.id}</div></td>
+    <td class="cell-sub">${t.venture}</td><td>${avatarChip(t.assignedTo)} ${t.assignedTo}</td>
+    <td>${priorityBadge(t.priority)}</td><td>${statusBadge(t.status)}</td><td class="cell-sub">${t.due}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+ROUTES['tasks'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <select class="filter-select"><option>All Ventures</option>${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select>
+      <select class="filter-select"><option>All Status</option><option>To Do</option><option>In Progress</option><option>Blocked</option><option>Completed</option></select>
+      <select class="filter-select"><option>All Priority</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <button class="btn btn-sm" onclick="toggleTaskView()">${icon('list')} Toggle Board / List</button>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="openModal(createTaskModal(''))">${icon('plus')} Add Task</button>
+    </div>
+    <div id="taskViewArea">${renderTaskTable(DB.tasks)}</div>
+  </div>`;
+function toggleTaskView(){
+  const el = document.getElementById('taskViewArea');
+  el.dataset.board = el.dataset.board==='1' ? '0' : '1';
+  el.innerHTML = el.dataset.board==='1' ? renderTaskBoard(DB.tasks) : renderTaskTable(DB.tasks);
+}
+function renderTaskBoard(list){
+  const cols = ['todo','in-progress','blocked','completed'];
+  const labels = {todo:'To Do', 'in-progress':'In Progress', blocked:'Blocked', completed:'Completed'};
+  return `<div class="kanban">${cols.map(c=>`
+    <div><div class="kanban-col-head">${labels[c]} <span>${list.filter(t=>t.status===c).length}</span></div>
+      ${list.filter(t=>t.status===c).map(t=>`<div class="kanban-card" onclick="navigate('task-detail',{id:'${t.id}'})">
+        <div class="kt">${t.title}</div><div class="kmeta"><span>${avatarChip(t.assignedTo)} ${t.assignedTo}</span>${priorityBadge(t.priority)}</div>
+      </div>`).join('') || '<div class="cell-sub" style="font-size:12px;">No tasks</div>'}
+    </div>`).join('')}</div>`;
+}
+ROUTES['task-detail'] = (params) => {
+  const t = DB.tasks.find(x=>x.id===params.id) || DB.tasks[0];
+  return `
+  <div class="breadcrumb"><a onclick="navigate('tasks')">Tasks</a> ${icon('chevronRight')} <span>${t.id}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top"><div><h2 style="margin:0;font-size:18px;font-weight:800;">${t.title}</h2><div class="cell-sub mono">${t.id}</div></div>
+      <div style="display:flex;gap:8px;">${statusBadge(t.status)}${priorityBadge(t.priority)}</div>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Venture</span><span class="v">${t.venture}</span></div>
+      <div class="m"><span class="l">Assigned To</span><span class="v">${t.assignedTo}</span></div>
+      <div class="m"><span class="l">Created By</span><span class="v">${t.createdBy}</span></div>
+      <div class="m"><span class="l">Due Date</span><span class="v">${t.due}</span></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card card-pad">
+      <div class="card-title" style="margin-bottom:10px;">Update Status</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${['todo','in-progress','blocked','completed'].map(s=>`<button class="btn btn-sm ${t.status===s?'btn-amber':''}" onclick="updateTaskStatus('${t.id}','${s}')">${statusBadge(s)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-title" style="margin-bottom:10px;">Activity</div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="tt">Task created by ${t.createdBy}</div><div class="ts">3 days ago</div></div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="tt">Assigned to ${t.assignedTo}</div><div class="ts">3 days ago</div></div></div>
+    </div>
+  </div>`;
+};
+function updateTaskStatus(id, status){
+  const t = DB.tasks.find(x=>x.id===id); if(t) t.status=status;
+  render(); toast('Task status updated');
+}
+function createTaskModal(venture){
+  return {render:()=>`<div class="modal" style="width:480px;">
+    <div class="modal-head"><div class="micon" style="background:var(--amber-soft);color:var(--amber-ink);">${icon('tasks')}</div><b>Add Task</b></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Title <span class="req">*</span></label><input class="form-input" placeholder="e.g. Column casting — Floor 9"></div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Venture</label><select class="form-select">${DB.ventures.map(v=>`<option ${venture===v.name?'selected':''}>${v.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Assign To</label><select class="form-select">${DB.employees.map(e=>`<option>${e.name}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Priority</label><select class="form-select"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></div>
+        <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" type="date"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-amber" onclick="closeModal();toast('Task created successfully')">${icon('check')} Create Task</button></div>
+  </div>`};
+}
+
+/* ---------- ISSUES ---------- */
+function renderIssueTable(list){
+  if(!list.length) return emptyState('No issues reported', 'Issues raised on site will be tracked here.', 'alert');
+  return `<table><thead><tr><th>Issue</th><th>Venture</th><th>Category</th><th>Severity</th><th>Reported By</th><th>Date</th><th>Status</th></tr></thead>
+  <tbody>${list.map(i=>`<tr class="clickable" onclick="navigate('issue-detail',{id:'${i.id}'})">
+    <td><div class="cell-title">${i.title}</div><div class="cell-sub cell-id">${i.id}</div></td>
+    <td class="cell-sub">${i.venture}</td><td><span class="badge badge-neutral"><span class="badge-dot"></span>${i.category}</span></td>
+    <td>${priorityBadge(i.severity)}</td><td>${i.reportedBy}</td><td class="cell-sub">${i.date}</td><td>${statusBadge(i.status)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+ROUTES['issues'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <select class="filter-select"><option>All Ventures</option>${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select>
+      <select class="filter-select"><option>All Categories</option><option>Safety</option><option>Quality</option><option>Material</option><option>Labour</option><option>Equipment</option><option>Design</option></select>
+      <select class="filter-select"><option>All Severity</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <select class="filter-select"><option>All Status</option><option>Open</option><option>In Progress</option><option>Resolved</option><option>Closed</option></select>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="openModal(createIssueModal(''))">${icon('plus')} Report Issue</button>
+    </div>
+    ${renderIssueTable(DB.issues)}
+  </div>`;
+ROUTES['issue-detail'] = (params) => {
+  const i = DB.issues.find(x=>x.id===params.id) || DB.issues[0];
+  return `
+  <div class="breadcrumb"><a onclick="navigate('issues')">Issues</a> ${icon('chevronRight')} <span>${i.id}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top"><div><h2 style="margin:0;font-size:18px;font-weight:800;">${i.title}</h2><div class="cell-sub mono">${i.id} · ${i.venture}</div></div>
+      <div style="display:flex;gap:8px;">${statusBadge(i.status)}${priorityBadge(i.severity)}</div>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Category</span><span class="v">${i.category}</span></div>
+      <div class="m"><span class="l">Reported By</span><span class="v">${i.reportedBy}</span></div>
+      <div class="m"><span class="l">Date</span><span class="v">${i.date}</span></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card card-pad">
+      <div class="card-title" style="margin-bottom:8px;">Description</div>
+      <p style="font-size:13px;color:var(--ink-soft);">${i.desc}</p>
+      <div class="doc-thumb" style="height:140px;width:220px;margin-top:10px;">${icon('image')}<span style="font-size:11px;margin-left:6px;">Site photo</span></div>
+      <div class="card-title" style="margin:18px 0 8px;">Comments</div>
+      <div style="font-size:13px;"><b>${i.reportedBy}:</b> Flagging this for immediate attention.</div>
+      <input class="form-input" style="margin-top:10px;" placeholder="Add a comment…">
+    </div>
+    <div class="card card-pad">
+      <div class="card-title" style="margin-bottom:8px;">Assigned To</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">${avatarChip(i.reportedBy)} ${i.reportedBy}</div>
+      <div class="card-title" style="margin-bottom:8px;">Resolution</div>
+      ${i.status==='resolved'||i.status==='closed' ? `<p style="font-size:13px;color:var(--success);">Resolved — corrective action confirmed on site.</p>` : `
+      <textarea class="form-textarea" placeholder="Describe the resolution…"></textarea>
+      <button class="btn btn-amber btn-block" style="margin-top:10px;" onclick="resolveIssue('${i.id}')">${icon('check')} Mark Resolved</button>`}
+    </div>
+  </div>`;
+};
+function resolveIssue(id){ const i=DB.issues.find(x=>x.id===id); if(i) i.status='resolved'; navigate('issues'); setTimeout(()=>toast('Issue marked as resolved'),400); }
+function createIssueModal(venture){
+  return {render:()=>`<div class="modal" style="width:500px;">
+    <div class="modal-head"><div class="micon" style="background:var(--critical-soft);color:var(--critical);">${icon('alert')}</div><b>Report Issue</b></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Title <span class="req">*</span></label><input class="form-input" placeholder="e.g. Missing guardrails at Floor 5"></div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Venture</label><select class="form-select">${DB.ventures.map(v=>`<option ${venture===v.name?'selected':''}>${v.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Category</label><select class="form-select"><option>Safety</option><option>Quality</option><option>Material</option><option>Labour</option><option>Equipment</option><option>Design</option><option>Other</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Severity</label><select class="form-select"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" placeholder="Describe what happened…"></textarea></div>
+      <div class="form-group" style="border:1.5px dashed var(--border);border-radius:10px;padding:16px;text-align:center;color:var(--ink-soft);">${icon('image')}<div style="font-size:12px;margin-top:4px;">Attach photos</div></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-amber" onclick="closeModal();toast('Issue reported successfully')">${icon('check')} Report Issue</button></div>
+  </div>`};
+}
+function deactivateModal(id, name){
+  return {render:()=>`<div class="modal">
+    <div class="modal-head"><div class="micon" style="background:var(--critical-soft);color:var(--critical);">${icon('trash')}</div><b>Deactivate Employee</b></div>
+    <div class="modal-body">Are you sure you want to deactivate <b>${name}</b> (${id})? They will lose access and be unassigned from active tasks. This action can be reversed by an Admin.</div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-danger" onclick="closeModal();toast('${name} has been deactivated','error')">${icon('trash')} Deactivate</button></div>
+  </div>`};
+}
+
+/* ---------- DAILY REPORTS ---------- */
+ROUTES['daily-reports'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <select class="filter-select"><option>All Ventures</option>${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select>
+      <input class="form-input" style="max-width:170px;" type="date">
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="navigate('daily-report-create')">${icon('plus')} New Report</button>
+    </div>
+    <table><thead><tr><th>Report</th><th>Venture</th><th>Site</th><th>Supervisor</th><th>Workers</th><th>Progress</th><th>Date</th></tr></thead>
+    <tbody>${DB.dailyReports.map(r=>`<tr class="clickable" onclick="navigate('daily-report-detail',{id:'${r.id}'})">
+      <td class="cell-id">${r.id}</td><td class="cell-sub">${r.venture}</td><td class="cell-sub">${r.site}</td><td>${r.supervisor}</td>
+      <td class="mono">${r.workersPresent}</td><td><span class="badge badge-success"><span class="badge-dot"></span>${r.progress}</span></td><td class="cell-sub">${r.date}</td>
+    </tr>`).join('')}</tbody></table>
+  </div>`;
+ROUTES['daily-report-detail'] = (params) => {
+  const r = DB.dailyReports.find(x=>x.id===params.id) || DB.dailyReports[0];
+  return `
+  <div class="breadcrumb"><a onclick="navigate('daily-reports')">Daily Reports</a> ${icon('chevronRight')} <span>${r.id}</span></div>
+  <div class="detail-header">
+    <div class="detail-header-top"><div><h2 style="margin:0;font-size:18px;font-weight:800;">Daily Site Report</h2><div class="cell-sub mono">${r.id} · ${r.date}</div></div>
+      <button class="btn btn-sm">${icon('download')} Export PDF</button>
+    </div>
+    <div class="detail-meta">
+      <div class="m"><span class="l">Venture</span><span class="v">${r.venture}</span></div>
+      <div class="m"><span class="l">Site</span><span class="v">${r.site}</span></div>
+      <div class="m"><span class="l">Supervisor</span><span class="v">${r.supervisor}</span></div>
+      <div class="m"><span class="l">Workers Present</span><span class="v">${r.workersPresent}</span></div>
+      <div class="m"><span class="l">Progress</span><span class="v" style="color:var(--success);">${r.progress}</span></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="stack" style="gap:16px;">
+      <div class="card card-pad"><div class="card-title" style="margin-bottom:6px;">Work Completed</div><p style="font-size:13px;color:var(--ink-soft);margin:0;">${r.workCompleted}</p></div>
+      <div class="card card-pad"><div class="card-title" style="margin-bottom:6px;">Materials Received</div><p style="font-size:13px;color:var(--ink-soft);margin:0;">${r.materialsReceived}</p></div>
+      <div class="card card-pad"><div class="card-title" style="margin-bottom:6px;">Materials Used</div><p style="font-size:13px;color:var(--ink-soft);margin:0;">${r.materialsUsed}</p></div>
+      <div class="card card-pad"><div class="card-title" style="margin-bottom:6px;">Equipment on Site</div><p style="font-size:13px;color:var(--ink-soft);margin:0;">${r.equipment}</p></div>
+    </div>
+    <div class="stack" style="gap:16px;">
+      <div class="card card-pad"><div class="card-title" style="margin-bottom:6px;">Site Photos</div>
+        <div style="display:flex;gap:8px;">${Array.from({length:3}).map(()=>`<div class="doc-thumb" style="height:70px;width:90px;">${icon('image')}</div>`).join('')}</div>
+      </div>
+      <div class="card card-pad"><div class="card-title" style="margin-bottom:6px;">Issues</div><p style="font-size:13px;color:${r.issues==='None reported today.'?'var(--ink-soft)':'var(--critical)'};margin:0;">${r.issues}</p></div>
+      <div class="card card-pad"><div class="card-title" style="margin-bottom:6px;">Safety Observations</div><p style="font-size:13px;color:var(--ink-soft);margin:0;">${r.safety}</p></div>
+    </div>
+  </div>`;
+};
+ROUTES['daily-report-create'] = (params) => `
+  <div class="breadcrumb"><a onclick="navigate('daily-reports')">Daily Reports</a> ${icon('chevronRight')} <span>New Report</span></div>
+  <div class="card" style="max-width:760px;"><div class="card-head"><div class="card-title">Create Daily Report</div></div>
+    <div class="card-pad">
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Venture <span class="req">*</span></label><select class="form-select">${DB.ventures.map(v=>`<option ${params.venture===v.name?'selected':''}>${v.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Date <span class="req">*</span></label><input class="form-input" type="date"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Workers Present <span class="req">*</span></label><input class="form-input" placeholder="e.g. 22"></div>
+      <div class="form-group"><label class="form-label">Work Completed <span class="req">*</span></label><textarea class="form-textarea" placeholder="Describe today's progress…"></textarea></div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">Materials Received</label><input class="form-input" placeholder="e.g. 500 bags Cement"></div>
+        <div class="form-group"><label class="form-label">Materials Used</label><input class="form-input" placeholder="e.g. 120 bags Cement"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Equipment on Site</label><input class="form-input" placeholder="e.g. Tower crane, 2x mixers"></div>
+      <div class="form-group"><label class="form-label">Issues</label><textarea class="form-textarea" placeholder="Any issues today?"></textarea></div>
+      <div class="form-group"><label class="form-label">Safety Observations</label><textarea class="form-textarea" placeholder="Toolbox talk, PPE compliance, incidents…"></textarea></div>
+      <div class="form-group" style="border:1.5px dashed var(--border);border-radius:10px;padding:18px;text-align:center;color:var(--ink-soft);">${icon('image')}<div style="font-size:12px;margin-top:4px;">Attach site photos</div></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="navigate('daily-reports')">Cancel</button>
+      <button class="btn btn-amber" onclick="navigate('daily-reports');setTimeout(()=>toast('Daily report submitted successfully'),400)">${icon('check')} Submit Report</button></div>
+  </div>`;
+
+ROUTES['site-activity'] = () => `
+  <div class="card card-pad">
+    ${[
+      {t:'Daily report submitted — Green Valley Residency', ts:'14 min ago', icon:'file'},
+      {t:'Cement received at GVR Central Store — 500 bags (PO-3341)', ts:'2 hr ago', icon:'box'},
+      {t:'Stock transferred — 80 bags Cement, RFT → GVR', ts:'2 hr ago', icon:'truck'},
+      {t:'Issue ISS-501 created — Skyline Heights', ts:'3 hr ago', icon:'alert'},
+      {t:'Employee assigned — Anitha Reddy to Skyline Heights', ts:'5 hr ago', icon:'users'},
+      {t:'Document uploaded — Weekly Progress Report', ts:'1 day ago', icon:'file'},
+    ].map(a=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="tt">${a.t}</div><div class="ts">${a.ts}</div></div></div>`).join('')}
+  </div>`;
+
+/* ---------- DOCUMENTS ---------- */
+function renderDocGrid(list){
+  if(!list.length) return emptyState('No documents uploaded', 'Upload files to keep drawings, contracts and reports organized.', 'file',
+    `<button class="btn btn-amber" onclick="toast('Document uploaded successfully')">${icon('upload')} Upload Document</button>`);
+  return `<div class="doc-grid">${list.map(d=>`
+    <div class="doc-card" style="cursor:pointer;" onclick="openDrawer(docPreviewDrawer('${d.id}'))">
+      <div class="doc-thumb">${icon('file')}</div>
+      <div class="cell-title" style="font-size:12.5px;line-height:1.3;">${d.name}</div>
+      <div class="cell-sub" style="margin-top:6px;">${d.category} · ${d.version}</div>
+      <div class="cell-sub">${d.uploadedBy} · ${d.date}</div>
+    </div>`).join('')}</div>`;
+}
+function docPreviewDrawer(id){
+  const d = DB.documents.find(x=>x.id===id) || DB.documents[0];
+  return {render:()=>`
+    <div class="drawer-head"><b>Document Preview</b><button class="icon-btn" onclick="closeDrawer()">${icon('x')}</button></div>
+    <div class="drawer-body">
+      <div class="doc-thumb" style="height:220px;">${icon('file')}</div>
+      <h3 style="margin:14px 0 4px;font-size:15px;">${d.name}</h3>
+      <div class="cell-sub" style="margin-bottom:16px;">${d.category} · ${d.version}</div>
+      <div class="checklist-item"><span class="cell-sub" style="width:120px;">Venture</span><span>${d.venture}</span></div>
+      <div class="checklist-item"><span class="cell-sub" style="width:120px;">Uploaded By</span><span>${d.uploadedBy}</span></div>
+      <div class="checklist-item"><span class="cell-sub" style="width:120px;">Date</span><span>${d.date}</span></div>
+      <div style="display:flex;gap:8px;margin-top:18px;">
+        <button class="btn btn-block" onclick="toast('Downloading…')">${icon('download')} Download</button>
+        <button class="btn btn-block btn-amber" onclick="toast('New version uploaded')">${icon('upload')} New Version</button>
+      </div>
+    </div>`};
+}
+ROUTES['documents'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <div class="search-inline">${icon('search')}<input placeholder="Search documents…"></div>
+      <select class="filter-select"><option>All Categories</option><option>Drawings</option><option>Contracts</option><option>Site Documents</option><option>Safety</option><option>Reports</option><option>Photos</option><option>Invoices</option><option>Employee Documents</option></select>
+      <select class="filter-select"><option>All Ventures</option>${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="toast('Document uploaded successfully')">${icon('upload')} Upload</button>
+    </div>
+    <div class="card-pad">${renderDocGrid(DB.documents)}</div>
+  </div>`;
+ROUTES['venture-documents'] = () => ROUTES['documents']();
+ROUTES['employee-documents'] = () => `<div class="card card-pad">${renderDocGrid(DB.documents.filter(d=>d.category==='Employee Documents'))}</div>`;
+
+/* ---------- CHAT ---------- */
+function renderChatShell(defaultVenture){
+  if(!state.chatVenture) state.chatVenture = defaultVenture || DB.ventures[0].name;
+  if(!state.chatChannel) state.chatChannel = 'General';
+  const v = findVenture(state.chatVenture) || DB.ventures[0];
+  const msgs = DB.chatMessages[state.chatChannel] || [];
+  const openIssues = DB.issues.filter(i=>i.venture===v.name && i.status==='open');
+  const pendingReq = DB.materialRequests.filter(r=>r.venture===v.name && r.status==='pending');
+  const docs = DB.documents.filter(d=>d.venture===v.name).slice(0,3);
+  return `
+  <div class="chat-shell">
+    <div class="chat-col">
+      <div class="chat-channel-head">${v.name}</div>
+      ${DB.chatChannels.map(c=>`<div class="chan-item ${state.chatChannel===c?'active':''}" onclick="setChatChannel('${c}')"><span class="hash">#</span>${c}</div>`).join('')}
+      <div class="chat-channel-head" style="margin-top:10px;">Switch Venture</div>
+      ${DB.ventures.map(vv=>`<div class="chan-item ${state.chatVenture===vv.name?'active':''}" onclick="setChatVenture('${vv.name}')">${vv.name}</div>`).join('')}
+    </div>
+    <div class="chat-col">
+      <div class="chat-channel-head"># ${state.chatChannel}</div>
+      <div class="chat-messages">
+        ${msgs.length ? msgs.map(m=>`
+          <div class="msg">${avatarChip(m.who)}
+            <div class="msg-body">
+              <div class="msg-head"><span class="n">${m.who}</span><span class="t">${m.time}</span></div>
+              <div class="msg-text">${m.text}</div>
+              ${m.photo ? `<div class="msg-photo">${icon('image')} Site photo</div>` : ''}
+              ${m.ref ? `<div class="msg-ref" onclick="openChatRef('${m.ref.type}','${m.ref.id}')">${icon(m.ref.type==='mr'?'box':'alert')} ${m.ref.label}</div>` : ''}
+            </div>
+          </div>`).join('') : emptyState('No messages yet', 'Start the conversation in this channel.', 'chat')}
+      </div>
+      <div class="chat-input-bar">
+        <input placeholder="Message #${state.chatChannel}…" onkeydown="if(event.key==='Enter')sendChatMsg(this)">
+        <button class="btn btn-amber btn-sm" onclick="sendChatMsg(this.previousElementSibling)">Send</button>
+      </div>
+    </div>
+    <div class="chat-col">
+      <div class="chat-context">
+        <h4>Venture Progress</h4>
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">${v.progress}% complete</div>
+        ${progressBar(v.progress, ventureStatusTone(v.status))}
+        <h4>Manager</h4><div style="font-size:13px;">${v.manager}</div>
+        <h4>Supervisor</h4><div style="font-size:13px;">${v.supervisor}</div>
+        <h4>Team</h4><div style="font-size:13px;">${v.team} on site</div>
+        <h4>Open Issues</h4>
+        ${openIssues.length ? openIssues.map(i=>`<div class="msg-ref" style="display:flex;margin-bottom:6px;" onclick="navigate('issue-detail',{id:'${i.id}'})">${i.title}</div>`).join('') : '<div class="cell-sub" style="font-size:12px;">None</div>'}
+        <h4>Pending Material Requests</h4>
+        ${pendingReq.length ? pendingReq.map(r=>`<div class="msg-ref" style="display:flex;margin-bottom:6px;" onclick="navigate('material-request-detail',{id:'${r.id}'})">${r.id} — ${r.material.split(' — ')[0]}</div>`).join('') : '<div class="cell-sub" style="font-size:12px;">None</div>'}
+        <h4>Recent Documents</h4>
+        ${docs.length ? docs.map(d=>`<div class="msg-ref" style="display:flex;margin-bottom:6px;" onclick="openDrawer(docPreviewDrawer('${d.id}'))">${d.name.slice(0,26)}…</div>`).join('') : '<div class="cell-sub" style="font-size:12px;">None</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+function setChatChannel(c){ state.chatChannel = c; render(); }
+function setChatVenture(v){ state.chatVenture = v; state.chatChannel='General'; render(); }
+function sendChatMsg(input){
+  if(!input.value.trim()) return;
+  DB.chatMessages[state.chatChannel] = DB.chatMessages[state.chatChannel] || [];
+  DB.chatMessages[state.chatChannel].push({who:DB.admin.name, time:'Now', text:input.value.trim()});
+  input.value=''; render();
+}
+function openChatRef(type,id){
+  if(type==='mr') navigate('material-request-detail',{id});
+  else if(type==='issue') navigate('issue-detail',{id});
+}
+ROUTES['chat'] = () => renderChatShell();
+
+/* ---------- ANNOUNCEMENTS ---------- */
+ROUTES['announcements'] = () => `
+  <div class="card"><div class="card-head"><div class="card-title">Announcements</div><button class="btn btn-amber btn-sm" onclick="toast('Announcement posted')">${icon('plus')} New Announcement</button></div>
+  <div class="card-pad stack" style="gap:14px;">
+    ${[
+      {t:'Monsoon safety protocol — effective immediately', d:'All sites must suspend crane operations above 40km/h wind speed. Refer to updated SOP in Documents.', by:'Meera Iyer', ts:'2 days ago'},
+      {t:'Q3 vendor rate revision', d:'UltraTech Cement rates revised from 1 Sep. Updated pricing reflected in Vendors module.', by:'Meera Iyer', ts:'5 days ago'},
+    ].map(a=>`<div class="card" style="box-shadow:none;"><div class="card-pad"><div class="cell-title">${a.t}</div><p style="font-size:13px;color:var(--ink-soft);margin:6px 0;">${a.d}</p><div class="cell-sub">${a.by} · ${a.ts}</div></div></div>`).join('')}
+  </div></div>`;
+
+/* ---------- NOTIFICATIONS ---------- */
+ROUTES['notifications'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <select class="filter-select"><option>All Categories</option><option>Approvals</option><option>Inventory Alerts</option><option>Project Updates</option><option>Tasks</option><option>Issues</option><option>Documents</option><option>System</option></select>
+      <select class="filter-select"><option>All Priority</option><option>Critical</option><option>High</option><option>Low</option></select>
+      <button class="btn btn-sm" style="margin-left:auto;" onclick="markAllRead()">${icon('check')} Mark all as read</button>
+    </div>
+    <div>${DB.notifications.map(n=>`
+      <div class="checklist-item" style="padding:14px 20px;align-items:flex-start;cursor:pointer;background:${n.unread?'#FBFAF8':'transparent'};" onclick="handleNotifClick('${n.id}')">
+        <span style="width:8px;height:8px;border-radius:50%;background:${n.unread?'var(--amber)':'transparent'};margin-top:6px;flex-shrink:0;"></span>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;gap:10px;">
+            <b style="font-size:13px;">${n.title}</b>
+            <span class="cell-sub" style="white-space:nowrap;">${n.time}</span>
+          </div>
+          <div class="cell-sub" style="margin-top:2px;">${n.desc}</div>
+          <div style="display:flex;gap:6px;margin-top:6px;"><span class="badge badge-neutral">${n.category}</span>${priorityBadge(n.priority)}${n.venture!=='—'?`<span class="badge badge-terracotta">${n.venture}</span>`:''}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+function markAllRead(){ DB.notifications.forEach(n=>n.unread=false); render(); toast('All notifications marked as read'); }
+function handleNotifClick(id){
+  const n = DB.notifications.find(x=>x.id===id); if(n) n.unread=false;
+  if(n.category==='Approvals'){ const mr = DB.materialRequests.find(r=>n.title.includes(r.id)); if(mr) return navigate('material-request-detail',{id:mr.id}); }
+  if(n.category==='Issues'){ return navigate('issues'); }
+  if(n.category==='Inventory Alerts'){ return navigate('inventory-alerts'); }
+  render();
+}
+
+/* ---------- REPORTS ---------- */
+function reportShell(title, chartLabel, rows){
+  return `
+  <div class="card">
+    <div class="filters-bar">
+      <input class="form-input" style="max-width:150px;" type="date">
+      <span class="cell-sub">to</span>
+      <input class="form-input" style="max-width:150px;" type="date">
+      <select class="filter-select"><option>All Ventures</option>${DB.ventures.map(v=>`<option>${v.name}</option>`).join('')}</select>
+      <div class="search-inline">${icon('search')}<input placeholder="Search…"></div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="toast('Exporting PDF…')">${icon('download')} PDF</button>
+        <button class="btn btn-sm" onclick="toast('Exporting Excel…')">${icon('download')} Excel</button>
+        <button class="btn btn-sm" onclick="toast('Opening print dialog…')">${icon('ext')} Print</button>
+      </div>
+    </div>
+    <div class="card-pad">
+      <div class="card-title" style="margin-bottom:10px;">${chartLabel}</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;height:140px;margin-bottom:18px;">
+        ${Array.from({length:8}).map(()=>{ const h = 30+Math.random()*100; return `<div style="flex:1;background:var(--amber-soft);border-radius:6px 6px 0 0;height:${h}px;position:relative;"><div style="position:absolute;bottom:0;left:0;right:0;height:${h*0.5}px;background:var(--amber);border-radius:6px 6px 0 0;"></div></div>`; }).join('')}
+      </div>
+      ${rows}
+    </div>
+  </div>`;
+}
+ROUTES['reports'] = () => reportShell('Project Reports','Venture progress trend', renderVentureTable(DB.ventures));
+ROUTES['reports-employee'] = () => reportShell('Employee Reports','Attendance trend', `<table><thead><tr><th>Employee</th><th>Role</th><th>Attendance</th><th>Venture</th></tr></thead><tbody>${DB.employees.map(e=>`<tr><td class="cell-title">${e.name}</td><td>${e.role}</td><td class="mono">${e.attendance}%</td><td class="cell-sub">${e.venture}</td></tr>`).join('')}</tbody></table>`);
+ROUTES['reports-inventory'] = () => reportShell('Inventory Reports','Stock value trend', `<table><thead><tr><th>Material</th><th>Available</th><th>Status</th></tr></thead><tbody>${DB.materials.map(m=>`<tr><td class="cell-title">${m.name}</td><td class="mono">${m.available} ${m.unit}</td><td>${statusBadge(m.status)}</td></tr>`).join('')}</tbody></table>`);
+ROUTES['reports-consumption'] = () => reportShell('Material Consumption Report','Weekly consumption by category', `<table><thead><tr><th>Category</th><th>This Week</th><th>Last Week</th><th>Trend</th></tr></thead><tbody>${[['Cement','980 bags','845 bags','up'],['Steel','12.4 MT','15.1 MT','down'],['Sand','210 cu.m','198 cu.m','up'],['Bricks','32k','29k','up']].map(([c,a,b,t])=>`<tr><td class="cell-title">${c}</td><td class="mono">${a}</td><td class="mono">${b}</td><td><span class="badge badge-${t==='up'?'warn':'success'}"><span class="badge-dot"></span>${t==='up'?'Increased':'Decreased'}</span></td></tr>`).join('')}</tbody></table>`);
+ROUTES['reports-vendor'] = () => reportShell('Vendor Reports','On-time delivery rate', renderVendorTable(DB.vendors));
+ROUTES['reports-operational'] = () => reportShell('Operational Reports','Task completion trend', renderTaskTable(DB.tasks));
+
+/* ---------- USERS / ROLES / AUDIT / SETTINGS ---------- */
+ROUTES['users'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <div class="search-inline">${icon('search')}<input placeholder="Search users…"></div>
+      <select class="filter-select"><option>All Roles</option><option>Admin</option><option>Manager</option><option>Supervisor</option><option>Employee</option></select>
+      <button class="btn btn-amber" style="margin-left:auto;" onclick="toast('Add User form would open here')">${icon('plus')} Add User</button>
+    </div>
+    <table><thead><tr><th>User</th><th>Role</th><th>Email</th><th>Status</th><th>Last Login</th><th></th></tr></thead>
+    <tbody>${DB.users.map(u=>`<tr class="clickable" onclick="navigate('user-detail',{id:'${u.id}'})">
+      <td><div style="display:flex;align-items:center;gap:8px;">${avatarChip(u.name)}<span class="cell-title">${u.name}</span></div></td>
+      <td><span class="badge badge-terracotta">${u.role}</span></td><td class="cell-sub">${u.email}</td><td>${statusBadge(u.status)}</td><td class="cell-sub">${u.lastLogin}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();toast('Edit user form would open here')">${icon('edit')}</button></td>
+    </tr>`).join('')}</tbody></table>
+  </div>`;
+ROUTES['user-detail'] = (params) => {
+  const u = DB.users.find(x=>x.id===params.id) || DB.users[0];
+  return `
+  <div class="breadcrumb"><a onclick="navigate('users')">Users</a> ${icon('chevronRight')} <span>${u.name}</span></div>
+  <div class="detail-header"><div class="detail-header-top">
+    <div style="display:flex;gap:14px;"><div class="avatar-md">${initials(u.name)}</div><div><h2 style="margin:0;font-size:18px;font-weight:800;">${u.name}</h2><div class="cell-sub">${u.email}</div></div></div>
+    <button class="btn btn-sm">${icon('edit')} Edit Access</button>
+  </div>
+  <div class="detail-meta"><div class="m"><span class="l">Role</span><span class="v">${u.role}</span></div><div class="m"><span class="l">Status</span><span class="v">${statusBadge(u.status)}</span></div><div class="m"><span class="l">Last Login</span><span class="v">${u.lastLogin}</span></div></div>
+  </div>
+  <div class="card"><div class="card-head"><div class="card-title">Effective Permissions</div></div><div class="card-pad">${renderPermMatrix([u.role])}</div></div>`;
+};
+function renderPermMatrix(onlyRoles){
+  const roles = onlyRoles || ['Admin','Manager','Supervisor','Employee'];
+  const perms = [
+    ['Manage Ventures', [1,0,0,0]], ['Approve Material Requests',[1,1,0,0]], ['View Assigned Venture Data',[1,1,1,1]],
+    ['Create Tasks',[1,1,1,0]], ['Report Issues',[1,1,1,1]], ['Submit Daily Reports',[1,0,1,0]],
+    ['Manage Vendors',[1,0,0,0]], ['Manage Users & Roles',[1,0,0,0]], ['View Financial Reports',[1,1,0,0]], ['View Audit Logs',[1,0,0,0]],
+  ];
+  const allRoles = ['Admin','Manager','Supervisor','Employee'];
+  return `<table class="perm-matrix"><thead><tr><th>Permission</th>${roles.map(r=>`<th>${r}</th>`).join('')}</tr></thead>
+  <tbody>${perms.map(([label,vals])=>`<tr><td>${label}</td>${roles.map(r=>{const idx=allRoles.indexOf(r);return `<td>${vals[idx]?`<span class="perm-check">${icon('check')}</span>`:`<span class="perm-cross">${icon('x')}</span>`}</td>`;}).join('')}</tr>`).join('')}</tbody></table>`;
+}
+ROUTES['roles'] = () => `
+  <div class="grid-2" style="margin-bottom:16px;">
+    ${['Admin','Manager','Supervisor','Employee'].map(r=>`
+      <div class="card card-pad">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><b>${r}</b><span class="badge badge-neutral">${DB.users.filter(u=>u.role===r).length} users</span></div>
+      </div>`).join('')}
+  </div>
+  <div class="card"><div class="card-head"><div class="card-title">Permission Matrix</div></div><div class="card-pad">${renderPermMatrix()}</div></div>`;
+ROUTES['branches'] = () => `<div class="card"><div class="card-head"><div class="card-title">Branches / Locations</div><button class="btn btn-amber btn-sm" onclick="toast('Branch added')">${icon('plus')} Add Branch</button></div>
+  <table><thead><tr><th>Branch</th><th>City</th><th>Ventures</th></tr></thead>
+  <tbody>${[['Hyderabad Regional Office','Hyderabad',1],['Bengaluru Regional Office','Bengaluru',1],['Chennai Regional Office','Chennai',2],['Pune Regional Office','Pune',1]].map(([n,c,v])=>`<tr><td class="cell-title">${n}</td><td>${c}</td><td class="mono">${v}</td></tr>`).join('')}</tbody></table></div>`;
+
+ROUTES['audit-logs'] = () => `
+  <div class="card">
+    <div class="filters-bar">
+      <select class="filter-select"><option>All Modules</option><option>Inventory</option><option>Employees</option><option>Daily Reports</option><option>Authentication</option></select>
+      <select class="filter-select"><option>All Users</option>${DB.users.map(u=>`<option>${u.name}</option>`).join('')}</select>
+      <input class="form-input" style="max-width:170px;" type="date">
+      <button class="btn btn-sm" style="margin-left:auto;">${icon('download')} Export</button>
+    </div>
+    <table><thead><tr><th>Timestamp</th><th>User</th><th>Role</th><th>Action</th><th>Module</th><th>Entity</th><th>IP</th><th>Status</th></tr></thead>
+    <tbody>${DB.auditLogs.map((l,idx)=>`<tr class="clickable" onclick="openDrawer(auditDrawer(${idx}))">
+      <td class="cell-sub mono">${l.time}</td><td>${l.user}</td><td class="cell-sub">${l.role}</td><td>${l.action}</td><td><span class="badge badge-neutral">${l.module}</span></td>
+      <td class="cell-id">${l.entity}</td><td class="cell-sub mono">${l.ip}</td><td>${statusBadge(l.status)}</td>
+    </tr>`).join('')}</tbody></table>
+  </div>`;
+function auditDrawer(idx){
+  const l = DB.auditLogs[idx];
+  return {render:()=>`<div class="drawer-head"><b>Audit Entry</b><button class="icon-btn" onclick="closeDrawer()">${icon('x')}</button></div>
+  <div class="drawer-body">
+    <div class="checklist-item"><span class="cell-sub" style="width:120px;">Timestamp</span><span class="mono">${l.time}</span></div>
+    <div class="checklist-item"><span class="cell-sub" style="width:120px;">User</span><span>${l.user} (${l.role})</span></div>
+    <div class="checklist-item"><span class="cell-sub" style="width:120px;">Action</span><span>${l.action}</span></div>
+    <div class="checklist-item"><span class="cell-sub" style="width:120px;">Module</span><span>${l.module}</span></div>
+    <div class="checklist-item"><span class="cell-sub" style="width:120px;">Entity</span><span class="mono">${l.entity}</span></div>
+    <div class="checklist-item"><span class="cell-sub" style="width:120px;">IP / Session</span><span class="mono">${l.ip}</span></div>
+    <div class="checklist-item"><span class="cell-sub" style="width:120px;">Status</span><span>${statusBadge(l.status)}</span></div>
+  </div>`};
+}
+
+ROUTES['settings'] = () => `
+  <div class="grid-2">
+    <div class="card card-pad">
+      <div class="card-title" style="margin-bottom:14px;">Company Settings</div>
+      <div class="form-group"><label class="form-label">Company Name</label><input class="form-input" value="Naprocs Construction Pvt. Ltd."></div>
+      <div class="form-row2"><div class="form-group"><label class="form-label">GSTIN</label><input class="form-input mono" value="36AAECN1234A1Z5"></div>
+      <div class="form-group"><label class="form-label">Time Zone</label><select class="form-select"><option>Asia/Kolkata (IST)</option></select></div></div>
+      <button class="btn btn-amber" onclick="toast('Settings saved')">${icon('check')} Save Changes</button>
+    </div>
+    <div class="card card-pad">
+      <div class="card-title" style="margin-bottom:14px;">Notification Settings</div>
+      ${['Critical Issues','Pending Approvals','Low Stock Alerts','Daily Report Reminders'].map(l=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:13px;">${l}</span>
+          <label style="position:relative;display:inline-block;width:36px;height:20px;">
+            <input type="checkbox" checked style="opacity:0;width:0;height:0;">
+            <span style="position:absolute;inset:0;background:#000000;border-radius:20px;"></span>
+            <span style="position:absolute;top:2px;left:18px;width:16px;height:16px;background:#fff;border-radius:50%;"></span>
+          </label>
+        </div>`).join('')}
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:16px;">
+    <div class="card card-pad">
+      <div class="card-title" style="margin-bottom:14px;">Security</div>
+      <div class="checklist-item"><span>Two-factor authentication</span><span class="badge badge-success" style="margin-left:auto;"><span class="badge-dot"></span>Enabled</span></div>
+      <div class="checklist-item"><span>Session timeout</span><span style="margin-left:auto;color:var(--ink-soft);">30 minutes</span></div>
+      <div class="checklist-item"><span>Password policy</span><span style="margin-left:auto;color:var(--ink-soft);">Strong</span></div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-title" style="margin-bottom:14px;">Backup & Restore</div>
+      <div class="checklist-item"><span>Last backup</span><span style="margin-left:auto;color:var(--ink-soft);">Today, 02:00 AM</span></div>
+      <button class="btn btn-sm" style="margin-top:10px;" onclick="toast('Backup started')">${icon('download')} Run Backup Now</button>
+    </div>
+  </div>`;
+
+ROUTES['profile'] = () => `
+  <div class="card card-pad" style="max-width:520px;">
+    <div style="display:flex;gap:14px;align-items:center;margin-bottom:18px;">
+      <div class="avatar-md">${DB.admin.initials}</div>
+      <div><h2 style="margin:0;font-size:17px;">${DB.admin.name}</h2><div class="cell-sub">${DB.admin.role} · Naprocs Construction Pvt. Ltd.</div></div>
+    </div>
+    <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" value="${DB.admin.name}"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" value="meera.iyer@naprocs.in"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" value="+91 98220 00011"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn btn-amber" onclick="toast('Profile updated')">${icon('check')} Save Changes</button>
+      <button class="btn btn-danger" onclick="toast('Logged out')">${icon('logout')} Log Out</button>
+    </div>
+  </div>`;
+
+/* ---------- INIT ---------- */
+render();
+
+</script>
+</body>
+</html>

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  Building2, Plus, Search, Filter, LayoutGrid, LayoutList, 
+import {
+  Building2, Plus, Search, Filter, LayoutGrid, LayoutList,
   MapPin, Calendar, Users, TrendingUp, ShieldAlert, ArrowUpRight, FileSpreadsheet
 } from 'lucide-react';
 import { CreateVentureWizard } from '@/components/ventures/CreateVentureWizard';
@@ -64,7 +64,7 @@ export default function VenturesPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <button 
+          <button
             onClick={() => setIsWizardOpen(true)}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
           >
@@ -213,13 +213,12 @@ export default function VenturesPage() {
                       ₹{((v.estimatedBudget || 0) / 10000000).toFixed(2)} Cr
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        v.status === 'ACTIVE'
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'ACTIVE'
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                           : v.status === 'PLANNING'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                          : 'bg-slate-800 text-slate-400'
-                      }`}>
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}>
                         ● {v.status}
                       </span>
                     </td>
@@ -253,11 +252,10 @@ export default function VenturesPage() {
                       <Link href={`/ventures/${v.id}`}>{v.name}</Link>
                     </h3>
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    v.status === 'ACTIVE'
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${v.status === 'ACTIVE'
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                       : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                  }`}>
+                    }`}>
                     {v.status}
                   </span>
                 </div>
@@ -293,7 +291,7 @@ export default function VenturesPage() {
               <div className="pt-3 flex justify-between items-center border-t border-slate-900 text-xs">
                 <div>
                   <span className="text-[10px] text-slate-500 block">Est. Budget</span>
-                  <span className="font-bold text-emerald-400">₹{((v.estimatedBudget || 0)/10000000).toFixed(2)} Cr</span>
+                  <span className="font-bold text-emerald-400">₹{((v.estimatedBudget || 0) / 10000000).toFixed(2)} Cr</span>
                 </div>
                 <Link
                   href={`/ventures/${v.id}`}
@@ -316,3 +314,4 @@ export default function VenturesPage() {
     </div>
   );
 }
+
