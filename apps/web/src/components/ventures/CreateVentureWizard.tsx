@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Building2, MapPin, Calendar, Users, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface CreateVentureWizardProps {
@@ -13,6 +13,21 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [employees, setEmployees] = useState<any[]>([]);
+
+  // Fetch employees from DB for leadership dropdowns
+  useEffect(() => {
+    if (isOpen) {
+      fetch('/api/employees')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setEmployees(data.data);
+          }
+        })
+        .catch((err) => console.error('Failed to fetch employees:', err));
+    }
+  }, [isOpen]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -355,8 +370,11 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white"
                   >
                     <option value="">Select Employee...</option>
-                    <option value="emp-002">Suresh Verma (#EMP-002)</option>
-                    <option value="emp-001">Rajesh Kumar (#EMP-001)</option>
+                    {employees.map((emp: any) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName} (#{emp.employeeId})
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -367,8 +385,11 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white"
                   >
                     <option value="">Select Employee...</option>
-                    <option value="emp-003">Ajay Rao (#EMP-003)</option>
-                    <option value="emp-004">Vikram Singh (#EMP-004)</option>
+                    {employees.map((emp: any) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName} (#{emp.employeeId})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

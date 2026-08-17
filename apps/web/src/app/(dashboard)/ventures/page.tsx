@@ -44,7 +44,8 @@ export default function VenturesPage() {
   }, [search, statusFilter, typeFilter]);
 
   const handleVentureCreated = (newVenture: any) => {
-    setVentures((prev) => [newVenture, ...prev]);
+    // Re-fetch full list from DB so relational data (manager, _count) is complete
+    fetchVentures();
   };
 
   return (
