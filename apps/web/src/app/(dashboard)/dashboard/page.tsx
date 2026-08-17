@@ -30,15 +30,19 @@ export default async function DashboardPage() {
     const dbRequests = await prisma.materialRequest.findMany({
       take: 4,
       orderBy: { createdAt: 'desc' },
-      include: { venture: true, items: { include: { material: true } } },
+      include: {
+        venture: true,
+        createdBy: true,
+        items: { include: { material: true } },
+      },
     });
 
     if (dbRequests.length > 0) {
       pendingRequests = dbRequests.map((r: any) => ({
         id: r.id.substring(0, 8),
         company: r.venture?.name || 'Venture Site',
-        requestedBy: 'Krishna Rao',
-        material: r.items[0]?.material?.name || 'Cement',
+        requestedBy: r.createdBy?.name || 'Staff Member',
+        material: r.items[0]?.material?.name || 'Material Item',
         date: r.createdAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         priority: 'High',
         status: r.status,
@@ -51,9 +55,9 @@ export default async function DashboardPage() {
         id: v.id,
         name: v.name,
         code: v.code,
-        location: v.location,
+        location: `${v.regCity || 'Site'}, ${v.regState || 'India'}`,
         progress: v.status === 'ACTIVE' ? 68 : 100,
-        status: v.status.toLowerCase(),
+        status: v.status.toLowerCase() === 'active' ? 'on-track' : v.status.toLowerCase(),
       }));
     }
   } catch (err) {

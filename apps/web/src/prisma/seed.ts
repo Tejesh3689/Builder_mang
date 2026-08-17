@@ -1,4 +1,5 @@
 import { PrismaClient, UserRole, VentureStatus, VentureType, DocumentCategory, AnnouncementPriority } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -75,12 +76,14 @@ async function main() {
   });
 
   // 4. Create Users & Employees
+  const defaultPasswordHash = await bcrypt.hash('password123', 10);
+
   const admin = await prisma.user.upsert({
     where: { email: 'admin@builder.com' },
-    update: {},
+    update: { passwordHash: defaultPasswordHash },
     create: {
       email: 'admin@builder.com',
-      passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.',
+      passwordHash: defaultPasswordHash,
       name: 'Rajesh Kumar',
       role: UserRole.ADMIN,
     },
@@ -88,10 +91,10 @@ async function main() {
 
   const manager = await prisma.user.upsert({
     where: { email: 'manager@builder.com' },
-    update: {},
+    update: { passwordHash: defaultPasswordHash },
     create: {
       email: 'manager@builder.com',
-      passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.',
+      passwordHash: defaultPasswordHash,
       name: 'Suresh Verma',
       role: UserRole.PROJECT_MANAGER,
     },
@@ -99,10 +102,10 @@ async function main() {
 
   const engineer = await prisma.user.upsert({
     where: { email: 'engineer@builder.com' },
-    update: {},
+    update: { passwordHash: defaultPasswordHash },
     create: {
       email: 'engineer@builder.com',
-      passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.',
+      passwordHash: defaultPasswordHash,
       name: 'Ajay Site Engineer',
       role: UserRole.SITE_ENGINEER,
     },
@@ -110,10 +113,10 @@ async function main() {
 
   const storeUser = await prisma.user.upsert({
     where: { email: 'store@builder.com' },
-    update: {},
+    update: { passwordHash: defaultPasswordHash },
     create: {
       email: 'store@builder.com',
-      passwordHash: '$2b$10$w8.15tJtZ1Z3bH1t7o7eO.5mB7B4y2K0Xn1jTj4Y15E.zQd5G3t1.',
+      passwordHash: defaultPasswordHash,
       name: 'Vikram Storekeeper',
       role: UserRole.STORE_MANAGER,
     },
@@ -121,7 +124,7 @@ async function main() {
 
   const emp1 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-001' },
-    update: {},
+    update: { userId: admin.id },
     create: {
       employeeId: 'EMP-001',
       userId: admin.id,
@@ -134,7 +137,7 @@ async function main() {
 
   const emp2 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-002' },
-    update: {},
+    update: { userId: manager.id },
     create: {
       employeeId: 'EMP-002',
       userId: manager.id,
@@ -147,7 +150,7 @@ async function main() {
 
   const emp3 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-003' },
-    update: {},
+    update: { userId: engineer.id },
     create: {
       employeeId: 'EMP-003',
       userId: engineer.id,
@@ -160,7 +163,7 @@ async function main() {
 
   const emp4 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-004' },
-    update: {},
+    update: { userId: storeUser.id },
     create: {
       employeeId: 'EMP-004',
       userId: storeUser.id,
