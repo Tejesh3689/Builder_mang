@@ -3,9 +3,23 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const currentUser = session?.user;
+  const userName = currentUser?.name || currentUser?.email?.split('@')[0] || 'User Account';
+  const userRole = (currentUser as any)?.role || 'USER';
+  const userEmail = currentUser?.email || '';
+
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
 
   const navGroups = [
     {
@@ -219,14 +233,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Footer Profile Chip */}
         <div className="p-4 border-t border-zinc-100">
-          <div className="flex items-center gap-3 p-2 rounded-full hover:bg-zinc-100 cursor-pointer transition-colors">
-            <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs">
-              MI
+          <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 border border-zinc-200/80">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-xs text-black truncate">{userName}</div>
+                <div className="text-[10px] text-zinc-500 truncate font-mono">{userRole} · {userEmail}</div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-xs text-black truncate">Meera Iyer</div>
-              <div className="text-[11px] text-zinc-500 truncate">Admin · Naprocs</div>
-            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              title="Sign Out"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </button>
           </div>
         </div>
       </aside>
