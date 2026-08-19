@@ -182,10 +182,25 @@ model Employee {
   designation            String
   department             String
   status                 EmployeeStatus              @default(ACTIVE)
+  onboardingStage        String                      @default("Active")
+  onboardingStatus       String                      @default("Active")
+  phone                  String?
+  email                  String?
+  joiningDate            String?
+  reportingManager       String?
+  employmentType         String?
+  attendanceRate         String?                     @default("100%")
+  performanceRating      Float?                      @default(5.0)
+  leaveBalancePaid       Int?                        @default(12)
+  leaveBalanceSick       Int?                        @default(8)
+  leaveBalanceCasual     Int?                        @default(10)
+  activitiesJson         String?
   createdAt              DateTime                    @default(now())
   updatedAt              DateTime                    @updatedAt
   documents              EmployeeDocument[]
   assignments            EmployeeVentureAssignment[]
+  skills                 EmployeeSkill[]
+  certifications         EmployeeCertification[]
 
   // Leadership relations
   directedVentures       Venture[]                   @relation("ProjectDirector")
@@ -208,6 +223,37 @@ model EmployeeDocument {
   createdAt  DateTime @default(now())
 
   @@map("employee_documents")
+}
+
+model EmployeeSkill {
+  id                 String           @id @default(uuid())
+  employeeId         String
+  employee           Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  skill              String
+  category           String           @default("Civil")
+  proficiency        String           @default("Intermediate") // Beginner, Intermediate, Expert
+  experienceYears    Int              @default(0)
+  verificationStatus String           @default("Pending")      // Verified, Pending, Rejected
+  verifiedBy         String?
+  verificationDate   DateTime?
+  createdAt          DateTime         @default(now())
+
+  @@map("employee_skills")
+}
+
+model EmployeeCertification {
+  id            String    @id @default(uuid())
+  employeeId    String
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  certification String
+  certificateNo String
+  issueDate     DateTime  @default(now())
+  expiryDate    DateTime
+  status        String    @default("Valid") // Valid, Expiring Soon, Expired
+  authority     String    @default("National Safety Agency")
+  createdAt     DateTime  @default(now())
+
+  @@map("employee_certifications")
 }
 
 model EmployeeVentureAssignment {

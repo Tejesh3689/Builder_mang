@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getLocalEmployees, updateLocalEmployee, EmployeeProfile } from '@/lib/mockDatabase';
+import { EmployeeProfile } from '@/lib/mockDatabase';
 
 interface EditEmployeeFormProps {
   employeeId: string;
@@ -29,20 +29,66 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const list = getLocalEmployees();
-    const found = list.find((e) => e.id === employeeId || e.employeeId === employeeId || e.employeeId === employeeId.toUpperCase());
-    if (found) {
-      setEmployee(found);
-      setFirstName(found.firstName);
-      setLastName(found.lastName);
-      setPhone(found.phone);
-      setEmail(found.email);
-      setRole(found.designation);
-      setVenture(found.currentProject);
-      setSupervisor(found.reportingManager);
-      setStatus(found.status);
-      setEmploymentType(found.employmentType);
+    async function loadEmployee() {
+      try {
+        const res = await fetch(`/api/employees/${employeeId}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          const item = json.data;
+          const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
+          
+          setEmployee({
+            id: item.id,
+            employeeId: item.employeeId,
+            firstName: item.firstName,
+            lastName: item.lastName,
+            phone: item.phone || '',
+            email: item.email || '',
+            designation: item.designation,
+            department: item.department,
+            status: item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated',
+            joiningDate: item.joiningDate || '',
+            onboardingStage: item.onboardingStage || 'Active',
+            onboardingStatus: item.onboardingStatus || 'Active',
+            currentProject: activeAssignment?.venture?.name || 'Unassigned',
+            currentSite: activeAssignment?.roleAtSite || '—',
+            reportingManager: item.reportingManager || '—',
+            employmentType: item.employmentType || 'Permanent',
+            attendanceRate: item.attendanceRate || '100%',
+            performanceRating: item.performanceRating || 5.0,
+            leaveBalancePaid: item.leaveBalancePaid ?? 12,
+            leaveBalanceSick: item.leaveBalanceSick ?? 8,
+            leaveBalanceCasual: item.leaveBalanceCasual ?? 10,
+            skills: item.skills || [],
+            certifications: item.certifications || [],
+            documents: item.documents || [],
+            trainingSafety: item.trainingSafety || [],
+            assignmentHistory: item.assignments?.map((a: any) => ({
+              id: a.id,
+              project: a.venture?.name || '—',
+              site: a.roleAtSite || '—',
+              role: a.roleAtSite || '—',
+              duration: a.startDate ? `${new Date(a.startDate).toLocaleDateString('en-GB')} - ${a.endDate ? new Date(a.endDate).toLocaleDateString('en-GB') : 'Present'}` : '—',
+              status: a.status === 'ACTIVE' ? 'Active' : 'Completed',
+            })) || [],
+            activities: item.activitiesJson ? JSON.parse(item.activitiesJson) : [],
+          });
+
+          setFirstName(item.firstName);
+          setLastName(item.lastName || '');
+          setPhone(item.phone || '');
+          setEmail(item.email || '');
+          setRole(item.designation);
+          setVenture(activeAssignment?.venture?.name || '');
+          setSupervisor(item.reportingManager || '—');
+          setStatus(item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated');
+          setEmploymentType(item.employmentType || 'Permanent');
+        }
+      } catch (err) {
+        console.error('Failed to load employee details for edit:', err);
+      }
     }
+    loadEmployee();
   }, [employeeId]);
 
   if (!employee) {
@@ -53,7 +99,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -71,19 +117,30 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
         'Quantity Surveyor': 'Planning & Civil',
       };
 
-      // Update in local storage
-      updateLocalEmployee(employee.id, {
+      const payload = {
         firstName,
         lastName,
         phone,
         email,
         designation: role,
         department: deptMap[role] || 'Site Operations',
-        status,
-        currentProject: venture,
+        status: status === 'Active' ? 'ACTIVE' : status === 'On Leave' ? 'ON_LEAVE' : 'TERMINATED',
         reportingManager: supervisor,
         employmentType,
+      };
+
+      const res = await fetch(`/api/employees/${employee.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Failed to update employee in database.');
+      }
 
       setSuccess(true);
       setTimeout(() => {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getLocalEmployees, updateLocalEmployee, EmployeeProfile, Skill, Certification, Document } from '@/lib/mockDatabase';
+import { EmployeeProfile, Skill, Certification, Document } from '@/lib/mockDatabase';
 
 interface EmployeeProfileProps {
   employeeId: string;
@@ -12,13 +12,58 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');
 
-  // Load from local storage
+  // Load from API
   useEffect(() => {
-    const list = getLocalEmployees();
-    const found = list.find((e) => e.id === employeeId || e.employeeId === employeeId || e.employeeId === employeeId.toUpperCase());
-    if (found) {
-      setEmployee(found);
+    async function loadEmployee() {
+      try {
+        const res = await fetch(`/api/employees/${employeeId}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          const item = json.data;
+          const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
+          
+          setEmployee({
+            id: item.id,
+            employeeId: item.employeeId,
+            firstName: item.firstName,
+            lastName: item.lastName,
+            phone: item.phone || '',
+            email: item.email || '',
+            designation: item.designation,
+            department: item.department,
+            status: item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated',
+            joiningDate: item.joiningDate || '',
+            onboardingStage: item.onboardingStage || 'Active',
+            onboardingStatus: item.onboardingStatus || 'Active',
+            currentProject: activeAssignment?.venture?.name || 'Unassigned',
+            currentSite: activeAssignment?.roleAtSite || '—',
+            reportingManager: item.reportingManager || '—',
+            employmentType: item.employmentType || 'Permanent',
+            attendanceRate: item.attendanceRate || '100%',
+            performanceRating: item.performanceRating || 5.0,
+            leaveBalancePaid: item.leaveBalancePaid ?? 12,
+            leaveBalanceSick: item.leaveBalanceSick ?? 8,
+            leaveBalanceCasual: item.leaveBalanceCasual ?? 10,
+            skills: item.skills || [],
+            certifications: item.certifications || [],
+            documents: item.documents || [],
+            trainingSafety: item.trainingSafety || [],
+            assignmentHistory: item.assignments?.map((a: any) => ({
+              id: a.id,
+              project: a.venture?.name || '—',
+              site: a.roleAtSite || '—',
+              role: a.roleAtSite || '—',
+              duration: a.startDate ? `${new Date(a.startDate).toLocaleDateString('en-GB')} - ${a.endDate ? new Date(a.endDate).toLocaleDateString('en-GB') : 'Present'}` : '—',
+              status: a.status === 'ACTIVE' ? 'Active' : 'Completed',
+            })) || [],
+            activities: item.activitiesJson ? JSON.parse(item.activitiesJson) : [],
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load employee profile:', err);
+      }
     }
+    loadEmployee();
   }, [employeeId]);
 
   // Modal / Action states
@@ -26,7 +71,6 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
   const [showSkillModal, setShowSkillModal] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
-  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   // Assignment states
   const [newProject, setNewProject] = useState('Green Heights Luxury Apartments');
@@ -53,11 +97,7 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
   const [docCategory, setDocCategory] = useState<'Identity' | 'Employment' | 'Construction' | 'Other'>('Identity');
   const [docFileType, setDocFileType] = useState('PDF');
   const [docExpiry, setDocExpiry] = useState('');
-
-  // Leave states
-  const [leaveDays, setLeaveDays] = useState(2);
-  const [leaveType, setLeaveType] = useState<'Paid' | 'Sick' | 'Casual'>('Casual');
-  const [leaveReason, setLeaveReason] = useState('');
+  const [selectedDocFile, setSelectedDocFile] = useState<{ name: string; type: string } | null>(null);
 
   if (!employee) {
     return (
@@ -83,17 +123,69 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
     'Certifications',
     'Documents',
     'Training & Safety',
-    'Attendance',
-    'Leave',
-    'Performance',
-    'Activity',
   ];
 
   // Helper to persist updates
-  const handlePersistUpdate = (updatedObj: Partial<EmployeeProfile>) => {
-    const res = updateLocalEmployee(employee.id, updatedObj);
-    if (res) {
-      setEmployee(res);
+  const handlePersistUpdate = async (updatedObj: Partial<EmployeeProfile>) => {
+    if (!employee) return;
+    try {
+      // Map status
+      let backendStatus = undefined;
+      if (updatedObj.status) {
+        backendStatus = updatedObj.status === 'Active' ? 'ACTIVE' : updatedObj.status === 'On Leave' ? 'ON_LEAVE' : 'TERMINATED';
+      }
+
+      const payload = {
+        firstName: updatedObj.firstName,
+        lastName: updatedObj.lastName,
+        phone: updatedObj.phone,
+        email: updatedObj.email,
+        designation: updatedObj.designation,
+        department: updatedObj.department,
+        status: backendStatus,
+        joiningDate: updatedObj.joiningDate,
+        reportingManager: updatedObj.reportingManager,
+        employmentType: updatedObj.employmentType,
+        onboardingStage: updatedObj.onboardingStage,
+        onboardingStatus: updatedObj.onboardingStatus,
+      };
+
+      const res = await fetch(`/api/employees/${employee.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        const item = json.data;
+        const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
+
+        setEmployee((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            firstName: item.firstName,
+            lastName: item.lastName,
+            phone: item.phone || '',
+            email: item.email || '',
+            designation: item.designation,
+            department: item.department,
+            status: item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated',
+            joiningDate: item.joiningDate || '',
+            onboardingStage: item.onboardingStage || 'Active',
+            onboardingStatus: item.onboardingStatus || 'Active',
+            currentProject: activeAssignment?.venture?.name || 'Unassigned',
+            currentSite: activeAssignment?.roleAtSite || '—',
+            reportingManager: item.reportingManager || '—',
+            employmentType: item.employmentType || 'Permanent',
+          };
+        });
+      }
+    } catch (err) {
+      console.error('Failed to update employee profile in database:', err);
     }
   };
 
@@ -224,35 +316,8 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
     });
 
     setDocName('');
+    setSelectedDocFile(null);
     setShowDocModal(false);
-  };
-
-  const handleLeaveSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    let updatedPaid = employee.leaveBalancePaid;
-    let updatedSick = employee.leaveBalanceSick;
-    let updatedCasual = employee.leaveBalanceCasual;
-
-    if (leaveType === 'Paid') {
-      updatedPaid = Math.max(0, updatedPaid - leaveDays);
-    } else if (leaveType === 'Sick') {
-      updatedSick = Math.max(0, updatedSick - leaveDays);
-    } else {
-      updatedCasual = Math.max(0, updatedCasual - leaveDays);
-    }
-
-    handlePersistUpdate({
-      status: 'On Leave',
-      leaveBalancePaid: updatedPaid,
-      leaveBalanceSick: updatedSick,
-      leaveBalanceCasual: updatedCasual,
-      activities: [
-        { action: `Requested ${leaveDays} days of ${leaveType} Leave: "${leaveReason}"`, timestamp: 'Just now' },
-        ...employee.activities,
-      ],
-    });
-
-    setShowLeaveModal(false);
   };
 
   // Render tab content
@@ -493,93 +558,6 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
           </div>
         );
 
-      case 'Attendance':
-        return (
-          <div className="space-y-4 text-xs">
-            <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Attendance Calendar Summary</h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-3 border border-zinc-200 rounded-xl bg-zinc-50/20 text-center">
-                <div className="text-zinc-400">Present (Current Month)</div>
-                <div className="text-xl font-bold text-emerald-600 mt-1">21 Days</div>
-              </div>
-              <div className="p-3 border border-zinc-200 rounded-xl bg-zinc-50/20 text-center">
-                <div className="text-zinc-400">Absent</div>
-                <div className="text-xl font-bold text-red-600 mt-1">1 Day</div>
-              </div>
-              <div className="p-3 border border-zinc-200 rounded-xl bg-zinc-50/20 text-center">
-                <div className="text-zinc-400">Attendance Rate</div>
-                <div className="text-xl font-bold text-indigo-600 mt-1">{employee.attendanceRate}</div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'Leave':
-        return (
-          <div className="space-y-4 text-xs">
-            <div className="flex justify-between items-center">
-              <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Leave Balance & Requests</h4>
-              <button
-                onClick={() => setShowLeaveModal(true)}
-                className="px-3.5 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs"
-              >
-                Request Leave
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <h5 className="font-bold text-zinc-800">Available Balance</h5>
-                <div className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/20 flex justify-between">
-                  <span>Paid Leave Balance</span>
-                  <span className="font-bold text-zinc-900">{employee.leaveBalancePaid} Days</span>
-                </div>
-                <div className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/20 flex justify-between">
-                  <span>Sick Leave Balance</span>
-                  <span className="font-bold text-zinc-900">{employee.leaveBalanceSick} Days</span>
-                </div>
-                <div className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/20 flex justify-between">
-                  <span>Casual Leave Balance</span>
-                  <span className="font-bold text-zinc-900">{employee.leaveBalanceCasual} Days</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'Performance':
-        return (
-          <div className="space-y-4 text-xs">
-            <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Annual Performance & Safety Ratings</h4>
-            <div className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/20 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-zinc-800">Safety Compliance Rating</span>
-                <span className="font-extrabold text-emerald-600">{employee.performanceRating ? `${employee.performanceRating} / 5.0` : '—'}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-zinc-800">Task Completion Rate</span>
-                <span className="font-extrabold text-zinc-900">95.4%</span>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'Activity':
-        return (
-          <div className="space-y-4 text-xs">
-            <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">System & Site Activity Log</h4>
-            <div className="space-y-3 relative before:absolute before:inset-y-0 before:left-3 before:w-0.5 before:bg-zinc-100">
-              {employee.activities.map((a, idx) => (
-                <div key={idx} className="relative pl-7">
-                  <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-zinc-400 border border-white" />
-                  <div className="font-bold text-zinc-800">{a.action}</div>
-                  <div className="text-[11px] text-zinc-400">{a.timestamp}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
       default:
         return null;
     }
@@ -775,6 +753,23 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Upload Document Vault</h3>
             <div className="space-y-3 text-xs">
               <div>
+                <label className="block font-bold text-zinc-700 mb-1">Select File <span className="text-red-500">*</span></label>
+                <input
+                  type="file"
+                  required
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      setSelectedDocFile({ name: file.name, type: file.type });
+                      setDocName(file.name);
+                      const ext = file.name.split('.').pop()?.toUpperCase() || 'PDF';
+                      setDocFileType(ext);
+                    }
+                  }}
+                  className="w-full border border-zinc-200 p-2 rounded-lg"
+                />
+              </div>
+              <div>
                 <label className="block font-bold text-zinc-700 mb-1">Document Title</label>
                 <input type="text" required placeholder="e.g. Aadhaar Card Copy.pdf" value={docName} onChange={(e) => setDocName(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg" />
               </div>
@@ -796,36 +791,6 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
         </div>
       )}
 
-      {/* Modal 5: Leave Request */}
-      {showLeaveModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleLeaveSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Request Leave</h3>
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-zinc-700 mb-1">Leave Type</label>
-                <select value={leaveType} onChange={(e) => setLeaveType(e.target.value as any)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
-                  <option value="Casual">Casual Leave</option>
-                  <option value="Paid">Paid Leave</option>
-                  <option value="Sick">Sick Leave</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-bold text-zinc-700 mb-1">Duration (Days)</label>
-                <input type="number" min="1" max="15" value={leaveDays} onChange={(e) => setLeaveDays(Number(e.target.value))} className="w-full border border-zinc-200 p-2 rounded-lg" />
-              </div>
-              <div>
-                <label className="block font-bold text-zinc-700 mb-1">Reason</label>
-                <textarea required placeholder="Reason for leave..." value={leaveReason} onChange={(e) => setLeaveReason(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg h-20" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
-              <button type="button" onClick={() => setShowLeaveModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
-              <button type="submit" className="px-4 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg">Submit Request</button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

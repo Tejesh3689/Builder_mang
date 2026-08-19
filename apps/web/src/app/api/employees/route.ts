@@ -33,18 +33,28 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { fullName, role, ventureId, designation, department } = body;
+    const {
+      firstName,
+      lastName,
+      phone,
+      email,
+      designation,
+      department,
+      status,
+      joiningDate,
+      onboardingStage,
+      onboardingStatus,
+      reportingManager,
+      employmentType,
+      ventureId,
+    } = body;
 
-    if (!fullName || !role) {
+    if (!firstName || !designation) {
       return NextResponse.json(
-        { success: false, error: 'Full name and role are required.' },
+        { success: false, error: 'First name and designation/role are required.' },
         { status: 400 }
       );
     }
-
-    const nameParts = fullName.trim().split(' ');
-    const firstName = nameParts[0] || fullName;
-    const lastName = nameParts.slice(1).join(' ') || '';
 
     // Generate unique employee ID (EMP-XXX)
     const empCount = await prisma.employee.count();
@@ -55,16 +65,23 @@ export async function POST(req: Request) {
       data: {
         employeeId,
         firstName,
-        lastName,
-        designation: role,
-        department: department || 'Operations',
-        status: EmployeeStatus.ACTIVE,
+        lastName: lastName || '',
+        phone,
+        email,
+        designation,
+        department: department || 'Site Operations',
+        status: status ? (status as EmployeeStatus) : EmployeeStatus.ACTIVE,
+        onboardingStage: onboardingStage || 'Active',
+        onboardingStatus: onboardingStatus || 'Active',
+        joiningDate: joiningDate || new Date().toISOString().split('T')[0],
+        reportingManager,
+        employmentType,
         ...(ventureId && ventureId !== 'none'
           ? {
               assignments: {
                 create: {
                   ventureId,
-                  roleAtSite: role,
+                  roleAtSite: designation,
                   status: 'ACTIVE',
                 },
               },
