@@ -39,10 +39,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     {
       group: 'People',
       items: [
+        { href: '/employees/dashboard', label: 'Employee Dashboard', icon: 'home' },
         { href: '/employees', label: 'Employees', icon: 'users', count: 12 },
-        { href: '/employees?role=manager', label: 'Managers', icon: 'briefcase', count: 2 },
-        { href: '/employees?role=supervisor', label: 'Supervisors', icon: 'shield', count: 4 },
-        { href: '/employees/assignments', label: 'Employee Assignments', icon: 'flag' },
+        { href: '/employees/managers', label: 'Managers', icon: 'briefcase', count: 2 },
+        { href: '/employees/supervisors', label: 'Supervisors', icon: 'shield', count: 4 },
+        { href: '/workforce', label: 'Workforce Allocation', icon: 'flag' },
+        { href: '/onboarding', label: 'Onboarding Desk', icon: 'list' },
+        { href: '/compliance', label: 'Compliance Vault', icon: 'shield' },
+        { href: '/reports', label: 'Reports Center', icon: 'file' },
       ],
     },
     {
