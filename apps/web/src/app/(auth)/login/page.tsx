@@ -43,19 +43,19 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-8 p-8 rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl">
+    <div className="w-full max-w-md space-y-8 p-8 rounded-2xl bg-white border border-zinc-200/80 shadow-xl">
       <div className="text-center">
-        <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-3">
+        <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-800 border border-amber-500/20 mb-3">
           Builder Management System
         </div>
-        <h2 className="text-3xl font-bold text-white tracking-tight">Sign In</h2>
-        <p className="mt-2 text-sm text-slate-400">
+        <h2 className="text-3xl font-bold text-black tracking-tight">Sign In</h2>
+        <p className="mt-2 text-sm text-zinc-500">
           Enter your database account credentials to access your portal
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center font-medium">
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 text-xs text-center font-medium">
           {error}
         </div>
       )}
@@ -63,7 +63,7 @@ function LoginFormContent() {
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         <div className="space-y-4">
           <div>
-            <label htmlFor="email-address" className="block text-sm font-medium text-slate-300">
+            <label htmlFor="email-address" className="block text-sm font-medium text-zinc-700">
               Email Address
             </label>
             <input
@@ -73,12 +73,12 @@ function LoginFormContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition"
+              className="mt-1 block w-full px-3.5 py-2.5 rounded-lg bg-zinc-50 border border-zinc-200 text-black placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition"
               placeholder="user@builder.com"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+            <label htmlFor="password" className="block text-sm font-medium text-zinc-700">
               Password
             </label>
             <div className="relative mt-1">
@@ -89,13 +89,13 @@ function LoginFormContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="block w-full pl-3.5 pr-11 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition"
+                className="block w-full pl-3.5 pr-11 py-2.5 rounded-lg bg-zinc-50 border border-zinc-200 text-black placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-white transition-colors focus:outline-none"
+                className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-400 hover:text-zinc-600 transition-colors focus:outline-none"
               >
                 {showPassword ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -116,17 +116,17 @@ function LoginFormContent() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 font-semibold transition-colors duration-200 shadow-md shadow-indigo-600/20 disabled:opacity-50"
+            className="w-full py-2.5 rounded-lg text-white bg-[#d97706] hover:bg-amber-700 font-semibold transition-colors duration-200 shadow-md shadow-black/10 disabled:opacity-50"
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </div>
       </form>
 
-      <div className="pt-4 border-t border-slate-800/80 text-center">
-        <p className="text-xs text-slate-400">
+      <div className="pt-4 border-t border-zinc-100 text-center">
+        <p className="text-xs text-zinc-500">
           Don't have an account?{' '}
-          <Link href="/register" className="text-indigo-400 font-semibold hover:underline">
+          <Link href="/register" className="text-amber-800 font-semibold hover:underline">
             Register New User
           </Link>
         </p>
@@ -137,8 +137,8 @@ function LoginFormContent() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-900 px-4 py-12">
-      <Suspense fallback={<div className="text-slate-400 text-xs">Loading sign in...</div>}>
+    <div className="flex min-h-screen items-center justify-center bg-[#EAEAEA] px-4 py-12">
+      <Suspense fallback={<div className="text-zinc-500 text-xs">Loading sign in...</div>}>
         <LoginFormContent />
       </Suspense>
     </div>

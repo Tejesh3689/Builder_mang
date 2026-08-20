@@ -156,16 +156,29 @@ export default function EmployeesClient() {
   ]);
 
   // Handle Deactivation
-  const handleDeactivate = (id: string, name: string) => {
+  const handleDeactivate = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to deactivate employee ${name}?`)) {
-      const updated = employees.map((emp) => {
-        if (emp.id === id) {
-          return { ...emp, status: 'Terminated' as const };
+      try {
+        const res = await fetch(`/api/employees/${id}`, {
+          method: 'DELETE',
+        });
+        const json = await res.json();
+        if (json.success) {
+          setEmployees((prev) =>
+            prev.map((emp) => {
+              if (emp.id === id) {
+                return { ...emp, status: 'Terminated' as const };
+              }
+              return emp;
+            })
+          );
+        } else {
+          alert(json.error || 'Failed to deactivate employee.');
         }
-        return emp;
-      });
-      setEmployees(updated);
-      saveLocalEmployees(updated);
+      } catch (err) {
+        console.error('Failed to deactivate employee:', err);
+        alert('An error occurred while deactivating the employee.');
+      }
     }
   };
 

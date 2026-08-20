@@ -359,7 +359,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
             <button
               type="submit"
               disabled={isLoading || success}
-              className="px-5 py-2 bg-black hover:bg-zinc-800 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors disabled:opacity-50"
+              className="px-5 py-2 bg-[#d97706] hover:bg-amber-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors disabled:opacity-50"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />

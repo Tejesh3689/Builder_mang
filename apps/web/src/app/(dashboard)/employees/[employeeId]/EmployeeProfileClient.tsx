@@ -457,7 +457,7 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
               <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Verified Professional Skills</h4>
               <button
                 onClick={() => setShowSkillModal(true)}
-                className="px-3.5 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs"
+                className="px-3.5 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs"
               >
                 + Add Skill
               </button>
@@ -481,7 +481,7 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
               <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Active Safety & Technical Licenses</h4>
               <button
                 onClick={() => setShowCertModal(true)}
-                className="px-3.5 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs"
+                className="px-3.5 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs"
               >
                 + Add Certification
               </button>
@@ -514,7 +514,7 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
               <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Employee Document Vault</h4>
               <button
                 onClick={() => setShowDocModal(true)}
-                className="px-3.5 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs"
+                className="px-3.5 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs"
               >
                 + Upload Document
               </button>
@@ -709,7 +709,7 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
               <button type="button" onClick={() => setShowSkillModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
-              <button type="submit" className="px-4 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg">Save Skill</button>
+              <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Save Skill</button>
             </div>
           </form>
         </div>
@@ -740,7 +740,7 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
               <button type="button" onClick={() => setShowCertModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
-              <button type="submit" className="px-4 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg">Save Certification</button>
+              <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Save Certification</button>
             </div>
           </form>
         </div>
@@ -785,7 +785,7 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
               <button type="button" onClick={() => setShowDocModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
-              <button type="submit" className="px-4 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-lg">Upload Doc</button>
+              <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Upload Doc</button>
             </div>
           </form>
         </div>

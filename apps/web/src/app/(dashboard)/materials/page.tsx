@@ -51,7 +51,7 @@ export default async function MaterialsPage() {
           </Link>
           <Link
             href="/materials/new"
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-black text-white text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-md shadow-black/10"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#d97706] text-white text-xs font-semibold hover:bg-amber-700 transition-colors shadow-md shadow-black/10"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
             <span>Add Material</span>
