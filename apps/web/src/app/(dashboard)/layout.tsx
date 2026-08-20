@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
@@ -8,6 +8,8 @@ import { useSession, signOut } from 'next-auth/react';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const currentUser = session?.user;
   const userName = currentUser?.name || currentUser?.email?.split('@')[0] || 'User Account';
@@ -32,8 +34,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       group: 'Ventures',
       items: [
         { href: '/ventures', label: 'All Ventures', icon: 'layers', count: 5 },
-        { href: '/ventures?status=active', label: 'Active Ventures', icon: 'activity' },
-        { href: '/ventures?status=completed', label: 'Completed Ventures', icon: 'check' },
       ],
     },
     {
@@ -43,10 +43,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { href: '/employees', label: 'Employees', icon: 'users', count: 12 },
         { href: '/employees/managers', label: 'Managers', icon: 'briefcase', count: 2 },
         { href: '/employees/supervisors', label: 'Supervisors', icon: 'shield', count: 4 },
-        { href: '/workforce', label: 'Workforce Allocation', icon: 'flag' },
-        { href: '/onboarding', label: 'Onboarding Desk', icon: 'list' },
-        { href: '/compliance', label: 'Compliance Vault', icon: 'shield' },
-        { href: '/reports', label: 'Reports Center', icon: 'file' },
       ],
     },
     {
@@ -55,20 +51,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { href: '/materials', label: 'Inventory Overview', icon: 'box' },
         { href: '/materials', label: 'Materials', icon: 'cube', count: 9 },
         { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
-        { href: '/materials/requests', label: 'Material Requests', icon: 'file', count: 2, alert: true },
-        { href: '/materials/transfers', label: 'Stock Transfers', icon: 'truck' },
-        { href: '/materials/warehouses', label: 'Warehouses / Sites', icon: 'building' },
-        { href: '/materials/alerts', label: 'Inventory Alerts', icon: 'alert', count: 3, alert: true },
-      ],
-    },
-    {
-      group: 'Procurement',
-      items: [
-        { href: '/procurement/vendors', label: 'Vendors', icon: 'truck', count: 7 },
-        { href: '/procurement/requests', label: 'Purchase Requests', icon: 'file' },
-        { href: '/procurement/orders', label: 'Purchase Orders', icon: 'package', count: 4 },
-        { href: '/procurement/deliveries', label: 'Deliveries', icon: 'truck' },
-        { href: '/procurement/invoices', label: 'Invoices', icon: 'file' },
       ],
     },
     {
@@ -76,16 +58,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       items: [
         { href: '/operations/tasks', label: 'Tasks', icon: 'tasks', count: 5 },
         { href: '/operations/issues', label: 'Issues', icon: 'alert', count: 3, alert: true },
-        { href: '/operations/daily-reports', label: 'Daily Reports', icon: 'file' },
-        { href: '/operations/activity', label: 'Site Activity', icon: 'activity' },
-      ],
-    },
-    {
-      group: 'Documents',
-      items: [
-        { href: '/documents', label: 'All Documents', icon: 'file', count: 8 },
-        { href: '/documents?type=venture', label: 'Venture Documents', icon: 'layers' },
-        { href: '/documents?type=employee', label: 'Employee Documents', icon: 'users' },
       ],
     },
     {
@@ -102,9 +74,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { href: '/reports/projects', label: 'Project Reports', icon: 'file' },
         { href: '/reports/employees', label: 'Employee Reports', icon: 'users' },
         { href: '/reports/inventory', label: 'Inventory Reports', icon: 'box' },
-        { href: '/reports/consumption', label: 'Material Consumption', icon: 'cube' },
-        { href: '/reports/vendors', label: 'Vendor Reports', icon: 'truck' },
-        { href: '/reports/operational', label: 'Operational Reports', icon: 'activity' },
       ],
     },
     {
@@ -173,25 +142,69 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-[#EAEAEA] text-black overflow-hidden font-sans">
+      {/* Mobile Sidebar Overlay Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-30 lg:hidden transition-opacity duration-200"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-[260px] bg-white border-r border-zinc-200/80 flex flex-col justify-between h-full shrink-0 shadow-sm z-30">
+      <aside
+        className={`fixed inset-y-0 left-0 bg-white border-r border-zinc-200/80 flex flex-col justify-between h-full shrink-0 shadow-lg lg:shadow-sm z-40 lg:z-30 lg:static transition-all duration-200 ease-in-out relative ${
+          isSidebarCollapsed ? 'w-[72px]' : 'w-[260px]'
+        } ${
+          isMobileSidebarOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        {/* Toggle Bar Button for Desktop Collapsing */}
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="hidden lg:flex absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 rounded-full border border-zinc-200 bg-white shadow-xs items-center justify-center text-zinc-500 hover:text-black hover:bg-zinc-50 z-50 cursor-pointer transition-transform duration-200"
+          title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          <svg
+            className={`w-3.5 h-3.5 transform transition-transform duration-200 ${
+              isSidebarCollapsed ? 'rotate-180' : ''
+            }`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
         <div>
           {/* Brand Header */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-zinc-100">
-            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-sm shadow-md shadow-black/10">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-5 px-2' : 'justify-between px-6 py-5'} border-b border-zinc-100`}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-sm shadow-md shadow-black/10 shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+              </div>
+              {!isSidebarCollapsed && (
+                <div className="flex flex-col">
+                  <span className="font-extrabold text-base tracking-tight text-black leading-none">Naprocs</span>
+                  <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase mt-1">Builder Management</span>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-base tracking-tight text-black leading-none">Naprocs</span>
-              <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase mt-1">Builder Management</span>
-            </div>
+            {/* Close Button on Mobile */}
+            <button
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
           </div>
 
           {/* Navigation Links */}
-          <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
+          <div className={`${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'} overflow-y-auto max-h-[calc(100vh-140px)]`}>
             {navGroups.map((group, gIdx) => (
               <div key={gIdx} className="space-y-1">
-                {group.group && (
+                {group.group && !isSidebarCollapsed && (
                   <div className="px-3 py-1.5 text-[10px] font-mono font-bold tracking-widest text-zinc-400 uppercase">
                     {group.group}
                   </div>
@@ -202,7 +215,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Link
                       key={item.href + item.label}
                       href={item.href}
-                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-full text-xs font-medium transition-all duration-150 ${
+                      title={isSidebarCollapsed ? item.label : undefined}
+                      className={`flex items-center rounded-full text-xs font-medium transition-all duration-150 ${
+                        isSidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5'
+                      } ${
                         isActive
                           ? 'bg-[#FBEFDB] text-[#855B14] font-semibold shadow-sm'
                           : 'text-zinc-700 hover:bg-zinc-100 hover:text-black'
@@ -212,9 +228,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <span className={isActive ? 'text-[#855B14]' : 'text-zinc-500'}>
                           {renderIcon(item.icon)}
                         </span>
-                        <span className="truncate">{item.label}</span>
+                        {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
                       </div>
-                      {(item as any).count !== undefined && (
+                      {!isSidebarCollapsed && (item as any).count !== undefined && (
                         <span
                           className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ${
                             (item as any).alert
@@ -236,24 +252,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Footer Profile Chip */}
-        <div className="p-4 border-t border-zinc-100">
-          <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 border border-zinc-200/80">
+        <div className={`${isSidebarCollapsed ? 'p-2' : 'p-4'} border-t border-zinc-100`}>
+          <div className={`flex items-center rounded-2xl bg-zinc-50 border border-zinc-200/80 ${isSidebarCollapsed ? 'p-1 justify-center' : 'p-2 justify-between'}`}>
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
-                {initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-xs text-black truncate">{userName}</div>
-                <div className="text-[10px] text-zinc-500 truncate font-mono">{userRole} · {userEmail}</div>
-              </div>
+              {isSidebarCollapsed ? (
+                <button
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  title="Sign Out"
+                  className="w-9 h-9 rounded-full bg-[#d97706] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm hover:bg-red-600 hover:text-white transition-colors"
+                >
+                  {initials}
+                </button>
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                  {initials}
+                </div>
+              )}
+              {!isSidebarCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-xs text-black truncate">{userName}</div>
+                  <div className="text-[10px] text-zinc-500 truncate font-mono">{userRole} · {userEmail}</div>
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              title="Sign Out"
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-            </button>
+            {!isSidebarCollapsed && (
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                title="Sign Out"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              </button>
+            )}
           </div>
         </div>
       </aside>
@@ -261,17 +291,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Topbar Header */}
-        <header className="h-16 glass-topbar flex items-center justify-between px-8 sticky top-0 z-20">
-          <div className="flex flex-col">
-            <h1 className="text-lg font-extrabold tracking-tight text-black leading-tight">
-              {pathname === '/dashboard' ? 'Dashboard Overview' : pathname.replace('/', '').toUpperCase()}
-            </h1>
-            <span className="text-[11px] font-mono text-zinc-500">Live Workspace Status</span>
+        <header className="h-16 glass-topbar flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            {/* Hamburger Trigger for Mobile */}
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="lg:hidden p-2 -ml-2 rounded-lg text-zinc-600 hover:text-black hover:bg-zinc-100 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <div className="flex flex-col">
+              <h1 className="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-black leading-tight truncate max-w-[150px] sm:max-w-none">
+                {pathname === '/dashboard' ? 'Dashboard Overview' : pathname.replace('/', '').toUpperCase()}
+              </h1>
+              <span className="text-[10px] sm:text-[11px] font-mono text-zinc-500">Live Workspace Status</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
             {/* Search Box */}
-            <div className="flex items-center gap-2 bg-zinc-100 border border-zinc-200/80 rounded-full px-4 py-1.5 w-64 text-xs text-zinc-500">
+            <div className="hidden sm:flex items-center gap-2 bg-zinc-100 border border-zinc-200/80 rounded-full px-4 py-1.5 w-64 text-xs text-zinc-500">
               <svg className="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
               <span>Search ventures, materials...</span>
             </div>
@@ -287,7 +326,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Dynamic Page Children */}
-        <main className="flex-1 overflow-y-auto p-8 bg-[#EAEAEA]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#EAEAEA]">
           {children}
         </main>
       </div>

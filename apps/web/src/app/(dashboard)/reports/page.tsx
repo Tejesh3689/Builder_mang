@@ -140,7 +140,7 @@ export default function ReportsPage() {
             </h3>
             <button
               onClick={() => handleExport(activeTab)}
-              className="px-4 py-2 bg-black hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+              className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
             >
               Export CSV
             </button>

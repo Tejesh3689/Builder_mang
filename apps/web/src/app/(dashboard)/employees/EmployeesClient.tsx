@@ -2,16 +2,68 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { getLocalEmployees, saveLocalEmployees, deleteLocalEmployee, EmployeeProfile } from '@/lib/mockDatabase';
+import { EmployeeProfile } from '@/lib/mockDatabase';
 
 export default function EmployeesClient() {
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Sync load from localStorage
+  // Fetch from live REST API
   useEffect(() => {
-    setEmployees(getLocalEmployees());
-    setLoading(false);
+    async function fetchEmployees() {
+      try {
+        const res = await fetch('/api/employees');
+        const json = await res.json();
+        if (json.success && json.data) {
+          // Map backend schema shape to frontend profile shape
+          const mapped: EmployeeProfile[] = json.data.map((item: any) => {
+            const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
+            return {
+              id: item.id,
+              employeeId: item.employeeId,
+              firstName: item.firstName,
+              lastName: item.lastName,
+              phone: item.phone || '',
+              email: item.email || '',
+              designation: item.designation,
+              department: item.department,
+              status: item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated',
+              joiningDate: item.joiningDate || '',
+              onboardingStage: item.onboardingStage || 'Active',
+              onboardingStatus: item.onboardingStatus || 'Active',
+              currentProject: activeAssignment?.venture?.name || 'Unassigned',
+              currentSite: activeAssignment?.roleAtSite || '—',
+              reportingManager: item.reportingManager || '—',
+              employmentType: item.employmentType || 'Permanent',
+              attendanceRate: item.attendanceRate || '100%',
+              performanceRating: item.performanceRating || 5.0,
+              leaveBalancePaid: item.leaveBalancePaid ?? 12,
+              leaveBalanceSick: item.leaveBalanceSick ?? 8,
+              leaveBalanceCasual: item.leaveBalanceCasual ?? 10,
+              skills: item.skills || [],
+              certifications: item.certifications || [],
+              documents: item.documents || [],
+              trainingSafety: item.trainingSafety || [],
+              assignmentHistory: item.assignments?.map((a: any) => ({
+                id: a.id,
+                project: a.venture?.name || '—',
+                site: a.roleAtSite || '—',
+                role: a.roleAtSite || '—',
+                duration: a.startDate ? `${new Date(a.startDate).toLocaleDateString('en-GB')} - ${a.endDate ? new Date(a.endDate).toLocaleDateString('en-GB') : 'Present'}` : '—',
+                status: a.status === 'ACTIVE' ? 'Active' : 'Completed',
+              })) || [],
+              activities: item.activitiesJson ? JSON.parse(item.activitiesJson) : [],
+            };
+          });
+          setEmployees(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to fetch employees:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEmployees();
   }, []);
 
   // Filter states
@@ -104,16 +156,29 @@ export default function EmployeesClient() {
   ]);
 
   // Handle Deactivation
-  const handleDeactivate = (id: string, name: string) => {
+  const handleDeactivate = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to deactivate employee ${name}?`)) {
-      const updated = employees.map((emp) => {
-        if (emp.id === id) {
-          return { ...emp, status: 'Terminated' as const };
+      try {
+        const res = await fetch(`/api/employees/${id}`, {
+          method: 'DELETE',
+        });
+        const json = await res.json();
+        if (json.success) {
+          setEmployees((prev) =>
+            prev.map((emp) => {
+              if (emp.id === id) {
+                return { ...emp, status: 'Terminated' as const };
+              }
+              return emp;
+            })
+          );
+        } else {
+          alert(json.error || 'Failed to deactivate employee.');
         }
-        return emp;
-      });
-      setEmployees(updated);
-      saveLocalEmployees(updated);
+      } catch (err) {
+        console.error('Failed to deactivate employee:', err);
+        alert('An error occurred while deactivating the employee.');
+      }
     }
   };
 

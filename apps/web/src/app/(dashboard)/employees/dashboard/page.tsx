@@ -89,12 +89,6 @@ export default function EmployeeDashboard() {
           >
             Employee Directory
           </Link>
-          <Link
-            href="/employees/new"
-            className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
-          >
-            Add New Employee
-          </Link>
         </div>
       </div>
 

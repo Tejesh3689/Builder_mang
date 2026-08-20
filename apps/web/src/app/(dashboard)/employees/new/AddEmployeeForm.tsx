@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { addLocalEmployee } from '@/lib/mockDatabase';
 
 export default function AddEmployeeForm() {
   const router = useRouter();
@@ -18,12 +17,33 @@ export default function AddEmployeeForm() {
   const [joiningDate, setJoiningDate] = useState('');
   const [employmentType, setEmploymentType] = useState<'Full-Time Contractor' | 'Permanent' | 'Daily Wage'>('Permanent');
 
+  const [selectedFiles, setSelectedFiles] = useState<{ name: string; type: string; base64?: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const filesArray = Array.from(e.target.files);
+    
+    filesArray.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedFiles((prev) => [
+          ...prev,
+          {
+            name: file.name,
+            type: file.type || 'application/pdf',
+            base64: reader.result as string,
+          },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Submit handler
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -45,30 +65,34 @@ export default function AddEmployeeForm() {
         'Quantity Surveyor': 'Planning & Civil',
       };
 
-      // Add to local storage database
-      addLocalEmployee({
+      const payload = {
         firstName,
         lastName,
         phone,
         email: email || `${firstName.toLowerCase()}.${lastName.toLowerCase() || 'site'}@naprocs.in`,
         designation: role,
         department: deptMap[role] || 'Site Operations',
-        status: 'Active',
-        joiningDate: joiningDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        status: 'ACTIVE',
+        joiningDate: joiningDate || new Date().toISOString().split('T')[0],
         onboardingStage: 'Active',
         onboardingStatus: 'Active',
-        currentProject: venture,
-        currentSite: 'Site A',
         reportingManager: supervisor,
         employmentType,
-        attendanceRate: '100%',
-        skills: [
-          { skill: `${role} Layouts`, category: 'Civil', proficiency: 'Expert', experienceYears: 3, verificationStatus: 'Verified', verifiedBy: 'System', verificationDate: new Date().toLocaleDateString('en-GB') }
-        ],
-        assignmentHistory: [
-          { id: `a-${Date.now()}`, project: venture, site: 'Site A', role, duration: `${new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' })} - Present`, status: 'Active' }
-        ]
+        ventureId: 'none', // Project assignments handled in Slice 2
+      };
+
+      const res = await fetch('/api/employees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Failed to create employee in database.');
+      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -268,13 +292,43 @@ export default function AddEmployeeForm() {
             <h3 className="text-[11px] font-extrabold text-[#d97706] tracking-wider uppercase font-mono">
               Documents
             </h3>
-            <div className="border-2 border-dashed border-zinc-200 rounded-xl p-8 text-center bg-zinc-50/50 hover:bg-zinc-50 transition-colors cursor-pointer">
+            <input
+              type="file"
+              multiple
+              id="employee-docs-input"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <label
+              htmlFor="employee-docs-input"
+              className="block border-2 border-dashed border-zinc-200 rounded-xl p-8 text-center bg-zinc-50/50 hover:bg-zinc-50 transition-colors cursor-pointer"
+            >
               <svg className="w-8 h-8 text-zinc-400 mx-auto mb-2" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
               </svg>
-              <div className="text-xs font-semibold text-zinc-700">Upload identity or safety documents</div>
+              <div className="text-xs font-semibold text-zinc-700">Click to upload identity or safety documents</div>
               <div className="text-[10px] text-zinc-400 mt-1">Aadhaar Card, PAN, Offer Letter, or certificates (PDF/JPG, Max 5MB)</div>
-            </div>
+            </label>
+
+            {/* Selected Files list */}
+            {selectedFiles.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs font-bold text-zinc-700">Selected Files:</div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedFiles.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200/50 rounded-lg text-xs font-medium"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span className="truncate max-w-[200px]">{file.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions Footer */}
