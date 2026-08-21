@@ -26,8 +26,8 @@ export default async function VentureChatPage({ params }: { params: Promise<{ ve
         </div>
 
         <div className="flex items-start space-x-3 justify-end">
-          <div className="p-3.5 rounded-2xl rounded-tr-none bg-black text-sm max-w-md text-white">
-            <span className="block text-xs font-bold text-amber-300 mb-1">You</span>
+          <div className="p-3.5 rounded-2xl rounded-tr-none bg-white border border-zinc-200 text-sm max-w-md text-zinc-900">
+            <span className="block text-xs font-bold text-amber-700 mb-1">You</span>
             <span>Yes, 100 bags cement and steel rods have arrived and are logged in the ledger.</span>
           </div>
           <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center text-xs font-semibold text-white">SA</div>
