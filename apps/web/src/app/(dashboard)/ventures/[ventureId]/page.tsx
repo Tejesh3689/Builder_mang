@@ -19,10 +19,15 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
   // Form & Action states inside tabs
   const [newChatMessage, setNewChatMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState<any[]>([
-    { id: 1, sender: 'Suresh Verma (PM)', content: 'Tower B slab casting scheduled for Thursday 8:00 AM.', time: '10:42 AM' },
-    { id: 2, sender: 'Ajay Rao (Lead Engineer)', content: 'Cement stock verified (420 bags). Ready for batching.', time: '10:18 AM' },
-  ]);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [activeRoom, setActiveRoom] = useState<any>(null);
+
+  // Assignment Modal states
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedEmpId, setSelectedEmpId] = useState('');
+  const [assignRole, setAssignRole] = useState('Site Engineer');
+  const [assignAccess, setAssignAccess] = useState('STANDARD');
 
   const [newDocTitle, setNewDocTitle] = useState('');
   const [newDocCategory, setNewDocCategory] = useState('DRAWINGS');
@@ -34,6 +39,9 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
       const data = await res.json();
       if (data.success) {
         setVenture(data.data);
+        if (data.data.chatRooms && data.data.chatRooms.length > 0 && !activeRoom) {
+          setActiveRoom(data.data.chatRooms[0]);
+        }
       }
     } catch (err) {
       console.error('Error fetching venture detail:', err);
@@ -42,18 +50,113 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
     }
   };
 
+  const fetchChatMessages = async (roomId: string) => {
+    try {
+      const res = await fetch(`/api/chat/rooms/${roomId}/messages`);
+      const data = await res.json();
+      if (data.success) {
+        setChatMessages(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching chat messages:', err);
+    }
+  };
+
+  const fetchAllEmployees = async () => {
+    try {
+      const res = await fetch('/api/employees');
+      const data = await res.json();
+      if (data.success) {
+        setAllEmployees(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching employees list:', err);
+    }
+  };
+
   useEffect(() => {
     fetchVentureDetail();
   }, [ventureId]);
 
-  const handleSendChat = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (activeRoom?.id) {
+      fetchChatMessages(activeRoom.id);
+    }
+  }, [activeRoom]);
+
+  useEffect(() => {
+    if (showAssignModal) {
+      fetchAllEmployees();
+    }
+  }, [showAssignModal]);
+
+  const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newChatMessage.trim()) return;
-    setChatMessages(prev => [
-      ...prev,
-      { id: Date.now(), sender: 'You (Current User)', content: newChatMessage, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-    ]);
-    setNewChatMessage('');
+    if (!newChatMessage.trim() || !activeRoom?.id) return;
+    try {
+      const res = await fetch(`/api/chat/rooms/${activeRoom.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newChatMessage }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewChatMessage('');
+        fetchChatMessages(activeRoom.id);
+      }
+    } catch (err) {
+      console.error('Error sending chat message:', err);
+    }
+  };
+
+  const handleAssignEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmpId) return;
+    try {
+      const res = await fetch(`/api/employees/${selectedEmpId}/assignments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ventureId: venture.id,
+          roleAtSite: assignRole,
+          accessLevel: assignAccess,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowAssignModal(false);
+        setSelectedEmpId('');
+        fetchVentureDetail();
+      }
+    } catch (err) {
+      console.error('Error assigning employee:', err);
+    }
+  };
+
+  const handleToggleSetting = async (field: string, val: boolean) => {
+    try {
+      setVenture((prev: any) => ({
+        ...prev,
+        settings: {
+          ...prev.settings,
+          [field]: val,
+        },
+      }));
+
+      await fetch(`/api/ventures/${venture.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            update: {
+              [field]: val,
+            },
+          },
+        }),
+      });
+    } catch (err) {
+      console.error('Failed to update settings in DB:', err);
+    }
   };
 
   if (loading) {
@@ -368,7 +471,10 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   <h3 className="text-base font-bold text-black">Assigned Venture Employees</h3>
                   <p className="text-xs text-zinc-500">A user's venture assignment determines what project data they can access.</p>
                 </div>
-                <button className="px-3.5 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5">
+                <button
+                  onClick={() => setShowAssignModal(true)}
+                  className="px-3.5 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs"
+                >
                   <UserPlus className="w-4 h-4" /> Assign New Employee
                 </button>
               </div>
@@ -394,7 +500,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                         <td className="px-4 py-3 text-zinc-500">{asgn.employee?.department || 'Operations'}</td>
                         <td className="px-4 py-3">
                           <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-700 border border-amber-200">
-                            {asgn.accessLevel || 'FULL_ACCESS'}
+                            {asgn.accessLevel || 'STANDARD'}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -512,32 +618,48 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
             <div className="p-4 rounded-2xl bg-white border border-zinc-200 space-y-3">
               <h3 className="text-xs font-bold text-black uppercase tracking-wider">Scoped Venture Channels</h3>
               <div className="space-y-1 text-xs">
-                {(venture.chatRooms || []).map((rm: any, idx: number) => (
-                  <button key={rm.id || idx} className={`w-full text-left px-3 py-2 rounded-lg font-semibold flex items-center gap-2 ${idx === 0 ? 'bg-black text-white' : 'text-zinc-500 hover:bg-zinc-50'}`}>
-                    <MessageSquare className="w-3.5 h-3.5" /> #{rm.name}
-                  </button>
-                ))}
+                {(venture.chatRooms || []).map((rm: any) => {
+                  const isActive = activeRoom?.id === rm.id;
+                  return (
+                    <button
+                      key={rm.id}
+                      onClick={() => setActiveRoom(rm)}
+                      className={`w-full text-left px-3 py-2 rounded-lg font-semibold flex items-center gap-2 shrink-0 ${
+                        isActive ? 'bg-black text-white' : 'text-zinc-500 hover:bg-zinc-50'
+                      }`}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" /> #{rm.name}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Chat Box */}
             <div className="md:col-span-3 p-5 rounded-2xl bg-white border border-zinc-200 flex flex-col h-[500px]">
               <div className="border-b border-zinc-200 pb-3 mb-4">
-                <h4 className="font-bold text-black text-sm"># General Discussion</h4>
+                <h4 className="font-bold text-black text-sm"># {activeRoom?.name || 'General Discussion'}</h4>
                 <p className="text-[11px] text-zinc-500">Scoped room for all members assigned to {venture.name}</p>
               </div>
 
               {/* Chat Feed */}
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 text-xs">
-                {chatMessages.map((msg) => (
-                  <div key={msg.id} className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1">
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="font-bold text-amber-700">{msg.sender}</span>
-                      <span className="text-zinc-400">{msg.time}</span>
+                {chatMessages.map((msg) => {
+                  const senderName = msg.sender?.name || msg.senderName || 'Anonymous';
+                  const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:42 AM';
+                  return (
+                    <div key={msg.id} className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1">
+                      <div className="flex justify-between items-center text-[10px]">
+                        <span className="font-bold text-amber-700">{senderName}</span>
+                        <span className="text-zinc-400">{msgTime}</span>
+                      </div>
+                      <p className="text-zinc-800">{msg.content}</p>
                     </div>
-                    <p className="text-zinc-800">{msg.content}</p>
-                  </div>
-                ))}
+                  );
+                })}
+                {chatMessages.length === 0 && (
+                  <div className="text-center text-zinc-400 py-12 text-xs">No messages yet. Start the conversation!</div>
+                )}
               </div>
 
               {/* Chat Input */}
@@ -549,7 +671,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   onChange={(e) => setNewChatMessage(e.target.value)}
                   className="flex-1 px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-black focus:outline-none focus:border-amber-500"
                 />
-                <button type="submit" className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1">
+                <button type="submit" className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs">
                   Send <Send className="w-3.5 h-3.5" />
                 </button>
               </form>
@@ -591,7 +713,12 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   <span className="font-bold text-black block">Require Material Request Approval</span>
                   <span className="text-zinc-500 text-[11px]">All site material requests must be approved by Venture Manager.</span>
                 </div>
-                <input type="checkbox" defaultChecked className="w-4 h-4 accent-[#d97706] cursor-pointer" />
+                <input
+                  type="checkbox"
+                  checked={!!venture.settings?.requireMaterialApproval}
+                  onChange={(e) => handleToggleSetting('requireMaterialApproval', e.target.checked)}
+                  className="w-4 h-4 accent-[#d97706] cursor-pointer"
+                />
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 border border-zinc-200">
@@ -599,14 +726,19 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   <span className="font-bold text-black block">Low-Stock Automatic Notifications</span>
                   <span className="text-zinc-500 text-[11px]">Notify Purchase Manager when stock dips below threshold.</span>
                 </div>
-                <input type="checkbox" defaultChecked className="w-4 h-4 accent-[#d97706] cursor-pointer" />
+                <input
+                  type="checkbox"
+                  checked={!!venture.settings?.notifyOnLowStock}
+                  onChange={(e) => handleToggleSetting('notifyOnLowStock', e.target.checked)}
+                  className="w-4 h-4 accent-[#d97706] cursor-pointer"
+                />
               </div>
 
               {/* Danger Zone */}
               <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-3 pt-3">
                 <h4 className="font-bold text-rose-400 text-xs">Danger Zone</h4>
                 <p className="text-[11px] text-rose-300/80">Archiving will lock venture access while preserving complete audit logs.</p>
-                <button className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5">
+                <button className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-xs">
                   <Archive className="w-4 h-4" /> Archive Venture
                 </button>
               </div>
@@ -614,6 +746,79 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
           </div>
         )}
       </div>
+
+      {/* Modal: Assign New Employee */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <form onSubmit={handleAssignEmployee} className="bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 max-w-md w-full space-y-4">
+            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Assign Employee to Venture</h3>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-zinc-700 mb-1">Select Employee</label>
+                <select
+                  required
+                  value={selectedEmpId}
+                  onChange={(e) => setSelectedEmpId(e.target.value)}
+                  className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none focus:border-amber-500"
+                >
+                  <option value="">-- Choose Employee --</option>
+                  {allEmployees
+                    .filter((emp) => !(venture.assignments || []).some((asgn: any) => asgn.employeeId === emp.id))
+                    .map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName} ({emp.designation})
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-zinc-700 mb-1">Role at Site</label>
+                <select
+                  value={assignRole}
+                  onChange={(e) => setAssignRole(e.target.value)}
+                  className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
+                >
+                  <option value="Site Engineer">Site Engineer</option>
+                  <option value="Supervisor">Supervisor</option>
+                  <option value="Store Manager">Store Manager</option>
+                  <option value="Mason">Mason</option>
+                  <option value="Laborer">Laborer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-zinc-700 mb-1">Venture Access Level</label>
+                <select
+                  value={assignAccess}
+                  onChange={(e) => setAssignAccess(e.target.value)}
+                  className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
+                >
+                  <option value="STANDARD">STANDARD</option>
+                  <option value="FULL_ACCESS">FULL_ACCESS</option>
+                  <option value="OPERATIONS">OPERATIONS</option>
+                  <option value="MATERIALS_ONLY">MATERIALS_ONLY</option>
+                  <option value="READ_ONLY">READ_ONLY</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setShowAssignModal(false)}
+                className="px-4 py-2 border border-zinc-200 rounded-lg text-zinc-700 hover:bg-zinc-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!selectedEmpId}
+                className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg shadow-xs"
+              >
+                Save Assignment
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

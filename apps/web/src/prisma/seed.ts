@@ -46,7 +46,7 @@ async function main() {
       name: 'OPC Cement 53 Grade',
       code: 'MAT-CEM-53',
       categoryId: structural.id,
-      unitOfMeasureId: bags.id,
+      baseUnitId: bags.id,
       description: 'Ultratech 53 Grade High Strength Cement',
     },
   });
@@ -58,7 +58,7 @@ async function main() {
       name: 'TMT Steel Rebars 12mm',
       code: 'MAT-STL-12',
       categoryId: structural.id,
-      unitOfMeasureId: tons.id,
+      baseUnitId: tons.id,
       description: 'Fe 550D High Ductility Steel Bars',
     },
   });
@@ -70,7 +70,7 @@ async function main() {
       name: 'Vitrified Floor Tiles 600x600',
       code: 'MAT-TIL-VIT',
       categoryId: finishing.id,
-      unitOfMeasureId: boxes.id,
+      baseUnitId: boxes.id,
       description: 'Kajaria Glossy Finish Premium Tiles',
     },
   });
@@ -283,33 +283,56 @@ async function main() {
   });
 
   // 8. Material Stocks
+  const mainStore = await prisma.stockLocation.upsert({
+    where: {
+      ventureId_code: {
+        ventureId: greenHeights.id,
+        code: 'MAIN'
+      }
+    },
+    update: {},
+    create: {
+      ventureId: greenHeights.id,
+      code: 'MAIN',
+      name: 'Main Storage Site A',
+      type: 'MAIN_STORE',
+      status: 'ACTIVE'
+    }
+  });
+
   await prisma.materialStock.upsert({
-    where: { materialId_ventureId: { materialId: cement.id, ventureId: greenHeights.id } },
-    update: { quantity: 420 },
+    where: { materialId_stockLocationId: { materialId: cement.id, stockLocationId: mainStore.id } },
+    update: { physicalQuantity: 420, availableQuantity: 420 },
     create: {
       materialId: cement.id,
       ventureId: greenHeights.id,
-      quantity: 420, // 420 bags
+      stockLocationId: mainStore.id,
+      physicalQuantity: 420,
+      availableQuantity: 420,
     },
   });
 
   await prisma.materialStock.upsert({
-    where: { materialId_ventureId: { materialId: steel.id, ventureId: greenHeights.id } },
-    update: { quantity: 8.4 },
+    where: { materialId_stockLocationId: { materialId: steel.id, stockLocationId: mainStore.id } },
+    update: { physicalQuantity: 8.4, availableQuantity: 8.4 },
     create: {
       materialId: steel.id,
       ventureId: greenHeights.id,
-      quantity: 8.4, // 8.4 tons
+      stockLocationId: mainStore.id,
+      physicalQuantity: 8.4,
+      availableQuantity: 8.4,
     },
   });
 
   await prisma.materialStock.upsert({
-    where: { materialId_ventureId: { materialId: tiles.id, ventureId: greenHeights.id } },
-    update: { quantity: 320 },
+    where: { materialId_stockLocationId: { materialId: tiles.id, stockLocationId: mainStore.id } },
+    update: { physicalQuantity: 320, availableQuantity: 320 },
     create: {
       materialId: tiles.id,
       ventureId: greenHeights.id,
-      quantity: 320, // 320 boxes
+      stockLocationId: mainStore.id,
+      physicalQuantity: 320,
+      availableQuantity: 320,
     },
   });
 
