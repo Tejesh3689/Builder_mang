@@ -43,19 +43,6 @@ enum EmployeeStatus {
   ON_LEAVE
 }
 
-enum RequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  FULFILLED
-}
-
-enum TransactionType {
-  STOCK_IN
-  STOCK_OUT
-  STOCK_TRANSFER
-}
-
 enum DocumentCategory {
   LEGAL
   DRAWINGS
@@ -75,99 +62,117 @@ enum AnnouncementPriority {
 }
 
 model User {
-  id               String            @id @default(uuid())
-  email            String            @unique
-  passwordHash     String
-  name             String
-  role             UserRole          @default(SITE_ENGINEER)
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  employee         Employee?
-  auditLogs        AuditLog[]
-  transactions     MaterialTransaction[]
-  chatMembers      ChatMember[]
-  messages         ChatMessage[]
-  messageReads     MessageRead[]
-  notifications    Notification[]
-  approvedRequests MaterialRequest[]  @relation("ApprovedRequests")
-  createdRequests  MaterialRequest[]  @relation("CreatedRequests")
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  role          UserRole       @default(SITE_ENGINEER)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  employee      Employee?
+  auditLogs     AuditLog[]
+  chatMembers   ChatMember[]
+  messages      ChatMessage[]
+  messageReads  MessageRead[]
+  notifications Notification[]
+
+  materialCreated       Material[]            @relation("MaterialCreatedBy")
+  transactionsPerformed MaterialTransaction[] @relation("TransactionPerformedBy")
+  requestsCreated       MaterialRequest[]     @relation("RequestCreatedBy")
+  requestApprovals      MaterialApproval[]    @relation("RequestApprover")
+  receiptsReceived      MaterialReceipt[]     @relation("ReceiptReceivedBy")
+  issuesIssued          MaterialIssue[]       @relation("IssueIssuedBy")
+  transfersDispatched   MaterialTransfer[]    @relation("TransferDispatchedBy")
+  transfersReceived     MaterialTransfer[]    @relation("TransferReceivedBy")
+  returnsReceived       MaterialReturn[]      @relation("ReturnReceivedBy")
+  adjustmentsPerformed  StockAdjustment[]     @relation("AdjustmentPerformedBy")
+  consumptionsReported  MaterialConsumption[] @relation("ConsumptionReportedBy")
+  materialAttachments   MaterialAttachment[]  @relation("AttachmentUploadedBy")
 
   @@map("users")
 }
 
 model Venture {
-  id                      String            @id @default(uuid())
-  name                    String
-  code                    String            @unique
-  type                    VentureType       @default(RESIDENTIAL)
-  description             String?
-  status                  VentureStatus     @default(ACTIVE)
-  
+  id          String        @id @default(uuid())
+  name        String
+  code        String        @unique
+  type        VentureType   @default(RESIDENTIAL)
+  description String?
+  status      VentureStatus @default(ACTIVE)
+
   // Registered Address
-  regAddressLine1         String?
-  regAddressLine2         String?
-  regCity                 String?
-  regDistrict             String?
-  regState                String?
-  regCountry              String?           @default("India")
-  regPincode              String?
+  regAddressLine1 String?
+  regAddressLine2 String?
+  regCity         String?
+  regDistrict     String?
+  regState        String?
+  regCountry      String? @default("India")
+  regPincode      String?
 
   // Construction Site Address
-  siteAddressLine1        String?
-  siteAddressLine2        String?
-  siteCity                String?
-  siteDistrict            String?
-  siteState               String?
-  siteCountry             String?           @default("India")
-  sitePincode             String?
-  latitude                Float?
-  longitude               Float?
-  mapUrl                  String?
+  siteAddressLine1 String?
+  siteAddressLine2 String?
+  siteCity         String?
+  siteDistrict     String?
+  siteState        String?
+  siteCountry      String? @default("India")
+  sitePincode      String?
+  latitude         Float?
+  longitude        Float?
+  mapUrl           String?
 
   // Timeline
-  planningStartDate       DateTime?
-  startDate               DateTime?
-  expectedCompletionDate  DateTime?
-  actualCompletionDate    DateTime?
-  handoverDate            DateTime?
+  planningStartDate      DateTime?
+  startDate              DateTime?
+  expectedCompletionDate DateTime?
+  actualCompletionDate   DateTime?
+  handoverDate           DateTime?
 
   // Finance / Budget Summary
-  estimatedBudget         Float?            @default(0)
-  budgetCurrency          String            @default("INR")
-  progressPercentage      Float             @default(0)
+  estimatedBudget    Float? @default(0)
+  budgetCurrency     String @default("INR")
+  progressPercentage Float  @default(0)
 
   // Leadership Foreign Keys (Optional references to Employee)
-  projectDirectorId       String?
-  projectDirector         Employee?         @relation("ProjectDirector", fields: [projectDirectorId], references: [id], onDelete: SetNull)
-  projectManagerId        String?
-  projectManager          Employee?         @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
-  siteManagerId           String?
-  siteManager             Employee?         @relation("SiteManager", fields: [siteManagerId], references: [id], onDelete: SetNull)
-  constructionManagerId   String?
-  constructionManager     Employee?         @relation("ConstructionManager", fields: [constructionManagerId], references: [id], onDelete: SetNull)
-  financeManagerId        String?
-  financeManager          Employee?         @relation("FinanceManager", fields: [financeManagerId], references: [id], onDelete: SetNull)
-  purchaseManagerId       String?
-  purchaseManager         Employee?         @relation("PurchaseManager", fields: [purchaseManagerId], references: [id], onDelete: SetNull)
+  projectDirectorId     String?
+  projectDirector       Employee? @relation("ProjectDirector", fields: [projectDirectorId], references: [id], onDelete: SetNull)
+  projectManagerId      String?
+  projectManager        Employee? @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  siteManagerId         String?
+  siteManager           Employee? @relation("SiteManager", fields: [siteManagerId], references: [id], onDelete: SetNull)
+  constructionManagerId String?
+  constructionManager   Employee? @relation("ConstructionManager", fields: [constructionManagerId], references: [id], onDelete: SetNull)
+  financeManagerId      String?
+  financeManager        Employee? @relation("FinanceManager", fields: [financeManagerId], references: [id], onDelete: SetNull)
+  purchaseManagerId     String?
+  purchaseManager       Employee? @relation("PurchaseManager", fields: [purchaseManagerId], references: [id], onDelete: SetNull)
 
   // Archival
-  archivedAt              DateTime?
-  archivedBy              String?
+  archivedAt DateTime?
+  archivedBy String?
 
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  assignments             EmployeeVentureAssignment[]
-  stocks                  MaterialStock[]
-  transactions            MaterialTransaction[]
-  requests                MaterialRequest[]
-  chatRooms               ChatRoom[]
-  auditLogs               AuditLog[]
-  documents               VentureDocument[]
-  announcements           VentureAnnouncement[]
-  settings                VentureSetting?
+  assignments   EmployeeVentureAssignment[]
+  stocks        MaterialStock[]
+  transactions  MaterialTransaction[]
+  requests      MaterialRequest[]
+  chatRooms     ChatRoom[]
+  auditLogs     AuditLog[]
+  documents     VentureDocument[]
+  announcements VentureAnnouncement[]
+  settings      VentureSetting?
+
+  stockLocations StockLocation[]
+  receipts       MaterialReceipt[]
+  issues         MaterialIssue[]
+  transfers      MaterialTransfer[]
+  returns        MaterialReturn[]
+  adjustments    StockAdjustment[]
+  consumptions   MaterialConsumption[]
 
   @@map("ventures")
 }
@@ -203,12 +208,12 @@ model Employee {
   certifications         EmployeeCertification[]
 
   // Leadership relations
-  directedVentures       Venture[]                   @relation("ProjectDirector")
-  managedVentures        Venture[]                   @relation("ProjectManager")
-  siteManagedVentures    Venture[]                   @relation("SiteManager")
-  constructionManagedVentures Venture[]               @relation("ConstructionManager")
-  financeManagedVentures Venture[]                   @relation("FinanceManager")
-  purchaseManagedVentures Venture[]                  @relation("PurchaseManager")
+  directedVentures            Venture[] @relation("ProjectDirector")
+  managedVentures             Venture[] @relation("ProjectManager")
+  siteManagedVentures         Venture[] @relation("SiteManager")
+  constructionManagedVentures Venture[] @relation("ConstructionManager")
+  financeManagedVentures      Venture[] @relation("FinanceManager")
+  purchaseManagedVentures     Venture[] @relation("PurchaseManager")
 
   @@map("employees")
 }
@@ -257,17 +262,17 @@ model EmployeeCertification {
 }
 
 model EmployeeVentureAssignment {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   ventureId   String
-  venture     Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  venture     Venture   @relation(fields: [ventureId], references: [id], onDelete: Cascade)
   roleAtSite  String?
-  accessLevel String   @default("STANDARD") // e.g. FULL_ACCESS, OPERATIONS, MATERIALS_ONLY, READ_ONLY
-  startDate   DateTime @default(now())
+  accessLevel String    @default("STANDARD") // e.g. FULL_ACCESS, OPERATIONS, MATERIALS_ONLY, READ_ONLY
+  startDate   DateTime  @default(now())
   endDate     DateTime?
-  status      String   @default("ACTIVE")
-  assignedAt  DateTime @default(now())
+  status      String    @default("ACTIVE")
+  assignedAt  DateTime  @default(now())
 
   @@unique([employeeId, ventureId])
   @@map("employee_venture_assignments")
@@ -308,97 +313,191 @@ model VentureAnnouncement {
 }
 
 model VentureSetting {
-  id                           String   @id @default(uuid())
-  ventureId                    String   @unique
-  venture                      Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
-  minStockThresholdDefault     Float    @default(50)
-  requireMaterialApproval      Boolean  @default(true)
-  allowEmployeeSelfAssignment  Boolean  @default(false)
-  allowFileUploadInChat        Boolean  @default(true)
-  notifyOnLowStock             Boolean  @default(true)
-  notifyOnMaterialRequests     Boolean  @default(true)
-  updatedAt                    DateTime @updatedAt
+  id                          String   @id @default(uuid())
+  ventureId                   String   @unique
+  venture                     Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  minStockThresholdDefault    Float    @default(50)
+  requireMaterialApproval     Boolean  @default(true)
+  allowEmployeeSelfAssignment Boolean  @default(false)
+  allowFileUploadInChat       Boolean  @default(true)
+  notifyOnLowStock            Boolean  @default(true)
+  notifyOnMaterialRequests    Boolean  @default(true)
+  updatedAt                   DateTime @updatedAt
 
   @@map("venture_settings")
 }
 
+// --- MATERIAL MANAGEMENT V1 ---
+
 model MaterialCategory {
-  id        String     @id @default(uuid())
-  name      String     @unique
-  materials Material[]
+  id            String                @id @default(uuid())
+  name          String                @unique
+  description   String?
+  materials     Material[]
+  subcategories MaterialSubcategory[]
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
   @@map("material_categories")
 }
 
+model MaterialSubcategory {
+  id          String           @id @default(uuid())
+  categoryId  String
+  category    MaterialCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  materials   Material[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([categoryId, name])
+  @@map("material_subcategories")
+}
+
 model UnitOfMeasure {
-  id        String     @id @default(uuid())
-  name      String     @unique
-  materials Material[]
+  id           String     @id @default(uuid())
+  name         String     @unique
+  abbreviation String?
+  materials    Material[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@map("units_of_measure")
 }
 
 model Material {
-  id               String           @id @default(uuid())
-  name             String
-  code             String           @unique
-  categoryId       String
-  category         MaterialCategory @relation(fields: [categoryId], references: [id])
-  unitOfMeasureId  String
-  unitOfMeasure    UnitOfMeasure    @relation(fields: [unitOfMeasureId], references: [id])
-  description      String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id          String  @id @default(uuid())
+  companyId   String? // Future readiness
+  code        String  @unique
+  name        String
+  description String?
+
+  categoryId    String
+  category      MaterialCategory     @relation(fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory   MaterialSubcategory? @relation(fields: [subcategoryId], references: [id])
+  baseUnitId    String
+  unitOfMeasure UnitOfMeasure        @relation(fields: [baseUnitId], references: [id])
+
+  reorderLevel      Float  @default(0)
+  minimumStockLevel Float  @default(0)
+  maximumStockLevel Float  @default(0)
+  status            String @default("ACTIVE") // ACTIVE, INACTIVE, DISCONTINUED
+
+  createdById String?
+  createdBy   User?   @relation("MaterialCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   stocks           MaterialStock[]
   transactions     MaterialTransaction[]
   requestItems     MaterialRequestItem[]
+  receiptItems     MaterialReceiptItem[]
+  issueItems       MaterialIssueItem[]
+  transferItems    MaterialTransferItem[]
+  returnItems      MaterialReturnItem[]
+  adjustmentItems  StockAdjustmentItem[]
+  consumptionItems MaterialConsumptionItem[]
 
   @@map("materials")
 }
 
-model MaterialStock {
-  id         String   @id @default(uuid())
-  materialId String
-  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  ventureId  String
-  venture    Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
-  quantity   Float    @default(0)
-  updatedAt  DateTime @updatedAt
+model StockLocation {
+  id        String   @id @default(uuid())
+  ventureId String
+  venture   Venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  code      String
+  name      String
+  type      String // MAIN_STORE, SITE_STORE, WAREHOUSE, TOWER_STORE, OTHER
+  address   String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([materialId, ventureId])
+  stocks        MaterialStock[]
+  transactions  MaterialTransaction[]
+  receipts      MaterialReceipt[]
+  issuesFrom    MaterialIssue[]       @relation("IssueFromLocation")
+  transfersFrom MaterialTransfer[]    @relation("TransferFromLocation")
+  transfersTo   MaterialTransfer[]    @relation("TransferToLocation")
+  returnsTo     MaterialReturn[]      @relation("ReturnToLocation")
+  adjustments   StockAdjustment[]
+
+  @@unique([ventureId, code])
+  @@map("stock_locations")
+}
+
+model MaterialStock {
+  id              String        @id @default(uuid())
+  materialId      String
+  material        Material      @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  ventureId       String
+  venture         Venture       @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  stockLocationId String
+  stockLocation   StockLocation @relation(fields: [stockLocationId], references: [id], onDelete: Cascade)
+
+  physicalQuantity  Float @default(0)
+  reservedQuantity  Float @default(0)
+  availableQuantity Float @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([materialId, stockLocationId])
   @@map("material_stocks")
 }
 
 model MaterialTransaction {
-  id          String          @id @default(uuid())
-  materialId  String
-  material    Material        @relation(fields: [materialId], references: [id])
-  ventureId   String
-  venture     Venture         @relation(fields: [ventureId], references: [id])
-  quantity    Float
-  type        TransactionType
-  referenceId String?
-  userId      String
-  user        User            @relation(fields: [userId], references: [id])
-  remarks     String?
-  createdAt   DateTime        @default(now())
+  id                String        @id @default(uuid())
+  transactionNumber String        @unique
+  materialId        String
+  material          Material      @relation(fields: [materialId], references: [id])
+  ventureId         String
+  venture           Venture       @relation(fields: [ventureId], references: [id])
+  stockLocationId   String
+  stockLocation     StockLocation @relation(fields: [stockLocationId], references: [id])
+
+  transactionType String // OPENING_BALANCE, RECEIPT, ISSUE, TRANSFER_IN, TRANSFER_OUT, RETURN_IN, ADJUSTMENT_IN, ADJUSTMENT_OUT, CONSUMPTION
+
+  quantityIn   Float @default(0)
+  quantityOut  Float @default(0)
+  balanceAfter Float
+
+  referenceType String // RECEIPT, ISSUE, TRANSFER, RETURN, ADJUSTMENT
+  referenceId   String?
+
+  remarks String?
+
+  performedById String
+  performedBy   User     @relation("TransactionPerformedBy", fields: [performedById], references: [id])
+  createdAt     DateTime @default(now())
 
   @@map("material_transactions")
 }
 
 model MaterialRequest {
-  id           String               @id @default(uuid())
-  ventureId    String
-  venture      Venture              @relation(fields: [ventureId], references: [id])
-  status       RequestStatus        @default(PENDING)
+  id            String  @id @default(uuid())
+  requestNumber String  @unique
+  ventureId     String
+  venture       Venture @relation(fields: [ventureId], references: [id])
+
+  priority     String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  purpose      String?
+  requiredDate DateTime?
+  status       String    @default("DRAFT") // DRAFT, SUBMITTED, PENDING_APPROVAL, APPROVED, PARTIALLY_ISSUED, ISSUED, REJECTED, CANCELLED
   remarks      String?
-  createdById  String
-  createdBy    User                 @relation("CreatedRequests", fields: [createdById], references: [id])
-  approvedById String?
-  approvedBy   User?                @relation("ApprovedRequests", fields: [approvedById], references: [id])
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  items        MaterialRequestItem[]
+
+  createdById String
+  createdBy   User   @relation("RequestCreatedBy", fields: [createdById], references: [id])
+
+  approvals MaterialApproval[]
+  items     MaterialRequestItem[]
+  issues    MaterialIssue[]       @relation("IssueRequestReference")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("material_requests")
 }
@@ -409,17 +508,286 @@ model MaterialRequestItem {
   request    MaterialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   materialId String
   material   Material        @relation(fields: [materialId], references: [id])
-  quantity   Float
+
+  requestedQuantity Float
+  approvedQuantity  Float @default(0)
+  issuedQuantity    Float @default(0)
 
   @@map("material_request_items")
 }
 
+model MaterialApproval {
+  id         String          @id @default(uuid())
+  requestId  String
+  request    MaterialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approverId String
+  approver   User            @relation("RequestApprover", fields: [approverId], references: [id])
+  action     String // APPROVED, PARTIALLY_APPROVED, REJECTED, RETURNED
+  comments   String?
+  createdAt  DateTime        @default(now())
+
+  @@map("material_approvals")
+}
+
+model MaterialReceipt {
+  id              String        @id @default(uuid())
+  receiptNumber   String        @unique // GRN
+  ventureId       String
+  venture         Venture       @relation(fields: [ventureId], references: [id])
+  stockLocationId String
+  stockLocation   StockLocation @relation(fields: [stockLocationId], references: [id])
+
+  vendorName      String?
+  receiptDate     DateTime @default(now())
+  referenceNumber String?
+  invoiceNumber   String?
+  notes           String?
+
+  receivedById String
+  receivedBy   User   @relation("ReceiptReceivedBy", fields: [receivedById], references: [id])
+
+  items MaterialReceiptItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("material_receipts")
+}
+
+model MaterialReceiptItem {
+  id         String          @id @default(uuid())
+  receiptId  String
+  receipt    MaterialReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  materialId String
+  material   Material        @relation(fields: [materialId], references: [id])
+
+  orderedQuantity  Float  @default(0)
+  receivedQuantity Float
+  acceptedQuantity Float
+  rejectedQuantity Float  @default(0)
+  rate             Float? // For future finance
+
+  @@map("material_receipt_items")
+}
+
+model MaterialIssue {
+  id             String        @id @default(uuid())
+  issueNumber    String        @unique
+  ventureId      String
+  venture        Venture       @relation(fields: [ventureId], references: [id])
+  fromLocationId String
+  fromLocation   StockLocation @relation("IssueFromLocation", fields: [fromLocationId], references: [id])
+
+  requestId String?
+  request   MaterialRequest? @relation("IssueRequestReference", fields: [requestId], references: [id])
+
+  issuedToName String?
+  purpose      String?
+  issueDate    DateTime @default(now())
+
+  issuedById String
+  issuedBy   User   @relation("IssueIssuedBy", fields: [issuedById], references: [id])
+
+  items   MaterialIssueItem[]
+  returns MaterialReturn[]    @relation("ReturnSourceIssue")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("material_issues")
+}
+
+model MaterialIssueItem {
+  id         String        @id @default(uuid())
+  issueId    String
+  issue      MaterialIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  materialId String
+  material   Material      @relation(fields: [materialId], references: [id])
+
+  requestedQuantity Float?
+  approvedQuantity  Float?
+  issuedQuantity    Float
+
+  @@map("material_issue_items")
+}
+
+model MaterialTransfer {
+  id             String  @id @default(uuid())
+  transferNumber String  @unique
+  ventureId      String // Initiating venture
+  venture        Venture @relation(fields: [ventureId], references: [id])
+
+  fromLocationId String
+  fromLocation   StockLocation @relation("TransferFromLocation", fields: [fromLocationId], references: [id])
+  toLocationId   String
+  toLocation     StockLocation @relation("TransferToLocation", fields: [toLocationId], references: [id])
+
+  status       String    @default("DRAFT") // DRAFT, DISPATCHED, IN_TRANSIT, RECEIVED, COMPLETED
+  dispatchDate DateTime?
+  receiveDate  DateTime?
+
+  dispatchedById String?
+  dispatchedBy   User?   @relation("TransferDispatchedBy", fields: [dispatchedById], references: [id])
+  receivedById   String?
+  receivedBy     User?   @relation("TransferReceivedBy", fields: [receivedById], references: [id])
+
+  items MaterialTransferItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("material_transfers")
+}
+
+model MaterialTransferItem {
+  id         String           @id @default(uuid())
+  transferId String
+  transfer   MaterialTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  materialId String
+  material   Material         @relation(fields: [materialId], references: [id])
+
+  dispatchedQuantity Float
+  receivedQuantity   Float?
+  damagedQuantity    Float  @default(0)
+
+  @@map("material_transfer_items")
+}
+
+model MaterialReturn {
+  id           String        @id @default(uuid())
+  returnNumber String        @unique
+  ventureId    String
+  venture      Venture       @relation(fields: [ventureId], references: [id])
+  toLocationId String
+  toLocation   StockLocation @relation("ReturnToLocation", fields: [toLocationId], references: [id])
+
+  sourceIssueId String?
+  sourceIssue   MaterialIssue? @relation("ReturnSourceIssue", fields: [sourceIssueId], references: [id])
+
+  returnDate DateTime @default(now())
+  reason     String?
+
+  receivedById String
+  receivedBy   User   @relation("ReturnReceivedBy", fields: [receivedById], references: [id])
+
+  items MaterialReturnItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("material_returns")
+}
+
+model MaterialReturnItem {
+  id             String         @id @default(uuid())
+  returnId       String
+  materialReturn MaterialReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  materialId     String
+  material       Material       @relation(fields: [materialId], references: [id])
+
+  quantity  Float
+  condition String @default("GOOD") // GOOD, DAMAGED
+
+  @@map("material_return_items")
+}
+
+model StockAdjustment {
+  id               String        @id @default(uuid())
+  adjustmentNumber String        @unique
+  ventureId        String
+  venture          Venture       @relation(fields: [ventureId], references: [id])
+  stockLocationId  String
+  stockLocation    StockLocation @relation(fields: [stockLocationId], references: [id])
+
+  reason String
+  notes  String?
+
+  adjustedById String
+  adjustedBy   User   @relation("AdjustmentPerformedBy", fields: [adjustedById], references: [id])
+
+  items StockAdjustmentItem[]
+
+  createdAt DateTime @default(now())
+
+  @@map("stock_adjustments")
+}
+
+model StockAdjustmentItem {
+  id           String          @id @default(uuid())
+  adjustmentId String
+  adjustment   StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  materialId   String
+  material     Material        @relation(fields: [materialId], references: [id])
+
+  systemQuantity     Float
+  physicalQuantity   Float
+  adjustmentQuantity Float // Physical - System
+
+  @@map("stock_adjustment_items")
+}
+
+model MaterialConsumption {
+  id                String  @id @default(uuid())
+  consumptionNumber String  @unique
+  ventureId         String
+  venture           Venture @relation(fields: [ventureId], references: [id])
+
+  // Future readiness for construction module
+  constructionActivityId String?
+  buildingId             String?
+  towerId                String?
+  floorId                String?
+
+  reportedDate DateTime @default(now())
+  notes        String?
+
+  reportedById String
+  reportedBy   User   @relation("ConsumptionReportedBy", fields: [reportedById], references: [id])
+
+  items MaterialConsumptionItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("material_consumptions")
+}
+
+model MaterialConsumptionItem {
+  id            String              @id @default(uuid())
+  consumptionId String
+  consumption   MaterialConsumption @relation(fields: [consumptionId], references: [id], onDelete: Cascade)
+  materialId    String
+  material      Material            @relation(fields: [materialId], references: [id])
+
+  quantityUsed Float
+
+  @@map("material_consumption_items")
+}
+
+model MaterialAttachment {
+  id         String  @id @default(uuid())
+  entityType String // MATERIAL, REQUEST, RECEIPT, ISSUE, etc.
+  entityId   String // ID of the referenced entity
+  fileName   String
+  storageKey String
+  mimeType   String?
+  fileSize   Int?
+
+  uploadedById String
+  uploadedBy   User   @relation("AttachmentUploadedBy", fields: [uploadedById], references: [id])
+
+  uploadedAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("material_attachments")
+}
+
 model ChatRoom {
-  id        String       @id @default(uuid())
+  id        String        @id @default(uuid())
   ventureId String?
-  venture   Venture?     @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  venture   Venture?      @relation(fields: [ventureId], references: [id], onDelete: Cascade)
   name      String
-  createdAt DateTime     @default(now())
+  createdAt DateTime      @default(now())
   members   ChatMember[]
   messages  ChatMessage[]
 
@@ -427,12 +795,12 @@ model ChatRoom {
 }
 
 model ChatMember {
-  id         String   @id @default(uuid())
-  roomId     String
-  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  joinedAt   DateTime @default(now())
+  id       String   @id @default(uuid())
+  roomId   String
+  room     ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
 
   @@unique([roomId, userId])
   @@map("chat_members")
@@ -501,4 +869,3 @@ model AuditLog {
 
   @@map("audit_logs")
 }
-
