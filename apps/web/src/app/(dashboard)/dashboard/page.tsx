@@ -229,7 +229,7 @@ export default async function DashboardPage() {
             <div className="space-y-3.5">
               {[
                 { label: 'Cement', pct: '78%', color: 'bg-amber-600' },
-                { label: 'Steel', pct: '54%', color: 'bg-slate-700' },
+                { label: 'Steel', pct: '54%', color: 'bg-zinc-600' },
                 { label: 'Sand', pct: '40%', color: 'bg-emerald-700' },
                 { label: 'Bricks', pct: '61%', color: 'bg-amber-800' },
                 { label: 'Other', pct: '22%', color: 'bg-zinc-400' },

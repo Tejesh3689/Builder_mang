@@ -111,8 +111,8 @@ export default function EmployeeDashboard() {
         {/* Card 3 */}
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
           <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Present On Site</div>
-          <div className="text-2xl font-black text-indigo-700 tracking-tight">{onSite}</div>
-          <div className="text-[9px] text-indigo-500">Actively deployed</div>
+          <div className="text-2xl font-black text-amber-700 tracking-tight">{onSite}</div>
+          <div className="text-[9px] text-amber-600">Actively deployed</div>
         </div>
 
         {/* Card 4 */}
@@ -250,7 +250,7 @@ export default function EmployeeDashboard() {
                   <div className="font-bold text-zinc-900">{o.firstName} {o.lastName}</div>
                   <div className="text-zinc-400 text-[11px] mt-0.5">Role: {o.designation} · Stage: {o.onboardingStage}</div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-700 border-blue-200">
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                   {o.onboardingStatus}
                 </span>
               </div>

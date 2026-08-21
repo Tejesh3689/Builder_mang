@@ -53,11 +53,11 @@ export default function ManagersDirectoryPage() {
   const getAvatarColor = (mgrName: string) => {
     const char = mgrName.charCodeAt(0) % 5;
     const colors = [
-      'bg-red-500/10 text-red-700 border-red-200/60',
+      'bg-amber-600/10 text-amber-700 border-amber-200/60',
       'bg-amber-500/10 text-amber-700 border-amber-200/60',
-      'bg-emerald-500/10 text-emerald-700 border-emerald-200/60',
-      'bg-blue-500/10 text-blue-700 border-blue-200/60',
-      'bg-purple-500/10 text-purple-700 border-purple-200/60',
+      'bg-zinc-100 text-zinc-700 border-zinc-200/60',
+      'bg-amber-700/10 text-amber-800 border-amber-200/60',
+      'bg-zinc-200 text-zinc-850 border-zinc-300/60',
     ];
     return colors[char];
   };

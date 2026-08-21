@@ -78,7 +78,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
       {/* Top Navigation & Breadcrumb */}
       <div className="flex items-center justify-between border-b border-zinc-200 pb-4">
         <div className="flex items-center gap-3">
-          <Link href="/ventures" className="p-2 rounded-xl bg-zinc-50 hover:bg-slate-800 text-zinc-500 hover:text-black transition-colors border border-zinc-200">
+          <Link href="/ventures" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200">
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
@@ -104,13 +104,13 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
           </button>
           <button 
             onClick={() => setActiveTab('team')}
-            className="px-3 py-1.5 bg-zinc-50 hover:bg-slate-800 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             <UserPlus className="w-3.5 h-3.5 text-amber-700" /> Assign Employee
           </button>
           <button 
             onClick={() => setActiveTab('communication')}
-            className="px-3 py-1.5 bg-zinc-50 hover:bg-slate-800 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> Open Chat
           </button>
@@ -123,7 +123,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
           <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider block">Progress</span>
           <div className="text-xl font-extrabold text-black">{venture.progressPercentage || 68}%</div>
           <div className="w-full h-1.5 rounded-full bg-zinc-50 overflow-hidden">
-            <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${venture.progressPercentage || 68}%` }} />
+            <div className="h-full bg-amber-600 rounded-full" style={{ width: `${venture.progressPercentage || 68}%` }} />
           </div>
         </div>
 
@@ -200,7 +200,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
               onClick={() => setActiveTab(t.key as any)}
               className={`px-4 py-3 border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
                 isActive
-                  ? 'border-indigo-500 text-amber-700 bg-indigo-500/5'
+                  ? 'border-[#d97706] text-amber-700 bg-amber-500/5'
                   : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50/50'
               }`}
             >
@@ -492,7 +492,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                 <div key={doc.id} className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2 hover:border-zinc-200 transition-colors">
                   <div className="flex items-start justify-between">
                     <FileText className="w-8 h-8 text-amber-700" />
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-zinc-700">{doc.category}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-55/10 text-amber-700 border border-amber-200/50">{doc.category}</span>
                   </div>
                   <h4 className="font-bold text-xs text-black truncate">{doc.title}</h4>
                   <div className="text-[10px] text-zinc-500 flex justify-between pt-2 border-t border-zinc-200">
@@ -591,7 +591,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   <span className="font-bold text-black block">Require Material Request Approval</span>
                   <span className="text-zinc-500 text-[11px]">All site material requests must be approved by Venture Manager.</span>
                 </div>
-                <input type="checkbox" defaultChecked className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+                <input type="checkbox" defaultChecked className="w-4 h-4 accent-[#d97706] cursor-pointer" />
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 border border-zinc-200">
@@ -599,14 +599,14 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   <span className="font-bold text-black block">Low-Stock Automatic Notifications</span>
                   <span className="text-zinc-500 text-[11px]">Notify Purchase Manager when stock dips below threshold.</span>
                 </div>
-                <input type="checkbox" defaultChecked className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+                <input type="checkbox" defaultChecked className="w-4 h-4 accent-[#d97706] cursor-pointer" />
               </div>
 
               {/* Danger Zone */}
               <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-3 pt-3">
                 <h4 className="font-bold text-rose-400 text-xs">Danger Zone</h4>
                 <p className="text-[11px] text-rose-300/80">Archiving will lock venture access while preserving complete audit logs.</p>
-                <button className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-black rounded-lg font-bold text-xs flex items-center gap-1.5">
+                <button className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5">
                   <Archive className="w-4 h-4" /> Archive Venture
                 </button>
               </div>

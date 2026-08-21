@@ -2,17 +2,17 @@ import React from 'react';
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
-      <div className="w-full max-w-md space-y-8 p-8 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-[#EAEAEA] px-4">
+      <div className="w-full max-w-md space-y-8 p-8 rounded-2xl bg-white border border-zinc-200/80 shadow-xl">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-white">Reset Password</h2>
-          <p className="mt-2 text-sm text-zinc-400">
+          <h2 className="text-3xl font-bold text-black tracking-tight">Reset Password</h2>
+          <p className="mt-2 text-sm text-zinc-500">
             Enter your email to receive a password reset link
           </p>
         </div>
         <form className="mt-8 space-y-6">
           <div>
-            <label htmlFor="email-address" className="block text-sm font-medium text-zinc-300">
+            <label htmlFor="email-address" className="block text-sm font-medium text-zinc-700">
               Email Address
             </label>
             <input
@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
               name="email"
               type="email"
               required
-              className="mt-1 block w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="mt-1 block w-full px-3.5 py-2.5 rounded-lg bg-zinc-50 border border-zinc-200 text-black placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition"
               placeholder="email@builder.com"
             />
           </div>
@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
           <div>
             <button
               type="submit"
-              className="w-full py-2.5 rounded-lg text-black bg-amber-500 hover:bg-amber-600 font-semibold transition-colors duration-200"
+              className="w-full py-2.5 rounded-lg text-white bg-[#d97706] hover:bg-amber-700 font-semibold transition-colors duration-200"
             >
               Send Reset Link
             </button>

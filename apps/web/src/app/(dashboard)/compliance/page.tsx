@@ -155,7 +155,7 @@ export default function CompliancePage() {
                         <td className="py-3 px-4">{emp.designation}</td>
                         <td className="py-3 px-4 text-red-600 font-medium">Aadhaar Card / Contract Copy</td>
                         <td className="py-3 px-4 text-center">
-                          <Link href={`/employees/${emp.id}`} className="text-indigo-600 font-bold hover:underline">Upload Vault</Link>
+                          <Link href={`/employees/${emp.id}`} className="text-amber-700 font-bold hover:underline">Upload Vault</Link>
                         </td>
                       </tr>
                     ))}
@@ -192,7 +192,7 @@ export default function CompliancePage() {
                         <td className="py-3 px-4">{emp.designation}</td>
                         <td className="py-3 px-4 text-amber-600 font-medium">Pending Heights & Scaffold Safety</td>
                         <td className="py-3 px-4 text-center">
-                          <Link href={`/employees/${emp.id}`} className="text-indigo-600 font-bold hover:underline">Complete Induction</Link>
+                          <Link href={`/employees/${emp.id}`} className="text-amber-700 font-bold hover:underline">Complete Induction</Link>
                         </td>
                       </tr>
                     ))}

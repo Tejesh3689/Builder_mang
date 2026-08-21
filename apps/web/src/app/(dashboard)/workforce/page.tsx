@@ -124,8 +124,8 @@ export default function WorkforcePage() {
         </div>
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
           <div className="text-xs text-zinc-400 font-medium">Active Site Crews</div>
-          <div className="text-2xl font-black text-indigo-700 tracking-tight">{crews.length} Active Crews</div>
-          <div className="text-[10px] text-indigo-500">Scheduled shifts</div>
+          <div className="text-2xl font-black text-amber-700 tracking-tight">{crews.length} Active Crews</div>
+          <div className="text-[10px] text-amber-600">Scheduled shifts</div>
         </div>
       </div>
 

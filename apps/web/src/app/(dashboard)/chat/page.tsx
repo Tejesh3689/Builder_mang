@@ -11,7 +11,7 @@ export default function ChatRoomsPage() {
         <Link href="/chat/ven-a" className="p-6 rounded-xl bg-white border border-zinc-200 space-y-3 block hover-lift">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold">Venture Heights Room</h3>
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#d97706] animate-pulse"></span>
           </div>
           <p className="text-sm text-zinc-500">Assigned members: Admin, Project Manager, Site Engineer</p>
         </Link>
