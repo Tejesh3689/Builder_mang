@@ -11,11 +11,13 @@ const mockLogs = [
 export default function AuditLogsPage() {
   return (
     <div className="p-6 space-y-6">
+      {/* Cat-C: header stacks on mobile */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-zinc-900">Audit Logs</h1>
         <Link href="/admin/audit-logs/filter" className="px-4 py-2 bg-white border border-zinc-200 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-50 inline-block self-start">Filter Logs</Link>
       </div>
 
+      {/* Cat-B: overflow-x-auto wrapper added inside overflow-hidden */}
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
