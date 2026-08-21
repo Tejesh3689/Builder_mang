@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const mockEmployees = [
   { id: 'E-001', name: 'John Doe', role: 'Site Manager', department: 'Operations', hours: 160, rating: 'Excellent' },
@@ -12,7 +13,7 @@ export default function EmployeeReportsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900">Employee Reports</h1>
-        <button className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Export Report</button>
+        <Link href="/reports/employees/export" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Export Report</Link>
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">

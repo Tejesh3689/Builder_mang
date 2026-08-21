@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const mockBranches = [
   { id: 'BR-01', name: 'Headquarters', location: 'New York, NY', manager: 'Admin Manager', contact: '+1 (555) 123-4567' },
@@ -11,7 +12,7 @@ export default function BranchesPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900">Branches / Locations</h1>
-        <button className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Add Branch</button>
+        <Link href="/admin/branches/new" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Add Branch</Link>
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
@@ -33,7 +34,7 @@ export default function BranchesPage() {
                 <td className="px-6 py-4">{branch.manager}</td>
                 <td className="px-6 py-4">{branch.contact}</td>
                 <td className="px-6 py-4 text-right">
-                  <button className="text-amber-600 hover:text-amber-800 font-semibold">View</button>
+                  <Link href={`/admin/branches/${branch.id}`} className="text-amber-600 hover:text-amber-800 font-semibold">View</Link>
                 </td>
               </tr>
             ))}

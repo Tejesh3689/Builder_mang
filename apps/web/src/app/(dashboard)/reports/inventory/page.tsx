@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const mockInventory = [
   { id: 'INV-101', item: 'Portland Cement (50kg)', category: 'Materials', stock: 450, reorder: 200, status: 'In Stock' },
@@ -12,7 +13,7 @@ export default function InventoryReportsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900">Inventory Reports</h1>
-        <button className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Export Report</button>
+        <Link href="/reports/inventory/export" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Export Report</Link>
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">

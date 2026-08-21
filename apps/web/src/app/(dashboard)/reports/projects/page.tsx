@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const mockProjects = [
   { id: 'PRJ-101', name: 'Downtown Skyline', status: 'Active', budget: '$5M', spent: '$2.1M', completion: 45 },
@@ -12,7 +13,7 @@ export default function ProjectReportsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900">Project Reports</h1>
-        <button className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Export Report</button>
+        <Link href="/reports/projects/export" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Export Report</Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

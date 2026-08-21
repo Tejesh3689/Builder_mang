@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const mockLogs = [
   { id: 'LOG-900', time: '10:32 AM', user: 'Admin Manager', action: 'Updated System Settings', ip: '192.168.1.10' },
@@ -12,7 +13,7 @@ export default function AuditLogsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900">Audit Logs</h1>
-        <button className="px-4 py-2 bg-white border border-zinc-200 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-50">Filter Logs</button>
+        <Link href="/admin/audit-logs/filter" className="px-4 py-2 bg-white border border-zinc-200 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-50 inline-block">Filter Logs</Link>
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
