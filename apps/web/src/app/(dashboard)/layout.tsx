@@ -163,7 +163,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 bg-white border-r border-zinc-200/80 flex flex-col justify-between h-full shrink-0 shadow-lg lg:shadow-sm z-40 lg:z-30 lg:static transition-all duration-200 ease-in-out relative ${
+        className={`fixed inset-y-0 left-0 bg-white border-r border-zinc-200/80 flex flex-col justify-between h-full shrink-0 shadow-lg lg:shadow-sm z-40 lg:z-30 lg:static transition-all duration-200 ease-in-out lg:relative ${
           isSidebarCollapsed ? 'w-[72px]' : 'w-[260px]'
         } ${
           isMobileSidebarOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full lg:translate-x-0'

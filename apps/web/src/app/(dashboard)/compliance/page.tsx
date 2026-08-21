@@ -68,13 +68,12 @@ export default function CompliancePage() {
 
       {/* Main Container Card */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs overflow-hidden">
-        {/* Horizontal Navigation Tabs */}
-        <div className="flex border-b border-zinc-200 bg-zinc-50/30">
+        <div className="flex border-b border-zinc-200 bg-zinc-50/30 overflow-x-auto">
           {['Certifications', 'Missing Documents', 'Safety Training Log'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-hidden ${
+              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-hidden shrink-0 ${
                 activeTab === tab
                   ? 'border-black text-black bg-white'
                   : 'border-transparent text-zinc-400 hover:text-black'

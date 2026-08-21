@@ -198,7 +198,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key as any)}
-              className={`px-4 py-3 border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              className={`px-4 py-3 border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors shrink-0 ${
                 isActive
                   ? 'border-[#d97706] text-amber-700 bg-amber-500/5'
                   : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50/50'
