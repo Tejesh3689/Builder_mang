@@ -27,7 +27,7 @@ export default function NewRolePage() {
           
           <div className="pt-4 border-t border-zinc-100">
             <h3 className="text-lg font-bold text-zinc-900 mb-4">Initial Permissions</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="flex items-center gap-3 p-3 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50">
                 <input type="checkbox" className="w-4 h-4 text-amber-600 rounded border-zinc-300 focus:ring-amber-500" />
                 <span className="text-sm font-medium text-zinc-700">View Projects</span>

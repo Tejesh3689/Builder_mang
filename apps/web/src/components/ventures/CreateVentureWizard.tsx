@@ -234,7 +234,7 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     onChange={(e) => setFormData({ ...formData, regAddressLine1: e.target.value })}
                     className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                   />
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="text"
                       placeholder="City"
@@ -271,7 +271,7 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     onChange={(e) => setFormData({ ...formData, siteAddressLine1: e.target.value })}
                     className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                   />
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="text"
                       placeholder="Site City"
@@ -291,7 +291,7 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
               </div>
 
               {/* Geo Coordinates */}
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 mb-1">Latitude</label>
                   <input
@@ -415,7 +415,7 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     {formData.code}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 text-xs text-zinc-600 gap-y-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 text-xs text-zinc-600 gap-y-1.5">
                   <div>Type: <span className="font-semibold text-zinc-900">{formData.type}</span></div>
                   <div>Status: <span className="font-semibold text-emerald-600">{formData.status}</span></div>
                   <div>Site City: <span className="font-semibold text-zinc-900">{formData.siteCity}</span></div>

@@ -265,7 +265,7 @@ export default function VenturesPage() {
 
                 <p className="text-xs text-zinc-500 line-clamp-2">{v.description || 'No description provided.'}</p>
 
-                <div className="grid grid-cols-2 gap-2 py-2 border-y border-zinc-100 text-xs text-zinc-600">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 py-2 border-y border-zinc-100 text-xs text-zinc-600">
                   <div className="flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-zinc-400" />
                     <span>{v.siteCity || 'Vijayawada'}</span>

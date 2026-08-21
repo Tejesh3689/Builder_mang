@@ -11,9 +11,9 @@ const mockProjects = [
 export default function ProjectReportsPage() {
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-zinc-900">Project Reports</h1>
-        <Link href="/reports/projects/export" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Export Report</Link>
+        <Link href="/reports/projects/export" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 inline-block self-start">Export Report</Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -32,43 +32,45 @@ export default function ProjectReportsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-600">
-            <tr>
-              <th className="px-6 py-4 font-medium">Project ID</th>
-              <th className="px-6 py-4 font-medium">Name</th>
-              <th className="px-6 py-4 font-medium">Status</th>
-              <th className="px-6 py-4 font-medium">Budget</th>
-              <th className="px-6 py-4 font-medium">Spent</th>
-              <th className="px-6 py-4 font-medium">Completion</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-200 text-zinc-800">
-            {mockProjects.map(p => (
-              <tr key={p.id} className="hover:bg-zinc-50/50">
-                <td className="px-6 py-4 font-medium text-zinc-900">{p.id}</td>
-                <td className="px-6 py-4">{p.name}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                    p.status === 'Active' ? 'bg-emerald-100 text-emerald-800' :
-                    p.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
-                    'bg-amber-100 text-amber-800'
-                  }`}>{p.status}</span>
-                </td>
-                <td className="px-6 py-4">{p.budget}</td>
-                <td className="px-6 py-4">{p.spent}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-full bg-zinc-200 rounded-full h-2">
-                      <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${p.completion}%` }}></div>
-                    </div>
-                    <span className="text-xs text-zinc-500 w-8">{p.completion}%</span>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-600">
+              <tr>
+                <th className="px-6 py-4 font-medium">Project ID</th>
+                <th className="px-6 py-4 font-medium">Name</th>
+                <th className="px-6 py-4 font-medium">Status</th>
+                <th className="px-6 py-4 font-medium">Budget</th>
+                <th className="px-6 py-4 font-medium">Spent</th>
+                <th className="px-6 py-4 font-medium">Completion</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 text-zinc-800">
+              {mockProjects.map(p => (
+                <tr key={p.id} className="hover:bg-zinc-50/50">
+                  <td className="px-6 py-4 font-medium text-zinc-900">{p.id}</td>
+                  <td className="px-6 py-4">{p.name}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      p.status === 'Active' ? 'bg-emerald-100 text-emerald-800' :
+                      p.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                      'bg-amber-100 text-amber-800'
+                    }`}>{p.status}</span>
+                  </td>
+                  <td className="px-6 py-4">{p.budget}</td>
+                  <td className="px-6 py-4">{p.spent}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-2 min-w-[140px]">
+                      <div className="w-full bg-zinc-200 rounded-full h-2">
+                        <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${p.completion}%` }}></div>
+                      </div>
+                      <span className="text-xs text-zinc-500 w-8">{p.completion}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

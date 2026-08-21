@@ -17,7 +17,7 @@ export default function ExportProjectReportPage() {
         <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">Date Range</label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input type="date" className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
               <input type="date" className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
             </div>
