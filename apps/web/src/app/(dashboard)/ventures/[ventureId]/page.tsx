@@ -613,9 +613,9 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
         {/* 6. COMMUNICATION (CHAT) TAB */}
         {activeTab === 'communication' && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Scoped Chat Rooms List */}
-            <div className="p-4 rounded-2xl bg-white border border-zinc-200 space-y-3">
+            <div className="md:col-span-1 p-4 rounded-2xl bg-white border border-zinc-200 space-y-3">
               <h3 className="text-xs font-bold text-black uppercase tracking-wider">Scoped Venture Channels</h3>
               <div className="space-y-1 text-xs">
                 {(venture.chatRooms || []).map((rm: any) => {
@@ -636,7 +636,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
             </div>
 
             {/* Chat Box */}
-            <div className="md:col-span-3 p-5 rounded-2xl bg-white border border-zinc-200 flex flex-col h-[500px]">
+            <div className="md:col-span-3 p-4 sm:p-5 rounded-2xl bg-white border border-zinc-200 flex flex-col h-[420px] sm:h-[500px]">
               <div className="border-b border-zinc-200 pb-3 mb-4">
                 <h4 className="font-bold text-black text-sm"># {activeRoom?.name || 'General Discussion'}</h4>
                 <p className="text-[11px] text-zinc-500">Scoped room for all members assigned to {venture.name}</p>
@@ -749,8 +749,8 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
       {/* Modal: Assign New Employee */}
       {showAssignModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleAssignEmployee} className="bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 max-w-md w-full space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <form onSubmit={handleAssignEmployee} className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-xl p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Assign Employee to Venture</h3>
             <div className="space-y-3 text-xs">
               <div>

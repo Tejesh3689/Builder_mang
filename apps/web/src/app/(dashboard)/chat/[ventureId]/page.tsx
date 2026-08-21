@@ -79,9 +79,9 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-4xl mx-auto rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm text-sm">
+    <div className="flex flex-col h-[calc(100dvh-9rem)] sm:h-[calc(100vh-10rem)] rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm text-sm">
       {/* Room Header */}
-      <div className="h-16 border-b border-zinc-200 px-6 flex justify-between items-center bg-zinc-50/50">
+      <div className="h-14 sm:h-16 border-b border-zinc-200 px-3 sm:px-6 flex justify-between items-center bg-zinc-50/50">
         <div className="flex items-center gap-3">
           <Link href="/chat" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200">
             <ArrowLeft className="w-4 h-4" />

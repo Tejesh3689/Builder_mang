@@ -131,7 +131,7 @@ export default function ManagersDirectoryPage() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors whitespace-nowrap"
+          className="w-full sm:w-auto px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors whitespace-nowrap"
         >
           + Add Manager
         </button>
@@ -140,7 +140,7 @@ export default function ManagersDirectoryPage() {
       {/* Directory Table */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[700px] text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-200 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/20">
                 <th className="py-3 px-6 font-semibold">Manager</th>
@@ -229,8 +229,8 @@ export default function ManagersDirectoryPage() {
 
       {/* Modal: Add Manager */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleAddSubmit} className="bg-white rounded-2xl border border-zinc-200 shadow-lg p-6 max-w-md w-full space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <form onSubmit={handleAddSubmit} className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-lg p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-zinc-100 pb-2">
               <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Manager Account</h3>
               <button type="button" onClick={() => setShowAddModal(false)} className="text-zinc-400 hover:text-black">

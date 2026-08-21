@@ -81,9 +81,9 @@ export default function NewMaterialPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-xl mx-auto text-sm">
+    <div className="space-y-6 w-full text-sm">
       {/* Top Header Card */}
-      <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs flex items-center justify-between">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-200 shadow-xs">
         <div className="space-y-1">
           <Link href="/materials" className="text-xs text-amber-700 hover:underline flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Materials
@@ -100,7 +100,7 @@ export default function NewMaterialPage() {
       )}
 
       {/* Main Form */}
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-zinc-700 mb-1">Material Name</label>

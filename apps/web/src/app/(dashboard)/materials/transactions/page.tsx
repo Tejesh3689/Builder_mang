@@ -42,9 +42,9 @@ export default async function MaterialTransactionsPage() {
       ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto text-sm">
+    <div className="space-y-6 w-full text-sm">
       {/* Top Header Card */}
-      <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs flex items-center justify-between">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-200 shadow-xs">
         <div className="space-y-1">
           <Link href="/materials" className="text-xs text-amber-700 hover:underline flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Materials
@@ -61,7 +61,7 @@ export default async function MaterialTransactionsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[750px] text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-100 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/50">
                 <th className="py-3 px-6 font-semibold">Tx Number & Type</th>
