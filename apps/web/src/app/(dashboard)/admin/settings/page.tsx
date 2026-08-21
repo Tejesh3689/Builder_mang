@@ -1,11 +1,12 @@
 import React from 'react';
+import Link from 'next/link';
 
 export default function CompanySettingsPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900">Company Settings</h1>
-        <button className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-sm font-semibold">Save Changes</button>
+        <button type="button" className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-sm font-semibold inline-block">Save Changes</button>
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
@@ -51,7 +52,7 @@ export default function CompanySettingsPage() {
               <span className="text-xs text-zinc-500 font-medium">Logo</span>
             </div>
             <div>
-              <button className="px-4 py-2 bg-white border border-zinc-300 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-100">Upload New Logo</button>
+              <Link href="/admin/settings/upload-logo" className="px-4 py-2 bg-white border border-zinc-300 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-100 inline-block">Upload New Logo</Link>
               <p className="text-xs text-zinc-500 mt-2">Recommended size: 256x256px. PNG or JPG.</p>
             </div>
           </div>

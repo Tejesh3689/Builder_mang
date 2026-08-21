@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const mockRoles = [
   { id: 'ROL-1', name: 'Super Admin', users: 2, description: 'Full access to all modules and settings.' },
@@ -12,7 +13,7 @@ export default function RolesPermissionsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900">Roles & Permissions</h1>
-        <button className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Create Role</button>
+        <Link href="/admin/roles/new" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Create Role</Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -28,7 +29,7 @@ export default function RolesPermissionsPage() {
             
             <div className="pt-4 border-t border-zinc-100 flex justify-between items-center">
               <span className="text-sm font-medium text-zinc-600">Permissions</span>
-              <button className="text-sm font-semibold text-amber-600 hover:text-amber-700">Manage</button>
+              <Link href={`/admin/roles/${role.id}/manage`} className="text-sm font-semibold text-amber-600 hover:text-amber-700">Manage</Link>
             </div>
           </div>
         ))}

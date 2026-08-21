@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const mockUsers = [
   { id: 'USR-001', name: 'Admin Manager', email: 'admin@builder.com', role: 'Super Admin', status: 'Active' },
@@ -12,7 +13,7 @@ export default function UsersPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900">Users</h1>
-        <button className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Add User</button>
+        <Link href="/admin/users/new" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Add User</Link>
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
@@ -38,8 +39,8 @@ export default function UsersPage() {
                   }`}>{user.status}</span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button className="text-amber-600 hover:text-amber-800 font-semibold mr-3">Edit</button>
-                  <button className="text-red-600 hover:text-red-800 font-semibold">Delete</button>
+                  <Link href={`/admin/users/${user.id}/edit`} className="text-amber-600 hover:text-amber-800 font-semibold mr-3">Edit</Link>
+                  <Link href={`/admin/users/${user.id}/delete`} className="text-red-600 hover:text-red-800 font-semibold">Delete</Link>
                 </td>
               </tr>
             ))}
