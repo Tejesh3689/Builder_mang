@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
@@ -10,6 +10,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: session } = useSession();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeOverride, setActiveOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pathname === '/materials') {
+      if (!activeOverride || (activeOverride !== 'Inventory Overview' && activeOverride !== 'Materials')) {
+        setActiveOverride('Inventory Overview');
+      }
+    } else {
+      setActiveOverride(null);
+    }
+  }, [pathname]);
 
   const currentUser = session?.user;
   const userName = currentUser?.name || currentUser?.email?.split('@')[0] || 'User Account';
@@ -210,12 +221,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 )}
                 {group.items.map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive = activeOverride
+                    ? item.label === activeOverride
+                    : pathname === item.href;
                   return (
                     <Link
                       key={item.href + item.label}
                       href={item.href}
                       title={isSidebarCollapsed ? item.label : undefined}
+                      onClick={() => {
+                        setActiveOverride(item.label);
+                        setIsMobileSidebarOpen(false);
+                      }}
                       className={`flex items-center rounded-full text-xs font-medium transition-all duration-150 ${
                         isSidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5'
                       } ${
