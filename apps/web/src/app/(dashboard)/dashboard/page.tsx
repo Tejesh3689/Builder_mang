@@ -278,30 +278,32 @@ export default async function DashboardPage() {
                 View all &rarr;
               </Link>
             </div>
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-zinc-100 text-zinc-400 uppercase font-mono text-[10px]">
-                  <th className="pb-2">MATERIAL</th>
-                  <th className="pb-2">LOCATION</th>
-                  <th className="pb-2">STATUS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {inventoryAlerts.map((alt, idx) => (
-                  <tr key={idx}>
-                    <td className="py-3 font-bold text-black">{alt.name}</td>
-                    <td className="py-3 text-zinc-500 font-mono text-[11px]">{alt.location}</td>
-                    <td className="py-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                        alt.tone === 'red' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>
-                        • {alt.status}
-                      </span>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-zinc-100 text-zinc-400 uppercase font-mono text-[10px]">
+                    <th className="pb-2">MATERIAL</th>
+                    <th className="pb-2">LOCATION</th>
+                    <th className="pb-2">STATUS</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {inventoryAlerts.map((alt, idx) => (
+                    <tr key={idx}>
+                      <td className="py-3 font-bold text-black">{alt.name}</td>
+                      <td className="py-3 text-zinc-500 font-mono text-[11px]">{alt.location}</td>
+                      <td className="py-3">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                          alt.tone === 'red' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
+                          • {alt.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
