@@ -183,7 +183,7 @@ export default function NewMaterialPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-5 py-2.5 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+            className="w-full sm:w-auto px-5 py-2.5 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
           >
             <Save className="w-4 h-4" /> {submitting ? 'Saving Material...' : 'Save Material'}
           </button>

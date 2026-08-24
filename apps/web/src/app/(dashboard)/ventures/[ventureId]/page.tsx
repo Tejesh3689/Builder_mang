@@ -179,9 +179,9 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
   return (
     <div className="space-y-6">
       {/* Top Navigation & Breadcrumb */}
-      <div className="flex items-center justify-between border-b border-zinc-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 pb-4">
         <div className="flex items-center gap-3">
-          <Link href="/ventures" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200">
+          <Link href="/ventures" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
@@ -466,21 +466,21 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
         {activeTab === 'team' && (
           <div className="space-y-6">
             <div className="p-6 rounded-2xl bg-white border border-zinc-200 space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="text-base font-bold text-black">Assigned Venture Employees</h3>
                   <p className="text-xs text-zinc-500">A user's venture assignment determines what project data they can access.</p>
                 </div>
                 <button
                   onClick={() => setShowAssignModal(true)}
-                  className="px-3.5 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs"
+                  className="px-3.5 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs w-full sm:w-auto shrink-0"
                 >
                   <UserPlus className="w-4 h-4" /> Assign New Employee
                 </button>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-zinc-700">
+                <table className="w-full min-w-[650px] text-left text-xs text-zinc-700">
                   <thead className="bg-zinc-50 text-zinc-500 font-semibold border-b border-zinc-200">
                     <tr>
                       <th className="px-4 py-3">Employee Name</th>
@@ -518,16 +518,16 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
         {/* 4. OPERATIONS TAB (Materials & Employees) */}
         {activeTab === 'operations' && (
           <div className="space-y-6">
-            <div className="flex gap-2 border-b border-zinc-200 text-xs font-semibold pb-2">
+            <div className="flex gap-2 border-b border-zinc-200 text-xs font-semibold pb-2 overflow-x-auto">
               <button
                 onClick={() => setOpsSubTab('materials')}
-                className={`px-3 py-1.5 rounded-lg ${opsSubTab === 'materials' ? 'bg-black text-white' : 'text-zinc-500 hover:text-black'}`}
+                className={`px-3 py-1.5 rounded-lg shrink-0 ${opsSubTab === 'materials' ? 'bg-black text-white' : 'text-zinc-500 hover:text-black'}`}
               >
                 Materials Inventory
               </button>
               <button
                 onClick={() => setOpsSubTab('employees')}
-                className={`px-3 py-1.5 rounded-lg ${opsSubTab === 'employees' ? 'bg-black text-white' : 'text-zinc-500 hover:text-black'}`}
+                className={`px-3 py-1.5 rounded-lg shrink-0 ${opsSubTab === 'employees' ? 'bg-black text-white' : 'text-zinc-500 hover:text-black'}`}
               >
                 Venture Staff
               </button>
@@ -537,7 +537,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
               <div className="p-6 rounded-2xl bg-white border border-zinc-200 space-y-4">
                 <h3 className="text-base font-bold text-black">Scoped Site Inventory</h3>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-zinc-700">
+                  <table className="w-full min-w-[650px] text-left text-xs text-zinc-700">
                     <thead className="bg-zinc-50 text-zinc-500 font-semibold border-b border-zinc-200">
                       <tr>
                         <th className="px-4 py-3">Material Name & Code</th>
@@ -583,12 +583,12 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
         {/* 5. DOCUMENTS TAB */}
         {activeTab === 'documents' && (
           <div className="p-6 rounded-2xl bg-white border border-zinc-200 space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-black">Venture Documents Repository</h3>
                 <p className="text-xs text-zinc-500">Drawings, municipal approvals, legal permits, and photos scoped to this venture.</p>
               </div>
-              <button className="px-3.5 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5">
+              <button className="px-3.5 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0">
                 <Upload className="w-4 h-4" /> Upload Document
               </button>
             </div>
@@ -800,18 +800,18 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                 </select>
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setShowAssignModal(false)}
-                className="px-4 py-2 border border-zinc-200 rounded-lg text-zinc-700 hover:bg-zinc-50"
+                className="w-full sm:w-auto px-4 py-2 border border-zinc-200 rounded-lg text-zinc-700 hover:bg-zinc-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!selectedEmpId}
-                className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg shadow-xs"
+                className="w-full sm:w-auto px-4 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg shadow-xs"
               >
                 Save Assignment
               </button>

@@ -81,23 +81,23 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
   return (
     <div className="flex flex-col h-[calc(100dvh-9rem)] sm:h-[calc(100vh-10rem)] rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm text-sm">
       {/* Room Header */}
-      <div className="h-14 sm:h-16 border-b border-zinc-200 px-3 sm:px-6 flex justify-between items-center bg-zinc-50/50">
-        <div className="flex items-center gap-3">
-          <Link href="/chat" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200">
+      <div className="h-14 sm:h-16 border-b border-zinc-200 px-3 sm:px-6 flex justify-between items-center gap-3 bg-zinc-50/50">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/chat" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <h3 className="font-extrabold text-zinc-950 flex items-center gap-1.5">
-              <MessageSquare className="w-4 h-4 text-amber-700" /> #{room?.name || 'Venture Channel'}
+          <div className="min-w-0">
+            <h3 className="font-extrabold text-zinc-950 flex items-center gap-1.5 min-w-0">
+              <MessageSquare className="w-4 h-4 text-amber-700 shrink-0" /> <span className="truncate">#{room?.name || 'Venture Channel'}</span>
             </h3>
             {room?.venture && (
-              <span className="text-[10px] text-zinc-400 font-mono flex items-center gap-1">
-                <Building2 className="w-3 h-3 text-amber-600" /> Scoped to {room.venture.name}
+              <span className="text-[10px] text-zinc-400 font-mono flex items-center gap-1 min-w-0">
+                <Building2 className="w-3 h-3 text-amber-600 shrink-0" /> <span className="truncate">Scoped to {room.venture.name}</span>
               </span>
             )}
           </div>
         </div>
-        <Link href="/chat" className="text-xs font-semibold text-amber-700 hover:underline">Exit Room</Link>
+        <Link href="/chat" className="text-xs font-semibold text-amber-700 hover:underline shrink-0">Exit Room</Link>
       </div>
 
       {/* Messages Scroll Area */}

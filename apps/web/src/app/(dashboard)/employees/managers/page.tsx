@@ -301,17 +301,17 @@ export default function ManagersDirectoryPage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 border border-zinc-200 rounded-lg text-zinc-700 hover:bg-zinc-50"
+                className="w-full sm:w-auto px-4 py-2 border border-zinc-200 rounded-lg text-zinc-700 hover:bg-zinc-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg shadow-xs"
+                className="w-full sm:w-auto px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg shadow-xs"
               >
                 Save Manager
               </button>
