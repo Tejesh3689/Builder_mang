@@ -35,7 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     .substring(0, 2);
 
   const getNavGroups = (role: string) => {
-    if (role === 'SUPERVISOR') {
+    if (role === 'SITE_ENGINEER') {
       return [
         {
           group: null,
@@ -71,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ];
     }
 
-    if (role === 'MANAGER') {
+    if (role === 'PROJECT_MANAGER') {
       return [
         {
           group: null,
@@ -123,39 +123,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {
         group: 'Ventures',
         items: [
-          { href: '/ventures', label: 'All Ventures', icon: 'layers', count: 5 },
+          { href: '/ventures', label: 'All Ventures', icon: 'layers' },
         ],
       },
       {
         group: 'People',
         items: [
           { href: '/employees/dashboard', label: 'Employee Dashboard', icon: 'home' },
-          { href: '/employees', label: 'Employees', icon: 'users', count: 12 },
-          { href: '/employees/managers', label: 'Managers', icon: 'briefcase', count: 2 },
-          { href: '/employees/supervisors', label: 'Supervisors', icon: 'shield', count: 4 },
+          { href: '/employees', label: 'Employees', icon: 'users' },
+          { href: '/employees/managers', label: 'Managers', icon: 'briefcase' },
+          { href: '/employees/supervisors', label: 'Supervisors', icon: 'shield' },
         ],
       },
       {
         group: 'Inventory',
         items: [
           { href: '/materials', label: 'Inventory Overview', icon: 'box' },
-          { href: '/materials', label: 'Materials', icon: 'cube', count: 9 },
+          { href: '/materials', label: 'Materials', icon: 'cube' },
           { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
-        ],
-      },
-      {
-        group: 'Operations',
-        items: [
-          { href: '/operations/tasks', label: 'Tasks', icon: 'tasks', count: 5 },
-          { href: '/operations/issues', label: 'Issues', icon: 'alert', count: 3, alert: true },
         ],
       },
       {
         group: 'Communication',
         items: [
           { href: '/chat', label: 'Venture Chat', icon: 'chat' },
-          { href: '/announcements', label: 'Announcements', icon: 'bell' },
-          { href: '/notifications', label: 'Notifications', icon: 'bell', count: 4, alert: true },
+          { href: '/notifications', label: 'Notifications', icon: 'bell' },
         ],
       },
       {

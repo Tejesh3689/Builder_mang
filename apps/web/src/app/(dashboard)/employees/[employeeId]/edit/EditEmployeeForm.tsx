@@ -23,6 +23,30 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
   const [supervisor, setSupervisor] = useState('—');
   const [status, setStatus] = useState<'Active' | 'On Leave' | 'Terminated'>('Active');
   const [employmentType, setEmploymentType] = useState<'Full-Time Contractor' | 'Permanent' | 'Daily Wage'>('Permanent');
+  
+  const [seniorEmployees, setSeniorEmployees] = useState<{name: string, designation: string}[]>([]);
+
+  useEffect(() => {
+    async function fetchManagers() {
+      try {
+        const res = await fetch('/api/employees');
+        const data = await res.json();
+        if (data.success && data.data) {
+          // Filter to senior roles or managers
+          const managers = data.data.filter((e: any) => 
+            e.designation?.toLowerCase().includes('manager') || 
+            e.designation?.toLowerCase().includes('director') || 
+            e.designation?.toLowerCase().includes('supervisor') ||
+            e.designation?.toLowerCase().includes('lead')
+          );
+          setSeniorEmployees(managers);
+        }
+      } catch (err) {
+        console.error('Failed to fetch managers:', err);
+      }
+    }
+    fetchManagers();
+  }, []);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -304,13 +328,15 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   onChange={(e) => setSupervisor(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="Krishna Rao">Krishna Rao</option>
-                  <option value="Suresh Kumar">Suresh Kumar</option>
-                  <option value="Manoj Verma">Manoj Verma</option>
-                  <option value="Arjun Sharma">Arjun Sharma</option>
-                  <option value="Ajay Rao">Ajay Rao</option>
-                  <option value="Rajesh Kumar">Rajesh Kumar</option>
                   <option value="—">None / Direct Report</option>
+                  {seniorEmployees.map((emp, idx) => (
+                    <option key={idx} value={`${emp.name}`}>
+                      {emp.name} ({emp.designation})
+                    </option>
+                  ))}
+                  {!seniorEmployees.some(e => e.name === supervisor) && supervisor !== '—' && supervisor && (
+                    <option value={supervisor}>{supervisor} (Current)</option>
+                  )}
                 </select>
               </div>
 

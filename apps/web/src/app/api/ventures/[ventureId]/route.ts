@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: Request,
@@ -55,19 +57,45 @@ export async function GET(
   }
 }
 
+// Allowlist of fields that can be updated via PATCH
+const PATCHABLE_FIELDS = [
+  'name', 'description', 'status', 'type',
+  'regAddressLine1', 'regCity', 'regState', 'regPincode', 'regDistrict',
+  'siteAddressLine1', 'siteCity', 'siteState', 'sitePincode', 'siteDistrict',
+  'latitude', 'longitude',
+  'startDate', 'expectedCompletionDate', 'planningStartDate',
+  'estimatedBudget', 'progressPercentage',
+  'projectDirectorId', 'projectManagerId', 'siteManagerId',
+  'constructionManagerId', 'financeManagerId', 'purchaseManagerId',
+];
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ ventureId: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
+    }
+
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
     const body = await request.json();
 
+    // Only allow explicitly permitted fields — prevent arbitrary column overwrites
+    const safeData: Record<string, any> = {};
+    for (const key of PATCHABLE_FIELDS) {
+      if (key in body) {
+        safeData[key] = body[key];
+      }
+    }
+
     try {
       const updated = await prisma.venture.update({
         where: { id: ventureId },
-        data: body,
+        data: safeData,
       });
       return NextResponse.json({ success: true, data: updated });
     } catch (dbError: any) {

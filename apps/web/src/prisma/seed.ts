@@ -415,35 +415,66 @@ async function main() {
     ],
   });
 
-  // 10. Scoped Chat Rooms
-  const chatGeneral = await prisma.chatRoom.create({
-    data: {
+  // 10. Scoped Chat Rooms (upsert for idempotency — prevents duplicates on re-seed)
+  const chatGeneral = await prisma.chatRoom.upsert({
+    where: { ventureId_name: { ventureId: greenHeights.id, name: 'General Discussion' } },
+    update: {},
+    create: {
       ventureId: greenHeights.id,
       name: 'General Discussion',
     },
   });
 
-  const chatSiteTeam = await prisma.chatRoom.create({
-    data: {
+  const chatSiteTeam = await prisma.chatRoom.upsert({
+    where: { ventureId_name: { ventureId: greenHeights.id, name: 'Site Engineers & Ops' } },
+    update: {},
+    create: {
       ventureId: greenHeights.id,
       name: 'Site Engineers & Ops',
     },
   });
 
-  await prisma.chatMessage.create({
-    data: {
-      roomId: chatGeneral.id,
-      senderId: manager.id,
-      content: 'Welcome everyone! Tower B slab casting is scheduled for this Thursday.',
-    },
+  // Add ChatMember rows for users who participate in these rooms
+  // (required by the membership check on GET /api/chat/rooms/[roomId]/messages)
+  await prisma.chatMember.upsert({
+    where: { roomId_userId: { roomId: chatGeneral.id, userId: manager.id } },
+    update: {},
+    create: { roomId: chatGeneral.id, userId: manager.id },
   });
 
-  await prisma.chatMessage.create({
-    data: {
-      roomId: chatSiteTeam.id,
-      senderId: engineer.id,
-      content: 'Cement stock verified (420 bags). Ready for morning batching operation.',
-    },
+  await prisma.chatMember.upsert({
+    where: { roomId_userId: { roomId: chatGeneral.id, userId: admin.id } },
+    update: {},
+    create: { roomId: chatGeneral.id, userId: admin.id },
+  });
+
+  await prisma.chatMember.upsert({
+    where: { roomId_userId: { roomId: chatSiteTeam.id, userId: engineer.id } },
+    update: {},
+    create: { roomId: chatSiteTeam.id, userId: engineer.id },
+  });
+
+  await prisma.chatMember.upsert({
+    where: { roomId_userId: { roomId: chatSiteTeam.id, userId: manager.id } },
+    update: {},
+    create: { roomId: chatSiteTeam.id, userId: manager.id },
+  });
+
+  // Seed welcome messages (skipDuplicates prevents doubling on re-seed)
+  await prisma.chatMessage.createMany({
+    skipDuplicates: true,
+    data: [
+      {
+        roomId: chatGeneral.id,
+        senderId: manager.id,
+        content: 'Welcome everyone! Tower B slab casting is scheduled for this Thursday.',
+      },
+      {
+        roomId: chatSiteTeam.id,
+        senderId: engineer.id,
+        content: 'Cement stock verified (420 bags). Ready for morning batching operation.',
+      },
+    ],
   });
 
   // 11. Audit Activity Log

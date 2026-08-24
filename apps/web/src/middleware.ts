@@ -8,12 +8,14 @@ export default withAuth(
 
     // Protect admin routes from non-ADMINs
     if (token?.role !== 'ADMIN') {
-      const isManager = token?.role === 'MANAGER';
+      const isProjectManager = token?.role === 'PROJECT_MANAGER';
+      const isSiteEngineer = token?.role === 'SITE_ENGINEER';
+      const isStoreManager = token?.role === 'STORE_MANAGER';
       
       const adminOnlyPrefixes = [
         '/admin',
-        ...(isManager ? [] : ['/ventures']), // Allow MANAGER to access ventures
-        '/materials',
+        ...(isProjectManager ? [] : ['/ventures']), // Allow PROJECT_MANAGER to access ventures
+        ...(isProjectManager || isStoreManager ? [] : ['/materials']), // Allow PROJECT_MANAGER and STORE_MANAGER to access materials
         '/compliance',
         '/workforce',
         '/onboarding',
@@ -34,10 +36,9 @@ export default withAuth(
       }
       
       // Global API Blocking
-      const isSupervisor = token?.role === 'SUPERVISOR';
       const adminApiPrefixes = [
-        ...(isManager || isSupervisor ? [] : ['/api/ventures']), // Allow MANAGER and SUPERVISOR to access ventures API for dropdowns
-        '/api/materials',
+        ...(isProjectManager || isSiteEngineer || isStoreManager ? [] : ['/api/ventures']), // Allow PM, SE, SM to access ventures API for dropdowns
+        ...(isProjectManager || isStoreManager ? [] : ['/api/materials']), // Allow PM and SM to access materials API
         '/api/workforce',
         '/api/onboarding',
         '/api/assignments',

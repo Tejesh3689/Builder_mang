@@ -11,8 +11,8 @@ export default function EmployeesClient({
   userRole?: string;
   sessionName?: string;
 }) {
-  const isSupervisor = userRole === 'SUPERVISOR';
-  const isManager = userRole === 'MANAGER';
+  const isSupervisor = userRole === 'SITE_ENGINEER';
+  const isManager = userRole === 'PROJECT_MANAGER';
   const isSupervisorOrManager = isSupervisor || isManager;
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [loading, setLoading] = useState(true);

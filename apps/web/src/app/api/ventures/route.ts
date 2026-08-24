@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
@@ -95,6 +97,9 @@ export async function POST(request: Request) {
     }
 
     try {
+      const session = await getServerSession(authOptions);
+      const creatorUserId = (session?.user as any)?.id;
+
       const venture = await prisma.venture.create({
         data: {
           name,
@@ -132,9 +137,32 @@ export async function POST(request: Request) {
             ],
           },
         },
+        include: {
+          chatRooms: { select: { id: true } },
+        },
       });
 
-      return NextResponse.json({ success: true, data: venture });
+      // Auto-add venture leaders as chat members in all created rooms
+      const leaderEmployeeIds = [projectDirectorId, projectManagerId, siteManagerId].filter(Boolean);
+      const leaderUsers = leaderEmployeeIds.length > 0
+        ? await prisma.employee.findMany({
+            where: { id: { in: leaderEmployeeIds } },
+            select: { userId: true },
+          })
+        : [];
+      const memberUserIds = [...new Set([
+        ...leaderUsers.map((e) => e.userId).filter(Boolean),
+        ...(creatorUserId ? [creatorUserId] : []),
+      ])] as string[];
+
+      if (memberUserIds.length > 0) {
+        const chatMemberData = venture.chatRooms.flatMap((room) =>
+          memberUserIds.map((userId) => ({ roomId: room.id, userId }))
+        );
+        await prisma.chatMember.createMany({ data: chatMemberData, skipDuplicates: true });
+      }
+
+      return NextResponse.json({ success: true, data: venture }, { status: 201 });
     } catch (dbError: any) {
       console.error('Database error in ventures POST:', dbError);
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });

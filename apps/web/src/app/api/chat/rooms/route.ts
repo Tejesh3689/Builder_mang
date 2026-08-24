@@ -6,15 +6,25 @@ import { authOptions } from '@/lib/auth';
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !(session.user as any)?.id) {
+    const userId = (session?.user as any)?.id;
+    const userRole = (session?.user as any)?.role;
+    if (!session || !userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
     const ventureId = searchParams.get('ventureId');
 
+    // ADMIN sees all rooms. Other roles only see rooms they are a member of.
+    const membershipFilter = userRole !== 'ADMIN'
+      ? { members: { some: { userId } } }
+      : {};
+
     const rooms = await prisma.chatRoom.findMany({
-      where: ventureId ? { ventureId } : undefined,
+      where: {
+        ...(ventureId ? { ventureId } : {}),
+        ...membershipFilter,
+      },
       include: {
         venture: {
           select: { id: true, name: true, code: true }
@@ -37,6 +47,7 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
+    const userRole = (session?.user as any)?.role;
     if (!session || !userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
@@ -46,6 +57,25 @@ export async function POST(req: Request) {
 
     if (!name) {
       return NextResponse.json({ success: false, error: 'Room name is required' }, { status: 400 });
+    }
+
+    // If scoped to a venture, verify the creating user is assigned to it (unless ADMIN)
+    if (ventureId && userRole !== 'ADMIN') {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          employee: {
+            include: { assignments: { where: { ventureId, status: 'ACTIVE' } } }
+          }
+        }
+      });
+      const isAssigned = (user?.employee?.assignments?.length ?? 0) > 0;
+      if (!isAssigned) {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden: You are not assigned to this venture' },
+          { status: 403 }
+        );
+      }
     }
 
     const room = await prisma.chatRoom.create({
@@ -58,7 +88,7 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, data: room });
+    return NextResponse.json({ success: true, data: room }, { status: 201 });
   } catch (error: any) {
     console.error('Failed to create chat room:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
