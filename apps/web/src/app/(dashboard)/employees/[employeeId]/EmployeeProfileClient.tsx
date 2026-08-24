@@ -17,6 +17,25 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
   const canDeactivate = userRole === 'ADMIN';
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [ventureOptions, setVentureOptions] = useState<{ id: string; name: string }[]>([]);
+  const [actionError, setActionError] = useState('');
+
+  // Load real ventures for the "Assign Project" dropdown, so submissions reference a
+  // venture ID that actually exists instead of a hardcoded placeholder.
+  useEffect(() => {
+    async function loadVentures() {
+      try {
+        const res = await fetch('/api/ventures');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setVentureOptions(json.data.map((v: any) => ({ id: v.id, name: v.name })));
+        }
+      } catch (err) {
+        console.error('Failed to load ventures for assignment dropdown:', err);
+      }
+    }
+    loadVentures();
+  }, []);
 
   // Load from API
   useEffect(() => {
@@ -78,12 +97,18 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
   const [showCertModal, setShowCertModal] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
 
-  // Assignment states
-  const [newProject, setNewProject] = useState('Green Heights Luxury Apartments');
+  // Assignment states — newProject holds the real venture ID (populated once ventureOptions loads)
+  const [newProject, setNewProject] = useState('');
   const [newSite, setNewSite] = useState('Site A');
   const [newRole, setNewRole] = useState('Site Engineer');
   const [newManager, setNewManager] = useState('Suresh Verma');
   const [newDuration, setNewDuration] = useState('Feb 2026 - Present');
+
+  useEffect(() => {
+    if (!newProject && ventureOptions.length > 0) {
+      setNewProject(ventureOptions[0].id);
+    }
+  }, [ventureOptions, newProject]);
 
   // Skill states
   const [skillName, setSkillName] = useState('');
@@ -198,26 +223,22 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
   // Actions
   const handleAssignProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employee) return;
-    
-    // Convert named project to a mocked ID for the API, since dropdowns hold names
-    // In a real app we'd map this, but for now we'll pass a dummy venture ID.
-    let resolvedVentureId = 'vnt-001';
-    if (newProject.includes('Skyline')) resolvedVentureId = 'vnt-002';
-    else if (newProject.includes('Lake')) resolvedVentureId = 'vnt-003';
-    else if (newProject.includes('Sunrise')) resolvedVentureId = 'vnt-004';
+    if (!employee || !newProject) return;
+    setActionError('');
+
+    const projectName = ventureOptions.find((v) => v.id === newProject)?.name || newProject;
 
     try {
       const res = await fetch(`/api/employees/${employee.id}/assignments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ventureId: resolvedVentureId,
+          ventureId: newProject,
           roleAtSite: newRole,
           accessLevel: 'STANDARD'
         }),
       });
-      
+
       const json = await res.json();
       if (json.success) {
         // Optimistically update UI
@@ -225,10 +246,10 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
           if (a.status === 'Active') return { ...a, status: 'Completed' as const };
           return a;
         });
-        
+
         updatedHistory.unshift({
           id: json.data.id || `assign-${Date.now()}`,
-          project: newProject,
+          project: projectName,
           site: newSite,
           role: newRole,
           duration: 'Just now - Present',
@@ -237,26 +258,30 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
 
         setEmployee((prev: any) => ({
           ...prev,
-          currentProject: newProject,
+          currentProject: projectName,
           currentSite: newSite,
           designation: newRole,
           reportingManager: newManager,
           assignmentHistory: updatedHistory,
           activities: [
-            { action: `Assigned to ${newProject} (${newSite}) as ${newRole}`, timestamp: 'Just now' },
+            { action: `Assigned to ${projectName} (${newSite}) as ${newRole}`, timestamp: 'Just now' },
             ...prev.activities,
           ],
         }));
         setShowAssignModal(false);
+      } else {
+        setActionError(json.error || 'Failed to save assignment.');
       }
     } catch (err) {
       console.error('Failed to assign project', err);
+      setActionError('Failed to save assignment. Please try again.');
     }
   };
 
   const handleAddSkillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!skillName || !employee) return;
+    setActionError('');
 
     try {
       const res = await fetch(`/api/employees/${employee.id}/skills`, {
@@ -285,15 +310,19 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         }));
         setSkillName('');
         setShowSkillModal(false);
+      } else {
+        setActionError(json.error || 'Failed to save skill.');
       }
     } catch (err) {
       console.error('Failed to add skill', err);
+      setActionError('Failed to save skill. Please try again.');
     }
   };
 
   const handleAddCertSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!certName || !certNo || !employee) return;
+    setActionError('');
 
     try {
       const res = await fetch(`/api/employees/${employee.id}/certifications`, {
@@ -323,23 +352,26 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         setCertName('');
         setCertNo('');
         setShowCertModal(false);
+      } else {
+        setActionError(json.error || 'Failed to save certification.');
       }
     } catch (err) {
       console.error('Failed to add cert', err);
+      setActionError('Failed to save certification. Please try again.');
     }
   };
 
   const handleAddDocSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!docName || !employee) return;
+    setActionError('');
 
     try {
       const res = await fetch(`/api/employees/${employee.id}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: docName,
-          category: docCategory,
+          name: docName,
           fileType: docFileType,
           fileUrl: '/docs/placeholder.pdf'
         }),
@@ -350,7 +382,6 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
           ...prev,
           documents: [...prev.documents, {
             ...json.data,
-            name: docName, // UI maps title to name
             uploadDate: new Date().toISOString().split('T')[0]
           }],
           activities: [
@@ -361,9 +392,12 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         setDocName('');
         setSelectedDocFile(null);
         setShowDocModal(false);
+      } else {
+        setActionError(json.error || 'Failed to upload document.');
       }
     } catch (err) {
       console.error('Failed to add document', err);
+      setActionError('Failed to upload document. Please try again.');
     }
   };
 
@@ -707,14 +741,15 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <form onSubmit={handleAssignProjectSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Assign Project & Site</h3>
+            {actionError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Select Project</label>
-                <select value={newProject} onChange={(e) => setNewProject(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
-                  <option value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</option>
-                  <option value="Skyline Gated Villas">Skyline Gated Villas</option>
-                  <option value="Lake View Gated Community">Lake View Gated Community</option>
-                  <option value="Sunrise Villas">Sunrise Villas</option>
+                <select value={newProject} onChange={(e) => setNewProject(e.target.value)} disabled={ventureOptions.length === 0} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                  {ventureOptions.length === 0 && <option value="">Loading ventures...</option>}
+                  {ventureOptions.map((v) => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -736,7 +771,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
-              <button type="button" onClick={() => setShowAssignModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
+              <button type="button" onClick={() => { setShowAssignModal(false); setActionError(''); }} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
               <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Save Assignment</button>
             </div>
           </form>
@@ -748,6 +783,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <form onSubmit={handleAddSkillSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Verified Skill</h3>
+            {actionError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Skill Name</label>
@@ -767,7 +803,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
-              <button type="button" onClick={() => setShowSkillModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
+              <button type="button" onClick={() => { setShowSkillModal(false); setActionError(''); }} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
               <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Save Skill</button>
             </div>
           </form>
@@ -779,6 +815,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <form onSubmit={handleAddCertSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Certification</h3>
+            {actionError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Certification Name</label>
@@ -798,7 +835,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
-              <button type="button" onClick={() => setShowCertModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
+              <button type="button" onClick={() => { setShowCertModal(false); setActionError(''); }} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
               <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Save Certification</button>
             </div>
           </form>
@@ -810,6 +847,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <form onSubmit={handleAddDocSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Upload Document Vault</h3>
+            {actionError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Select File <span className="text-red-500">*</span></label>
@@ -843,7 +881,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
-              <button type="button" onClick={() => setShowDocModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
+              <button type="button" onClick={() => { setShowDocModal(false); setActionError(''); }} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
               <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Upload Doc</button>
             </div>
           </form>
