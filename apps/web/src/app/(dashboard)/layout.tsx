@@ -239,7 +239,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen bg-[#EAEAEA] text-black overflow-hidden font-sans">
+    <div className="flex h-dvh bg-[#EAEAEA] text-black overflow-hidden font-sans">
       {/* Mobile Sidebar Overlay Backdrop */}
       {isMobileSidebarOpen && (
         <div
@@ -299,7 +299,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Navigation Links */}
-          <div className={`${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'} overflow-y-auto max-h-[calc(100vh-140px)]`}>
+          <div className={`${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'} overflow-y-auto max-h-[calc(100dvh-140px)]`}>
             {navGroups.map((group, gIdx) => (
               <div key={gIdx} className="space-y-1">
                 {group.group && !isSidebarCollapsed && (
@@ -363,6 +363,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <button
                   onClick={() => signOut({ callbackUrl: '/login' })}
                   title="Sign Out"
+                  aria-label="Sign Out"
                   className="w-9 h-9 rounded-full bg-[#d97706] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm hover:bg-red-600 hover:text-white transition-colors"
                 >
                   {initials}
@@ -383,6 +384,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 onClick={() => signOut({ callbackUrl: '/login' })}
                 title="Sign Out"
+                aria-label="Sign Out"
                 className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -400,13 +402,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Hamburger Trigger for Mobile */}
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
+              aria-label="Open mobile menu"
               className="lg:hidden p-2 -ml-2 rounded-lg text-zinc-600 hover:text-black hover:bg-zinc-100 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
             <div className="flex flex-col">
               <h1 className="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-black leading-tight truncate max-w-[150px] sm:max-w-none">
-                {pathname === '/dashboard' ? 'Dashboard Overview' : pathname.replace('/', '').toUpperCase()}
+                {pathname === '/dashboard' ? 'Dashboard Overview' : pathname.split('/').filter(Boolean).join(' / ').toUpperCase()}
               </h1>
               <span className="text-[10px] sm:text-[11px] font-mono text-zinc-500">Live Workspace Status</span>
             </div>
@@ -420,7 +423,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Notification Button */}
-            <button className="w-9 h-9 rounded-full border border-zinc-200 bg-white flex items-center justify-center relative hover:bg-zinc-100 transition-colors">
+            <button aria-label="Notifications" className="w-9 h-9 rounded-full border border-zinc-200 bg-white flex items-center justify-center relative hover:bg-zinc-100 transition-colors">
               <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
               <span className="absolute -top-0.5 -right-0.5 bg-black text-white text-[9px] font-bold font-mono rounded-full w-4 h-4 flex items-center justify-center border-2 border-white">
                 3

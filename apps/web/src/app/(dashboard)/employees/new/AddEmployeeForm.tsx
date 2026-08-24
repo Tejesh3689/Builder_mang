@@ -153,7 +153,7 @@ export default function AddEmployeeForm() {
                   placeholder="e.g. Sunita Rao"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
                 />
               </div>
 
@@ -168,7 +168,7 @@ export default function AddEmployeeForm() {
                   placeholder="+91"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
                 />
               </div>
 
@@ -182,7 +182,7 @@ export default function AddEmployeeForm() {
                   placeholder="e.g. sunita.rao@naprocs.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
                 />
               </div>
 
@@ -194,7 +194,7 @@ export default function AddEmployeeForm() {
                   id="employmentType"
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Permanent">Permanent</option>
                   <option value="Full-Time Contractor">Full-Time Contractor</option>
@@ -218,7 +218,7 @@ export default function AddEmployeeForm() {
                   id="role"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Mason">Mason</option>
                   <option value="Electrician">Electrician</option>
@@ -240,7 +240,7 @@ export default function AddEmployeeForm() {
                   id="venture"
                   value={venture}
                   onChange={(e) => setVenture(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</option>
                   <option value="Skyline Gated Villas">Skyline Gated Villas</option>
@@ -259,7 +259,7 @@ export default function AddEmployeeForm() {
                   id="supervisor"
                   value={supervisor}
                   onChange={(e) => setSupervisor(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Krishna Rao">Krishna Rao</option>
                   <option value="Suresh Kumar">Suresh Kumar</option>
@@ -281,7 +281,7 @@ export default function AddEmployeeForm() {
                   required
                   value={joiningDate}
                   onChange={(e) => setJoiningDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 />
               </div>
             </div>

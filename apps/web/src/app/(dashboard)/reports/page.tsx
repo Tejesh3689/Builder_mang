@@ -90,7 +90,7 @@ export default function ReportsPage() {
         <select
           value={projectFilter}
           onChange={(e) => setProjectFilter(e.target.value)}
-          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <option value="All">All Projects</option>
           <option value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</option>
@@ -103,7 +103,7 @@ export default function ReportsPage() {
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <option value="All">All Departments</option>
           <option value="Site Operations">Site Operations</option>
@@ -120,7 +120,7 @@ export default function ReportsPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-hidden shrink-0 ${
+              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-none shrink-0 ${
                 activeTab === tab
                   ? 'border-black text-black bg-white'
                   : 'border-transparent text-zinc-400 hover:text-black'

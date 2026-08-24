@@ -136,7 +136,7 @@ export default function WorkforcePage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-hidden shrink-0 ${
+              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-none shrink-0 ${
                 activeTab === tab
                   ? 'border-black text-black bg-white'
                   : 'border-transparent text-zinc-400 hover:text-black'

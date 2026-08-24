@@ -111,6 +111,17 @@ async function main() {
     },
   });
 
+  const supervisor = await prisma.user.upsert({
+    where: { email: 'supervisor@builder.com' },
+    update: { passwordHash: defaultPasswordHash },
+    create: {
+      email: 'supervisor@builder.com',
+      passwordHash: defaultPasswordHash,
+      name: 'Krishna Rao Supervisor',
+      role: UserRole.SITE_ENGINEER,
+    },
+  });
+
   const storeUser = await prisma.user.upsert({
     where: { email: 'store@builder.com' },
     update: { passwordHash: defaultPasswordHash },
@@ -150,9 +161,23 @@ async function main() {
 
   const emp3 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-003' },
-    update: { userId: engineer.id },
+    update: { userId: supervisor.id },
     create: {
       employeeId: 'EMP-003',
+      userId: supervisor.id,
+      firstName: 'Krishna',
+      lastName: 'Rao',
+      designation: 'Site Supervisor',
+      department: 'Operations',
+      reportingManager: 'Suresh Verma'
+    },
+  });
+
+  const emp4 = await prisma.employee.upsert({
+    where: { employeeId: 'EMP-004' },
+    update: { userId: engineer.id },
+    create: {
+      employeeId: 'EMP-004',
       userId: engineer.id,
       firstName: 'Ajay',
       lastName: 'Rao',
@@ -161,11 +186,11 @@ async function main() {
     },
   });
 
-  const emp4 = await prisma.employee.upsert({
-    where: { employeeId: 'EMP-004' },
+  const emp5 = await prisma.employee.upsert({
+    where: { employeeId: 'EMP-005' },
     update: { userId: storeUser.id },
     create: {
-      employeeId: 'EMP-004',
+      employeeId: 'EMP-005',
       userId: storeUser.id,
       firstName: 'Vikram',
       lastName: 'Singh',

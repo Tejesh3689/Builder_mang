@@ -46,7 +46,7 @@ export default function AdminDashboard({
       </div>
 
       {/* Row 1: Venture Progress + Venture Status breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Venture Progress Card */}
         <div className="lg:col-span-2 bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
@@ -82,7 +82,7 @@ export default function AdminDashboard({
       </div>
 
       {/* Row 2: Pending Approvals + Material Consumption */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Pending Approvals Table */}
         <DashboardTableCard 
           title="Pending Approvals" 
@@ -143,7 +143,7 @@ export default function AdminDashboard({
       </div>
 
       {/* Row 3: Site Activity Timeline + Inventory Alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <DashboardActivityFeed 
           title="Site Activity" 
           subtitle="Across all ventures" 

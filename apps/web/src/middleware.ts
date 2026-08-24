@@ -34,8 +34,9 @@ export default withAuth(
       }
       
       // Global API Blocking
+      const isSupervisor = token?.role === 'SUPERVISOR';
       const adminApiPrefixes = [
-        ...(isManager ? [] : ['/api/ventures']), // Allow MANAGER to access ventures API
+        ...(isManager || isSupervisor ? [] : ['/api/ventures']), // Allow MANAGER and SUPERVISOR to access ventures API for dropdowns
         '/api/materials',
         '/api/workforce',
         '/api/onboarding',
@@ -43,6 +44,7 @@ export default withAuth(
         '/api/auth/register'
       ];
       if (adminApiPrefixes.some(prefix => path.startsWith(prefix))) {
+        // Prevent blocking GET requests if they are safe, but for now block all
         return new NextResponse(JSON.stringify({ error: 'Forbidden: Admin access required' }), { status: 403, headers: { 'content-type': 'application/json' } });
       }
     }

@@ -99,7 +99,7 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
             <button
               key={tab}
               onClick={() => setActiveCategory(tab)}
-              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-hidden shrink-0 ${
+              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-none shrink-0 ${
                 activeCategory === tab
                   ? 'border-black text-black bg-white'
                   : 'border-transparent text-zinc-400 hover:text-black'
@@ -121,7 +121,7 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
               </div>
             ) : (
               <div className="overflow-x-auto border border-zinc-200/80 rounded-xl">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[700px]">
                   <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200/80">
                     <tr>
                       <th className="py-2.5 px-4">Employee</th>
@@ -148,22 +148,22 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
                         <td className="py-3 px-4 text-zinc-600 truncate max-w-[250px]" title={req.summary}>{req.summary}</td>
                         <td className="py-3 px-4 text-zinc-500 text-[10px]">{req.submittedTime}</td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex items-center justify-center gap-3">
                             <button
                               onClick={() => setViewModal(req)}
-                              className="px-2 py-1 text-xs font-semibold text-zinc-600 hover:text-black bg-zinc-100 hover:bg-zinc-200 rounded transition-colors"
+                              className="px-3 py-2 text-xs font-semibold text-zinc-600 hover:text-black bg-zinc-100 hover:bg-zinc-200 rounded transition-colors"
                             >
                               Review
                             </button>
                             <button
                               onClick={() => setActionModal({ req, action: 'Approve' })}
-                              className="px-2 py-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors border border-emerald-200/50"
+                              className="px-3 py-2 text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors border border-emerald-200/50"
                             >
                               Approve
                             </button>
                             <button
                               onClick={() => setActionModal({ req, action: 'Reject' })}
-                              className="px-2 py-1 text-xs font-semibold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded transition-colors border border-red-200/50"
+                              className="px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded transition-colors border border-red-200/50"
                             >
                               Reject
                             </button>
@@ -181,8 +181,8 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
 
       {/* View Modal */}
       {viewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg border border-zinc-200 p-6 max-w-sm w-full space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-lg border border-zinc-200 p-6 max-w-sm w-full space-y-4 max-h-[90dvh] overflow-y-auto">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Review Request Details</h3>
             <div className="space-y-2 text-xs border border-zinc-200 rounded-lg p-3 bg-zinc-50">
               <div className="flex justify-between border-b border-zinc-200 pb-2"><span className="text-zinc-500 font-bold">Employee:</span> <span className="text-black font-semibold">{viewModal.employeeName}</span></div>
@@ -203,8 +203,8 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
 
       {/* Action Modal */}
       {actionModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg border border-zinc-200 p-6 max-w-xs w-full space-y-4 text-center">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-lg border border-zinc-200 p-6 max-w-xs w-full space-y-4 text-center max-h-[90dvh] overflow-y-auto">
             <h3 className={`text-lg font-extrabold tracking-tight ${actionModal.action === 'Approve' ? 'text-emerald-700' : 'text-red-700'}`}>
               {actionModal.action} Request?
             </h3>

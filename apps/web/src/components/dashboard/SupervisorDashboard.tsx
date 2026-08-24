@@ -55,14 +55,14 @@ export default function SupervisorDashboard() {
       </div>
 
       {/* Row 1: KPI Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <DashboardStatCard title="Team Overview" items={statItems.slice(0, 3)} />
         <DashboardStatCard title="Attendance Exceptions" items={statItems.slice(3, 6)} />
         <DashboardQuickActions title="Quick Actions" actions={quickActions} />
       </div>
 
       {/* Row 2: Pending Approvals */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
         <DashboardTableCard 
           title="Pending Leave Approvals"
           viewAllLink="/leave"
@@ -103,7 +103,7 @@ export default function SupervisorDashboard() {
       </div>
 
       {/* Row 3: Team Activity & Attendance List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <DashboardActivityFeed 
           title="Team Activity" 
           subtitle="Recent updates from your team" 

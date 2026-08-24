@@ -265,7 +265,7 @@ export default function EmployeesClient({
           <select
             value={selectedDept}
             onChange={(e) => setSelectedDept(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Departments</option>
             {departments.filter((d) => d !== 'All').map((d) => (
@@ -277,7 +277,7 @@ export default function EmployeesClient({
           <select
             value={selectedDesignation}
             onChange={(e) => setSelectedDesignation(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Designations</option>
             {designations.filter((d) => d !== 'All').map((d) => (
@@ -289,7 +289,7 @@ export default function EmployeesClient({
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Projects</option>
             {projects.filter((p) => p !== 'All').map((p) => (
@@ -301,7 +301,7 @@ export default function EmployeesClient({
           <select
             value={selectedSite}
             onChange={(e) => setSelectedSite(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Sites</option>
             {sites.filter((s) => s !== 'All').map((s) => (
@@ -313,7 +313,7 @@ export default function EmployeesClient({
           <select
             value={selectedEmpType}
             onChange={(e) => setSelectedEmpType(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Employment Types</option>
             {employmentTypes.filter((et) => et !== 'All').map((et) => (
@@ -325,7 +325,7 @@ export default function EmployeesClient({
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Statuses</option>
             {statuses.filter((s) => s !== 'All').map((s) => (
@@ -337,7 +337,7 @@ export default function EmployeesClient({
           <select
             value={selectedManager}
             onChange={(e) => setSelectedManager(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Managers</option>
             {managers.filter((m) => m !== 'All').map((m) => (
@@ -349,7 +349,7 @@ export default function EmployeesClient({
           <select
             value={selectedSkill}
             onChange={(e) => setSelectedSkill(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Skills</option>
             {skillsList.filter((s) => s !== 'All').map((s) => (
@@ -361,7 +361,7 @@ export default function EmployeesClient({
           <select
             value={selectedCertStatus}
             onChange={(e) => setSelectedCertStatus(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+            className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
             <option value="All">All Certifications Status</option>
             {certStatuses.filter((cs) => cs !== 'All').map((cs) => (

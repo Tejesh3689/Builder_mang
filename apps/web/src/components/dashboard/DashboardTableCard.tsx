@@ -33,7 +33,7 @@ export default function DashboardTableCard({
           )}
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[700px]">
             <thead>
               <tr className="border-b border-zinc-100 text-zinc-400 uppercase font-mono text-[10px]">
                 {headers.map((h, i) => (

@@ -60,6 +60,15 @@ function LoginFormContent() {
         </div>
       )}
 
+      <div className="p-3 mt-4 rounded-lg bg-blue-50 border border-blue-100 text-blue-800 text-[11px]">
+        <p className="font-semibold mb-1 text-xs">Test Accounts (password: password123)</p>
+        <ul className="list-disc pl-4 space-y-0.5">
+          <li><strong>Admin:</strong> admin@builder.com</li>
+          <li><strong>Manager:</strong> manager@builder.com</li>
+          <li><strong>Supervisor:</strong> supervisor@builder.com</li>
+        </ul>
+      </div>
+
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         <div className="space-y-4">
           <div>

@@ -199,7 +199,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   required
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 />
               </div>
 
@@ -213,7 +213,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   required
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 />
               </div>
 
@@ -227,7 +227,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 />
               </div>
 
@@ -241,7 +241,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 />
               </div>
             </div>
@@ -261,7 +261,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   id="role"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Mason">Mason</option>
                   <option value="Electrician">Electrician</option>
@@ -283,7 +283,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   id="venture"
                   value={venture}
                   onChange={(e) => setVenture(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</option>
                   <option value="Skyline Gated Villas">Skyline Gated Villas</option>
@@ -302,7 +302,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   id="supervisor"
                   value={supervisor}
                   onChange={(e) => setSupervisor(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Krishna Rao">Krishna Rao</option>
                   <option value="Suresh Kumar">Suresh Kumar</option>
@@ -322,7 +322,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   id="employmentType"
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Permanent">Permanent</option>
                   <option value="Full-Time Contractor">Full-Time Contractor</option>
@@ -338,7 +338,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                   id="status"
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
                   <option value="Active">Active</option>
                   <option value="On Leave">On Leave</option>

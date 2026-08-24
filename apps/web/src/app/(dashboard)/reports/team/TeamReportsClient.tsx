@@ -61,14 +61,16 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
       rows = filteredFieldWork.map(f => [f.date, f.employeeName, f.client, f.location, f.duration.toString(), f.status]);
     }
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvString = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.href = url;
     link.setAttribute('download', `Team_${activeTab.replace(' ', '_')}_Report.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -82,7 +84,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
       </div>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
           <div className="text-xs text-zinc-400 font-medium">Avg Attendance Rate</div>
           <div className="text-2xl font-black text-zinc-800 tracking-tight">92.4%</div>
@@ -112,7 +114,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
         <select
           value={dateRange}
           onChange={(e) => setDateRange(e.target.value)}
-          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <option value="Today">Today</option>
           <option value="This Week">This Week</option>
@@ -123,7 +125,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
         <select
           value={employeeFilter}
           onChange={(e) => setEmployeeFilter(e.target.value)}
-          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <option value="All">All Employees</option>
           <option value="Krishna Rao">Krishna Rao</option>
@@ -136,7 +138,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-zinc-400"
+          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <option value="All">All Statuses</option>
           <option value="Present">Present</option>
@@ -153,7 +155,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-hidden shrink-0 ${
+              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-none shrink-0 ${
                 activeTab === tab
                   ? 'border-black text-black bg-white'
                   : 'border-transparent text-zinc-400 hover:text-black'
@@ -166,7 +168,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
 
         {/* Tab Panel */}
         <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-wrap gap-4 justify-between items-center mb-4">
             <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">
               Report Data Preview
             </h3>
@@ -180,7 +182,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
 
           <div className="overflow-x-auto border border-zinc-200 rounded-xl">
             {activeTab === 'Team Attendance' && (
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs min-w-[700px]">
                 <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>
@@ -213,7 +215,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
             )}
 
             {activeTab === 'Leave' && (
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs min-w-[700px]">
                 <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
                   <tr>
                     <th className="py-2.5 px-4">Employee</th>
@@ -244,7 +246,7 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
             )}
 
             {activeTab === 'Field Work' && (
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs min-w-[700px]">
                 <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>
