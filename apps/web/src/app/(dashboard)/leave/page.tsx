@@ -1,14 +1,14 @@
 import React from 'react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import EmployeesClient from './EmployeesClient';
+import LeaveClient from './LeaveClient';
 
 export const revalidate = 0;
 
-export default async function EmployeesPage() {
+export default async function LeavePage() {
   const session = await getServerSession(authOptions);
   const userRole = (session?.user as any)?.role || 'USER';
   const sessionName = session?.user?.name || '';
 
-  return <EmployeesClient userRole={userRole} sessionName={sessionName} />;
+  return <LeaveClient userRole={userRole} sessionName={sessionName} />;
 }

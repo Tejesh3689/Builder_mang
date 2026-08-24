@@ -34,70 +34,157 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     .toUpperCase()
     .substring(0, 2);
 
-  const navGroups = [
-    {
-      group: null,
-      items: [
-        { href: '/dashboard', label: 'Dashboard', icon: 'home' },
-      ],
-    },
-    {
-      group: 'Ventures',
-      items: [
-        { href: '/ventures', label: 'All Ventures', icon: 'layers', count: 5 },
-      ],
-    },
-    {
-      group: 'People',
-      items: [
-        { href: '/employees/dashboard', label: 'Employee Dashboard', icon: 'home' },
-        { href: '/employees', label: 'Employees', icon: 'users', count: 12 },
-        { href: '/employees/managers', label: 'Managers', icon: 'briefcase', count: 2 },
-        { href: '/employees/supervisors', label: 'Supervisors', icon: 'shield', count: 4 },
-      ],
-    },
-    {
-      group: 'Inventory',
-      items: [
-        { href: '/materials', label: 'Inventory Overview', icon: 'box' },
-        { href: '/materials', label: 'Materials', icon: 'cube', count: 9 },
-        { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
-      ],
-    },
-    {
-      group: 'Operations',
-      items: [
-        { href: '/operations/tasks', label: 'Tasks', icon: 'tasks', count: 5 },
-        { href: '/operations/issues', label: 'Issues', icon: 'alert', count: 3, alert: true },
-      ],
-    },
-    {
-      group: 'Communication',
-      items: [
-        { href: '/chat', label: 'Venture Chat', icon: 'chat' },
-        { href: '/announcements', label: 'Announcements', icon: 'bell' },
-        { href: '/notifications', label: 'Notifications', icon: 'bell', count: 4, alert: true },
-      ],
-    },
-    {
-      group: 'Reports',
-      items: [
-        { href: '/reports/projects', label: 'Project Reports', icon: 'file' },
-        { href: '/reports/employees', label: 'Employee Reports', icon: 'users' },
-        { href: '/reports/inventory', label: 'Inventory Reports', icon: 'box' },
-      ],
-    },
-    {
-      group: 'Administration',
-      items: [
-        { href: '/admin/users', label: 'Users', icon: 'users', count: 9 },
-        { href: '/admin/roles', label: 'Roles & Permissions', icon: 'shield' },
-        { href: '/admin/branches', label: 'Branches / Locations', icon: 'pin' },
-        { href: '/admin/audit-logs', label: 'Audit Logs', icon: 'list' },
-        { href: '/admin/settings', label: 'Company Settings', icon: 'settings' },
-      ],
-    },
-  ];
+  const getNavGroups = (role: string) => {
+    if (role === 'SUPERVISOR') {
+      return [
+        {
+          group: null,
+          items: [
+            { href: '/dashboard', label: 'Dashboard', icon: 'home' },
+          ],
+        },
+        {
+          group: 'Team Management',
+          items: [
+            { href: '/employees/team', label: 'My Team', icon: 'users' },
+            { href: '/attendance', label: 'Attendance', icon: 'check' },
+            { href: '/leave', label: 'Leave Management', icon: 'activity' },
+          ],
+        },
+        {
+          group: 'Operations',
+          items: [
+            { href: '/field-work', label: 'Field Work', icon: 'tasks' },
+            { href: '/approvals', label: 'Approvals', icon: 'check' },
+            { href: '/reports/team', label: 'Reports', icon: 'file' },
+            { href: '/meetings', label: 'Meetings', icon: 'users' },
+            { href: '/assets', label: 'Assets', icon: 'box' },
+          ],
+        },
+        {
+          group: 'System',
+          items: [
+            { href: '/notifications', label: 'Notifications', icon: 'bell', count: 4, alert: true },
+            { href: '/profile', label: 'Profile', icon: 'settings' },
+          ],
+        },
+      ];
+    }
+
+    if (role === 'MANAGER') {
+      return [
+        {
+          group: null,
+          items: [
+            { href: '/dashboard', label: 'Dashboard', icon: 'home' },
+          ],
+        },
+        {
+          group: 'Ventures',
+          items: [
+            { href: '/ventures', label: 'My Ventures', icon: 'layers' },
+          ],
+        },
+        {
+          group: 'Team Management',
+          items: [
+            { href: '/employees/team', label: 'Extended Team', icon: 'users' },
+            { href: '/attendance', label: 'Attendance', icon: 'check' },
+            { href: '/leave', label: 'Leave Management', icon: 'activity' },
+          ],
+        },
+        {
+          group: 'Operations',
+          items: [
+            { href: '/field-work', label: 'Field Work', icon: 'tasks' },
+            { href: '/approvals', label: 'Approvals', icon: 'check' },
+            { href: '/reports/team', label: 'Reports', icon: 'file' },
+            { href: '/meetings', label: 'Meetings', icon: 'users' },
+            { href: '/assets', label: 'Assets', icon: 'box' },
+          ],
+        },
+        {
+          group: 'System',
+          items: [
+            { href: '/notifications', label: 'Notifications', icon: 'bell', count: 6, alert: true },
+            { href: '/profile', label: 'Profile', icon: 'settings' },
+          ],
+        },
+      ];
+    }
+
+    const groups = [
+      {
+        group: null,
+        items: [
+          { href: '/dashboard', label: 'Dashboard', icon: 'home' },
+        ],
+      },
+      {
+        group: 'Ventures',
+        items: [
+          { href: '/ventures', label: 'All Ventures', icon: 'layers', count: 5 },
+        ],
+      },
+      {
+        group: 'People',
+        items: [
+          { href: '/employees/dashboard', label: 'Employee Dashboard', icon: 'home' },
+          { href: '/employees', label: 'Employees', icon: 'users', count: 12 },
+          { href: '/employees/managers', label: 'Managers', icon: 'briefcase', count: 2 },
+          { href: '/employees/supervisors', label: 'Supervisors', icon: 'shield', count: 4 },
+        ],
+      },
+      {
+        group: 'Inventory',
+        items: [
+          { href: '/materials', label: 'Inventory Overview', icon: 'box' },
+          { href: '/materials', label: 'Materials', icon: 'cube', count: 9 },
+          { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
+        ],
+      },
+      {
+        group: 'Operations',
+        items: [
+          { href: '/operations/tasks', label: 'Tasks', icon: 'tasks', count: 5 },
+          { href: '/operations/issues', label: 'Issues', icon: 'alert', count: 3, alert: true },
+        ],
+      },
+      {
+        group: 'Communication',
+        items: [
+          { href: '/chat', label: 'Venture Chat', icon: 'chat' },
+          { href: '/announcements', label: 'Announcements', icon: 'bell' },
+          { href: '/notifications', label: 'Notifications', icon: 'bell', count: 4, alert: true },
+        ],
+      },
+      {
+        group: 'Reports',
+        items: [
+          { href: '/reports/projects', label: 'Project Reports', icon: 'file' },
+          { href: '/reports/employees', label: 'Employee Reports', icon: 'users' },
+          { href: '/reports/inventory', label: 'Inventory Reports', icon: 'box' },
+        ],
+      },
+    ];
+
+    if (role === 'ADMIN') {
+      groups.push({
+        group: 'Administration',
+        items: [
+          { href: '/admin/users', label: 'Users', icon: 'users', count: 9 },
+          { href: '/admin/roles', label: 'Roles & Permissions', icon: 'shield' },
+          { href: '/admin/branches', label: 'Branches / Locations', icon: 'pin' },
+          { href: '/admin/audit-logs', label: 'Audit Logs', icon: 'list' },
+          { href: '/admin/settings', label: 'Company Settings', icon: 'settings' },
+        ],
+      });
+    }
+
+    return groups;
+  };
+
+  const navGroups = getNavGroups(userRole);
 
   function renderIcon(name: string) {
     const iconClass = "w-4 h-4 text-zinc-500 shrink-0";

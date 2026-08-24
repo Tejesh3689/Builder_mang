@@ -6,9 +6,15 @@ import { EmployeeProfile, Skill, Certification, Document } from '@/lib/mockDatab
 
 interface EmployeeProfileProps {
   employeeId: string;
+  userRole?: string;
+  sessionName?: string;
 }
 
-export default function EmployeeProfileClient({ employeeId }: EmployeeProfileProps) {
+export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', sessionName = '' }: EmployeeProfileProps) {
+  const isSupervisor = userRole === 'SUPERVISOR';
+  const isManager = userRole === 'MANAGER';
+  const canEdit = userRole === 'ADMIN' || userRole === 'MANAGER';
+  const canDeactivate = userRole === 'ADMIN';
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');
 
@@ -496,12 +502,14 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
           <div className="space-y-4 text-xs">
             <div className="flex justify-between items-center">
               <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Verified Professional Skills</h4>
-              <button
-                onClick={() => setShowSkillModal(true)}
-                className="px-3.5 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs"
-              >
-                + Add Skill
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => setShowSkillModal(true)}
+                  className="px-3 py-1.5 text-xs font-bold text-black bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors border border-zinc-200"
+                >
+                  Add Skill
+                </button>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -520,12 +528,14 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
           <div className="space-y-4 text-xs">
             <div className="flex justify-between items-center">
               <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Active Safety & Technical Licenses</h4>
-              <button
-                onClick={() => setShowCertModal(true)}
-                className="px-3.5 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs"
-              >
-                + Add Certification
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => setShowCertModal(true)}
+                  className="px-3 py-1.5 text-xs font-bold text-black bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors border border-zinc-200"
+                >
+                  Add Certification
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -553,12 +563,14 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
           <div className="space-y-4 text-xs">
             <div className="flex justify-between items-center">
               <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Employee Document Vault</h4>
-              <button
-                onClick={() => setShowDocModal(true)}
-                className="px-3.5 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs"
-              >
-                + Upload Document
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => setShowDocModal(true)}
+                  className="px-3 py-1.5 text-xs font-bold text-black bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors border border-zinc-200"
+                >
+                  Upload Document
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -637,24 +649,30 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              href={`/employees/${employee.id}/edit`}
-              className="px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold text-xs transition-colors"
-            >
-              Edit Profile
-            </Link>
-            <button
-              onClick={() => setShowAssignModal(true)}
-              className="px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold text-xs transition-colors"
-            >
-              Assign Project
-            </button>
-            <button
-              onClick={() => handlePersistUpdate({ status: 'Terminated' })}
-              className="px-3.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-xs transition-colors border border-red-200"
-            >
-              Deactivate
-            </button>
+            {canEdit && (
+              <>
+                <Link
+                  href={`/employees/${employee.id}/edit`}
+                  className="px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold text-xs transition-colors"
+                >
+                  Edit Profile
+                </Link>
+                <button
+                  onClick={() => setShowAssignModal(true)}
+                  className="px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold text-xs transition-colors"
+                >
+                  Assign Project
+                </button>
+              </>
+            )}
+            {canDeactivate && (
+              <button
+                onClick={() => handlePersistUpdate({ status: 'Terminated' })}
+                className="px-3.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-xs transition-colors border border-red-200"
+              >
+                Deactivate
+              </button>
+            )}
           </div>
         </div>
       </div>

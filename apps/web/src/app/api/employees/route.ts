@@ -1,10 +1,37 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { EmployeeStatus } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role || 'USER';
+    const sessionName = session?.user?.name || '';
+
+    // Scope for SUPERVISOR (direct reports only)
+    let whereClause: any = {};
+    if (userRole === 'SUPERVISOR') {
+      whereClause = { reportingManager: sessionName };
+    } else if (userRole === 'MANAGER') {
+      // Scope for MANAGER (direct reports + their reports)
+      const directReports = await prisma.employee.findMany({
+        where: { reportingManager: sessionName },
+        select: { firstName: true, lastName: true }
+      });
+      const directReportNames = directReports.map(emp => `${emp.firstName} ${emp.lastName}`);
+      
+      whereClause = {
+        OR: [
+          { reportingManager: sessionName },
+          { reportingManager: { in: directReportNames } }
+        ]
+      };
+    }
+
     const employees = await prisma.employee.findMany({
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
@@ -32,6 +59,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if ((session?.user as any)?.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
     const body = await req.json();
     const {
       firstName,
