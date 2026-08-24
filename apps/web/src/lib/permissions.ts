@@ -20,7 +20,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'employees:view',
     'chat:access'
   ],
-  SUPERVISOR: [
+  SITE_ENGINEER: [
     'ventures:view',
     'employees:view_team', 
     'attendance:manage_team',

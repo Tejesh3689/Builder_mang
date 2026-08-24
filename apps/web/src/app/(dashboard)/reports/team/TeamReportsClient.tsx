@@ -8,8 +8,8 @@ interface TeamReportsClientProps {
 }
 
 export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = '' }: TeamReportsClientProps) {
-  const isSupervisor = userRole === 'SUPERVISOR';
-  const isManager = userRole === 'MANAGER';
+  const isSupervisor = userRole === 'SITE_ENGINEER';
+  const isManager = userRole === 'PROJECT_MANAGER';
   
   const [activeTab, setActiveTab] = useState('Team Attendance');
   const [dateRange, setDateRange] = useState('This Month');

@@ -10,6 +10,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
+    const userRole = (session?.user as any)?.role;
     if (!session || !userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
@@ -17,8 +18,15 @@ export async function GET(
     const resolvedParams = await params;
     const { roomId } = resolvedParams;
 
-    // Optional: enforce ChatMember check for GET as well, if they are not an ADMIN.
-    // For now, ensuring basic auth is applied.
+    // Enforce membership check for GET — non-ADMINs must be a member of the room
+    if (userRole !== 'ADMIN') {
+      const isMember = await prisma.chatMember.findUnique({
+        where: { roomId_userId: { roomId, userId } }
+      });
+      if (!isMember) {
+        return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
+      }
+    }
 
     const messages = await prisma.chatMessage.findMany({
       where: { roomId },

@@ -10,12 +10,12 @@ export async function GET() {
     const userRole = (session?.user as any)?.role || 'USER';
     const sessionName = session?.user?.name || '';
 
-    // Scope for SUPERVISOR (direct reports only)
+    // Scope for SITE_ENGINEER (direct reports only)
     let whereClause: any = {};
-    if (userRole === 'SUPERVISOR') {
+    if (userRole === 'SITE_ENGINEER') {
       whereClause = { reportingManager: sessionName };
-    } else if (userRole === 'MANAGER') {
-      // Scope for MANAGER (direct reports + their reports)
+    } else if (userRole === 'PROJECT_MANAGER') {
+      // Scope for PROJECT_MANAGER (direct reports + their reports)
       const directReports = await prisma.employee.findMany({
         where: { reportingManager: sessionName },
         select: { firstName: true, lastName: true }
@@ -88,6 +88,15 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate status enum membership before hitting the DB
+    const validStatuses = ['ACTIVE', 'TERMINATED', 'ON_LEAVE'];
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { success: false, error: `Invalid status '${status}'. Must be one of: ${validStatuses.join(', ')}.` },
+        { status: 400 }
+      );
+    }
+
     // Generate unique employee ID (EMP-XXX)
     const empCount = await prisma.employee.count();
     const employeeId = `EMP-${String(empCount + 1000).padStart(4, '0')}`;
@@ -129,7 +138,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, data: employee });
+    return NextResponse.json({ success: true, data: employee }, { status: 201 });
   } catch (error: any) {
     console.error('Failed to create employee:', error);
     return NextResponse.json(

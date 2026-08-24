@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const userRole = (session?.user as any)?.role || 'USER';
 
-  if (userRole === 'SUPERVISOR') {
+  if (userRole === 'SITE_ENGINEER') {
     return <SupervisorDashboard />;
   }
 
@@ -34,10 +34,10 @@ export default async function DashboardPage() {
     ]);
 
     counts = {
-      ventures: vCount || 5,
-      employees: eCount || 12,
-      materials: mCount || 9,
-      requests: rCount || 2,
+      ventures: vCount ?? 0,
+      employees: eCount ?? 0,
+      materials: mCount ?? 0,
+      requests: rCount ?? 0,
       issues: 3,
       vendors: 7,
     };
@@ -71,8 +71,11 @@ export default async function DashboardPage() {
         name: v.name,
         code: v.code,
         location: `${v.regCity || 'Site'}, ${v.regState || 'India'}`,
-        progress: v.status === 'ACTIVE' ? 68 : 100,
-        status: v.status.toLowerCase() === 'active' ? 'on-track' : v.status.toLowerCase(),
+        progress: v.progressPercentage ?? 0,
+        status: v.status === 'ACTIVE' ? 'on-track'
+          : v.status === 'ON_HOLD' ? 'at-risk'
+          : v.status === 'CANCELLED' ? 'delayed'
+          : v.status.toLowerCase(),
       }));
     }
   } catch (err) {

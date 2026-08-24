@@ -11,9 +11,9 @@ interface EmployeeProfileProps {
 }
 
 export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', sessionName = '' }: EmployeeProfileProps) {
-  const isSupervisor = userRole === 'SUPERVISOR';
-  const isManager = userRole === 'MANAGER';
-  const canEdit = userRole === 'ADMIN' || userRole === 'MANAGER';
+  const isSupervisor = userRole === 'SITE_ENGINEER';
+  const isManager = userRole === 'PROJECT_MANAGER';
+  const canEdit = userRole === 'ADMIN' || userRole === 'PROJECT_MANAGER';
   const canDeactivate = userRole === 'ADMIN';
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');
@@ -109,6 +109,28 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
       setNewProject(ventureOptions[0].id);
     }
   }, [ventureOptions, newProject]);
+
+  const [seniorEmployees, setSeniorEmployees] = useState<{name: string, designation: string}[]>([]);
+  useEffect(() => {
+    async function fetchManagers() {
+      try {
+        const res = await fetch('/api/employees');
+        const data = await res.json();
+        if (data.success && data.data) {
+          const managers = data.data.filter((e: any) => 
+            e.designation?.toLowerCase().includes('manager') || 
+            e.designation?.toLowerCase().includes('director') || 
+            e.designation?.toLowerCase().includes('supervisor') ||
+            e.designation?.toLowerCase().includes('lead')
+          );
+          setSeniorEmployees(managers);
+        }
+      } catch (err) {
+        console.error('Failed to fetch managers:', err);
+      }
+    }
+    fetchManagers();
+  }, []);
 
   // Skill states
   const [skillName, setSkillName] = useState('');
@@ -235,7 +257,8 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         body: JSON.stringify({
           ventureId: newProject,
           roleAtSite: newRole,
-          accessLevel: 'STANDARD'
+          accessLevel: 'STANDARD',
+          reportingManager: newManager
         }),
       });
 
@@ -767,7 +790,17 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Reporting Manager</label>
-                <input type="text" value={newManager} onChange={(e) => setNewManager(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg" />
+                <select value={newManager} onChange={(e) => setNewManager(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                  <option value="—">None / Direct Report</option>
+                  {seniorEmployees.map((emp, idx) => (
+                    <option key={idx} value={`${emp.name}`}>
+                      {emp.name} ({emp.designation})
+                    </option>
+                  ))}
+                  {!seniorEmployees.some(e => e.name === newManager) && newManager !== '—' && newManager && (
+                    <option value={newManager}>{newManager} (Current)</option>
+                  )}
+                </select>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">

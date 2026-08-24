@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ ventureId: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
 
@@ -29,17 +36,34 @@ export async function POST(
   { params }: { params: Promise<{ ventureId: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
+    }
+
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
     const { employeeId, roleAtSite, accessLevel = 'STANDARD' } = await request.json();
 
+    if (!employeeId) {
+      return NextResponse.json({ success: false, error: 'Employee ID is required' }, { status: 400 });
+    }
+
     try {
+      // Deactivate any currently active assignments for this employee (matching the employee/[id]/assignments endpoint)
+      await prisma.employeeVentureAssignment.updateMany({
+        where: { employeeId, status: 'ACTIVE' },
+        data: { status: 'COMPLETED', endDate: new Date() },
+      });
+
       const created = await prisma.employeeVentureAssignment.create({
         data: {
           ventureId,
           employeeId,
           roleAtSite,
           accessLevel,
+          status: 'ACTIVE',
         },
         include: { employee: true },
       });

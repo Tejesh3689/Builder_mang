@@ -34,14 +34,14 @@ export async function GET(
       );
     }
 
-    if (userRole === 'SUPERVISOR' && employee.reportingManager !== sessionName) {
+    if (userRole === 'SITE_ENGINEER' && employee.reportingManager !== sessionName) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: You do not have access to this employee' },
         { status: 403 }
       );
     }
 
-    if (userRole === 'MANAGER' && employee.reportingManager !== sessionName) {
+    if (userRole === 'PROJECT_MANAGER' && employee.reportingManager !== sessionName) {
       const directReports = await prisma.employee.findMany({
         where: { reportingManager: sessionName },
         select: { firstName: true, lastName: true }
@@ -74,7 +74,7 @@ export async function PATCH(
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role || 'USER';
     
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+    if (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER') {
       return NextResponse.json({ success: false, error: 'Forbidden: Elevated access required' }, { status: 403 });
     }
 

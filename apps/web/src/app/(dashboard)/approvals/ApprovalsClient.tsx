@@ -20,8 +20,8 @@ interface ApprovalsClientProps {
 }
 
 export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }: ApprovalsClientProps) {
-  const isSupervisor = userRole === 'SUPERVISOR';
-  const isManager = userRole === 'MANAGER';
+  const isSupervisor = userRole === 'SITE_ENGINEER';
+  const isManager = userRole === 'PROJECT_MANAGER';
   
   const [activeCategory, setActiveCategory] = useState('All');
   

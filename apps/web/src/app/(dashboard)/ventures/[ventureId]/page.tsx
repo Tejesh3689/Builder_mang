@@ -224,9 +224,9 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <div className="p-4 rounded-xl bg-white border border-zinc-200 space-y-1">
           <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider block">Progress</span>
-          <div className="text-xl font-extrabold text-black">{venture.progressPercentage || 68}%</div>
+          <div className="text-xl font-extrabold text-black">{venture.progressPercentage ?? 0}%</div>
           <div className="w-full h-1.5 rounded-full bg-zinc-50 overflow-hidden">
-            <div className="h-full bg-amber-600 rounded-full" style={{ width: `${venture.progressPercentage || 68}%` }} />
+            <div className="h-full bg-amber-600 rounded-full" style={{ width: `${venture.progressPercentage ?? 0}%` }} />
           </div>
         </div>
 

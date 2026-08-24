@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+
+const ALLOWED_ROLES = ['ADMIN', 'PROJECT_MANAGER', 'STORE_MANAGER'];
 
 export async function GET(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    if (!session || !ALLOWED_ROLES.includes(userRole)) {
+      return NextResponse.json({ success: false, error: 'Forbidden: Insufficient permissions' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const meta = searchParams.get('meta');
 
@@ -31,6 +41,12 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { name, code, categoryName, uomName, reorderLevel } = body;
 
@@ -77,7 +93,7 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, data: material });
+    return NextResponse.json({ success: true, data: material }, { status: 201 });
   } catch (error: any) {
     console.error('Failed to create material:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
