@@ -27,6 +27,7 @@ export const config = {
     '/materials/:path*',
     '/employees/:path*',
     '/chat/:path*',
-    '/admin/:path*'
+    '/admin/:path*',
+    '/api/:path*'
   ],
 };

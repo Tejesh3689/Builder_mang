@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const ventureId = searchParams.get('ventureId');
 
@@ -28,6 +35,12 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+    if (!session || !userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { name, ventureId } = body;
 
@@ -38,7 +51,10 @@ export async function POST(req: Request) {
     const room = await prisma.chatRoom.create({
       data: {
         name,
-        ventureId: ventureId || null
+        ventureId: ventureId || null,
+        members: {
+          create: [{ userId }]
+        }
       }
     });
 

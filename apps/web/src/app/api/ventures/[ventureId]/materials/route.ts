@@ -19,15 +19,9 @@ export async function GET(
         },
       });
       return NextResponse.json({ success: true, data: stocks });
-    } catch {
-      return NextResponse.json({
-        success: true,
-        data: [
-          { id: 'stk-1', quantity: 420, material: { name: 'OPC Cement 53 Grade', code: 'MAT-CEM-53', category: { name: 'Structural' }, unitOfMeasure: { name: 'Bags' } } },
-          { id: 'stk-2', quantity: 8.4, material: { name: 'TMT Steel Rebars 12mm', code: 'MAT-STL-12', category: { name: 'Structural' }, unitOfMeasure: { name: 'Tons' } } },
-          { id: 'stk-3', quantity: 320, material: { name: 'Vitrified Floor Tiles 600x600', code: 'MAT-TIL-VIT', category: { name: 'Finishing' }, unitOfMeasure: { name: 'Boxes' } } },
-        ],
-      });
+    } catch (dbError: any) {
+      console.error('Database error in materials GET:', dbError);
+      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

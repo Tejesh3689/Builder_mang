@@ -14,17 +14,9 @@ export async function GET(
         where: { ventureId },
       });
       return NextResponse.json({ success: true, data: setting });
-    } catch {
-      return NextResponse.json({
-        success: true,
-        data: {
-          minStockThresholdDefault: 50,
-          requireMaterialApproval: true,
-          allowEmployeeSelfAssignment: false,
-          allowFileUploadInChat: true,
-          notifyOnLowStock: true,
-        },
-      });
+    } catch (dbError: any) {
+      console.error('Database error in settings GET:', dbError);
+      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -47,8 +39,9 @@ export async function PATCH(
         create: { ventureId, ...body },
       });
       return NextResponse.json({ success: true, data: updated });
-    } catch {
-      return NextResponse.json({ success: true, data: { ventureId, ...body } });
+    } catch (dbError: any) {
+      console.error('Database error in settings PATCH:', dbError);
+      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

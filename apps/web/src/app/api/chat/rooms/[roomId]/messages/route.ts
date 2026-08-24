@@ -8,8 +8,17 @@ export async function GET(
   { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+    if (!session || !userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const resolvedParams = await params;
     const { roomId } = resolvedParams;
+
+    // Optional: enforce ChatMember check for GET as well, if they are not an ADMIN.
+    // For now, ensuring basic auth is applied.
 
     const messages = await prisma.chatMessage.findMany({
       where: { roomId },
@@ -44,16 +53,20 @@ export async function POST(
     }
 
     const session = await getServerSession(authOptions);
-    let senderId = (session?.user as any)?.id;
+    const senderId = (session?.user as any)?.id;
+    const userRole = (session?.user as any)?.role;
 
     if (!senderId) {
-      // Fallback to first user in database for developer convenience / testing
-      const firstUser = await prisma.user.findFirst();
-      senderId = firstUser?.id;
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!senderId) {
-      return NextResponse.json({ success: false, error: 'No active user found to send the message' }, { status: 401 });
+    if (userRole !== 'ADMIN') {
+      const isMember = await prisma.chatMember.findUnique({
+        where: { roomId_userId: { roomId, userId: senderId } }
+      });
+      if (!isMember) {
+        return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
+      }
     }
 
     const message = await prisma.chatMessage.create({

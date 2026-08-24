@@ -15,15 +15,9 @@ export async function GET(
         orderBy: { createdAt: 'desc' },
       });
       return NextResponse.json({ success: true, data: logs });
-    } catch {
-      return NextResponse.json({
-        success: true,
-        data: [
-          { id: 'aud-1', action: 'MATERIAL_REQUEST_APPROVED', details: 'Rajesh approved Material Request MR-1024 for 100 bags OPC Cement', createdAt: new Date().toISOString() },
-          { id: 'aud-2', action: 'STOCK_ISSUED', details: 'Suresh issued 50 bags Cement to Tower A Phase 2 Slab', createdAt: new Date().toISOString() },
-          { id: 'aud-3', action: 'EMPLOYEE_ASSIGNED', details: 'Assigned Vikram Singh as Store Manager to Green Heights', createdAt: new Date().toISOString() },
-        ],
-      });
+    } catch (dbError: any) {
+      console.error('Database error in activity GET:', dbError);
+      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

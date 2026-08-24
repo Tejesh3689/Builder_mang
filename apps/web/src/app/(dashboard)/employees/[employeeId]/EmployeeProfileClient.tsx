@@ -190,134 +190,175 @@ export default function EmployeeProfileClient({ employeeId }: EmployeeProfilePro
   };
 
   // Actions
-  const handleAssignProjectSubmit = (e: React.FormEvent) => {
+  const handleAssignProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newAssignment = {
-      id: `assign-${Date.now()}`,
-      project: newProject,
-      site: newSite,
-      role: newRole,
-      duration: newDuration,
-      status: 'Active' as const,
-    };
+    if (!employee) return;
+    
+    // Convert named project to a mocked ID for the API, since dropdowns hold names
+    // In a real app we'd map this, but for now we'll pass a dummy venture ID.
+    let resolvedVentureId = 'vnt-001';
+    if (newProject.includes('Skyline')) resolvedVentureId = 'vnt-002';
+    else if (newProject.includes('Lake')) resolvedVentureId = 'vnt-003';
+    else if (newProject.includes('Sunrise')) resolvedVentureId = 'vnt-004';
 
-    // Complete all previous active assignments in history
-    const updatedHistory = employee.assignmentHistory.map((a) => {
-      if (a.status === 'Active') {
-        return { ...a, status: 'Completed' as const };
+    try {
+      const res = await fetch(`/api/employees/${employee.id}/assignments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ventureId: resolvedVentureId,
+          roleAtSite: newRole,
+          accessLevel: 'STANDARD'
+        }),
+      });
+      
+      const json = await res.json();
+      if (json.success) {
+        // Optimistically update UI
+        const updatedHistory = employee.assignmentHistory.map((a: any) => {
+          if (a.status === 'Active') return { ...a, status: 'Completed' as const };
+          return a;
+        });
+        
+        updatedHistory.unshift({
+          id: json.data.id || `assign-${Date.now()}`,
+          project: newProject,
+          site: newSite,
+          role: newRole,
+          duration: 'Just now - Present',
+          status: 'Active' as const,
+        });
+
+        setEmployee((prev: any) => ({
+          ...prev,
+          currentProject: newProject,
+          currentSite: newSite,
+          designation: newRole,
+          reportingManager: newManager,
+          assignmentHistory: updatedHistory,
+          activities: [
+            { action: `Assigned to ${newProject} (${newSite}) as ${newRole}`, timestamp: 'Just now' },
+            ...prev.activities,
+          ],
+        }));
+        setShowAssignModal(false);
       }
-      return a;
-    });
-
-    updatedHistory.unshift(newAssignment);
-
-    handlePersistUpdate({
-      currentProject: newProject,
-      currentSite: newSite,
-      designation: newRole,
-      reportingManager: newManager,
-      assignmentHistory: updatedHistory,
-      activities: [
-        { action: `Assigned to ${newProject} (${newSite}) as ${newRole}`, timestamp: 'Just now' },
-        ...employee.activities,
-      ],
-    });
-
-    setShowAssignModal(false);
-  };
-
-  const handleAddSkillSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!skillName) return;
-
-    const newSkill: Skill = {
-      skill: skillName,
-      category: skillCategory,
-      proficiency: skillProficiency,
-      experienceYears: skillExp,
-      verificationStatus: 'Verified',
-      verifiedBy: 'Suresh Verma',
-      verificationDate: new Date().toLocaleDateString('en-GB'),
-    };
-
-    handlePersistUpdate({
-      skills: [...employee.skills, newSkill],
-      activities: [
-        { action: `Added skill "${skillName}" (${skillProficiency})`, timestamp: 'Just now' },
-        ...employee.activities,
-      ],
-    });
-
-    setSkillName('');
-    setShowSkillModal(false);
-  };
-
-  const handleAddCertSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!certName || !certNo) return;
-
-    // Check status based on expiry
-    const expiry = new Date(certExpiry);
-    const today = new Date();
-    const warningDays = 30 * 24 * 60 * 60 * 1000;
-    const diff = expiry.getTime() - today.getTime();
-
-    let certStatus: 'Valid' | 'Expiring Soon' | 'Expired' = 'Valid';
-    if (diff < 0) {
-      certStatus = 'Expired';
-    } else if (diff < warningDays) {
-      certStatus = 'Expiring Soon';
+    } catch (err) {
+      console.error('Failed to assign project', err);
     }
-
-    const newCert: Certification = {
-      id: `cert-${Date.now()}`,
-      certification: certName,
-      certificateNo: certNo,
-      issueDate: certIssue || new Date().toISOString().split('T')[0],
-      expiryDate: certExpiry,
-      status: certStatus,
-      authority: certAuthority || 'National Safety Agency',
-    };
-
-    handlePersistUpdate({
-      certifications: [...employee.certifications, newCert],
-      activities: [
-        { action: `Added safety certification "${certName}"`, timestamp: 'Just now' },
-        ...employee.activities,
-      ],
-    });
-
-    setCertName('');
-    setCertNo('');
-    setShowCertModal(false);
   };
 
-  const handleAddDocSubmit = (e: React.FormEvent) => {
+  const handleAddSkillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!docName) return;
+    if (!skillName || !employee) return;
 
-    const newDoc: Document = {
-      id: `doc-${Date.now()}`,
-      name: docName,
-      category: docCategory,
-      fileType: docFileType,
-      uploadDate: new Date().toISOString().split('T')[0],
-      expiryDate: docExpiry || undefined,
-      verificationStatus: 'Verified',
-      uploadedBy: 'HR Admin',
-    };
+    try {
+      const res = await fetch(`/api/employees/${employee.id}/skills`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          skill: skillName,
+          category: skillCategory,
+          proficiency: skillProficiency,
+          experienceYears: skillExp,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setEmployee((prev: any) => ({
+          ...prev,
+          skills: [...prev.skills, {
+            ...json.data,
+            verificationStatus: 'Verified',
+            verifiedBy: 'HR Admin'
+          }],
+          activities: [
+            { action: `Added skill "${skillName}" (${skillProficiency})`, timestamp: 'Just now' },
+            ...prev.activities,
+          ],
+        }));
+        setSkillName('');
+        setShowSkillModal(false);
+      }
+    } catch (err) {
+      console.error('Failed to add skill', err);
+    }
+  };
 
-    handlePersistUpdate({
-      documents: [...employee.documents, newDoc],
-      activities: [
-        { action: `Uploaded document "${docName}" under ${docCategory}`, timestamp: 'Just now' },
-        ...employee.activities,
-      ],
-    });
+  const handleAddCertSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!certName || !certNo || !employee) return;
 
-    setDocName('');
-    setSelectedDocFile(null);
-    setShowDocModal(false);
+    try {
+      const res = await fetch(`/api/employees/${employee.id}/certifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          certification: certName,
+          certificateNo: certNo,
+          issueDate: certIssue || new Date().toISOString().split('T')[0],
+          expiryDate: certExpiry,
+          authority: certAuthority || 'National Safety Agency',
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setEmployee((prev: any) => ({
+          ...prev,
+          certifications: [...prev.certifications, {
+            ...json.data,
+            status: 'Valid' // optimistic logic
+          }],
+          activities: [
+            { action: `Added safety certification "${certName}"`, timestamp: 'Just now' },
+            ...prev.activities,
+          ],
+        }));
+        setCertName('');
+        setCertNo('');
+        setShowCertModal(false);
+      }
+    } catch (err) {
+      console.error('Failed to add cert', err);
+    }
+  };
+
+  const handleAddDocSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!docName || !employee) return;
+
+    try {
+      const res = await fetch(`/api/employees/${employee.id}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: docName,
+          category: docCategory,
+          fileType: docFileType,
+          fileUrl: '/docs/placeholder.pdf'
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setEmployee((prev: any) => ({
+          ...prev,
+          documents: [...prev.documents, {
+            ...json.data,
+            name: docName, // UI maps title to name
+            uploadDate: new Date().toISOString().split('T')[0]
+          }],
+          activities: [
+            { action: `Uploaded document "${docName}" under ${docCategory}`, timestamp: 'Just now' },
+            ...prev.activities,
+          ],
+        }));
+        setDocName('');
+        setSelectedDocFile(null);
+        setShowDocModal(false);
+      }
+    } catch (err) {
+      console.error('Failed to add document', err);
+    }
   };
 
   // Render tab content

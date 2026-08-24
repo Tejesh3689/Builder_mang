@@ -15,15 +15,9 @@ export async function GET(
         include: { employee: true },
       });
       return NextResponse.json({ success: true, data: assignments });
-    } catch {
-      return NextResponse.json({
-        success: true,
-        data: [
-          { id: 'asgn-1', employee: { firstName: 'Suresh', lastName: 'Verma', designation: 'Project Manager', department: 'Management' }, roleAtSite: 'Project Manager', accessLevel: 'FULL_PROJECT_ACCESS' },
-          { id: 'asgn-2', employee: { firstName: 'Ajay', lastName: 'Rao', designation: 'Lead Site Engineer', department: 'Engineering' }, roleAtSite: 'Site Engineer', accessLevel: 'OPERATIONS_ACCESS' },
-          { id: 'asgn-3', employee: { firstName: 'Vikram', lastName: 'Singh', designation: 'Storekeeper', department: 'Logistics' }, roleAtSite: 'Store Manager', accessLevel: 'MATERIAL_ACCESS' },
-        ],
-      });
+    } catch (dbError: any) {
+      console.error('Database error in members GET:', dbError);
+      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -50,11 +44,9 @@ export async function POST(
         include: { employee: true },
       });
       return NextResponse.json({ success: true, data: created });
-    } catch {
-      return NextResponse.json({
-        success: true,
-        data: { id: `asgn-${Date.now()}`, ventureId, employeeId, roleAtSite, accessLevel },
-      });
+    } catch (dbError: any) {
+      console.error('Database error in members POST:', dbError);
+      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

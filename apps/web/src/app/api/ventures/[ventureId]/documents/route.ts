@@ -15,15 +15,9 @@ export async function GET(
         orderBy: { createdAt: 'desc' },
       });
       return NextResponse.json({ success: true, data: documents });
-    } catch {
-      return NextResponse.json({
-        success: true,
-        data: [
-          { id: 'doc-1', title: 'Municipal Building Approval Plan.pdf', category: 'APPROVALS', fileType: 'application/pdf', fileSize: 4500000, version: '2.1' },
-          { id: 'doc-2', title: 'Structural Design & Foundation Blueprints.dwg', category: 'DRAWINGS', fileType: 'image/vnd.dwg', fileSize: 12400000, version: '1.0' },
-          { id: 'doc-3', title: 'Environmental Impact Certificate.pdf', category: 'LEGAL', fileType: 'application/pdf', fileSize: 2100000, version: '1.0' },
-        ],
-      });
+    } catch (dbError: any) {
+      console.error('Database error in documents GET:', dbError);
+      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -52,11 +46,9 @@ export async function POST(
         },
       });
       return NextResponse.json({ success: true, data: created });
-    } catch {
-      return NextResponse.json({
-        success: true,
-        data: { id: `doc-${Date.now()}`, ventureId, title, category, version, createdAt: new Date().toISOString() },
-      });
+    } catch (dbError: any) {
+      console.error('Database error in documents POST:', dbError);
+      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

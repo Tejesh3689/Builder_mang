@@ -42,6 +42,12 @@ export async function POST(req: Request) {
 
     // Default role to SITE_ENGINEER if not specified or invalid
     let assignedRole: UserRole = UserRole.SITE_ENGINEER;
+    if (role === 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Cannot self-register as ADMIN.' },
+        { status: 403 }
+      );
+    }
     if (role && Object.values(UserRole).includes(role as UserRole)) {
       assignedRole = role as UserRole;
     }
