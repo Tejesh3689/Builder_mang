@@ -78,8 +78,8 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-xs">
         <div>
-          <h1 className="text-xl font-extrabold text-black tracking-tight">{isSupervisor ? 'Team Reports' : 'Global Reports'}</h1>
-          <p className="text-xs text-zinc-500 mt-1">{isSupervisor ? 'Analytics and exported logs for your assigned crew' : 'View analytics for all teams'}</p>
+          <h1 className="text-xl font-extrabold text-black tracking-tight">{isManager ? 'Extended Team Reports' : isSupervisor ? 'Team Reports' : 'Global Reports'}</h1>
+          <p className="text-xs text-zinc-500 mt-1">{isManager ? 'Analytics and exported logs for your extended hierarchy' : isSupervisor ? 'Analytics and exported logs for your assigned crew' : 'View analytics for all teams'}</p>
         </div>
       </div>
 

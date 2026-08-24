@@ -1,6 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
 import prisma from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import {
   AlertTriangle,
   ArrowRight,
@@ -25,6 +27,12 @@ export default async function InventoryOverviewPage() {
   let pendingRequests: any[] = [];
   let siteStockData: any[] = [];
 
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role || 'USER';
+  const userId = (session?.user as any)?.id;
+
+  const ventureFilter = (userRole === 'MANAGER' && userId) ? { projectManager: { userId } } : undefined;
+
   // Today's aggregates
   let todayReceived = 0;
   let todayIssued = 0;
@@ -39,6 +47,7 @@ export default async function InventoryOverviewPage() {
 
     // Stock data by site + material with reorder levels
     const allStocks = await prisma.materialStock.findMany({
+      where: ventureFilter ? { venture: ventureFilter } : undefined,
       include: {
         material: {
           include: { unitOfMeasure: true }
@@ -85,6 +94,7 @@ export default async function InventoryOverviewPage() {
 
     // Recent transactions
     recentTransactions = await prisma.materialTransaction.findMany({
+      where: ventureFilter ? { venture: ventureFilter } : undefined,
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -97,7 +107,7 @@ export default async function InventoryOverviewPage() {
 
     // Today's quantities
     const todayTxs = await prisma.materialTransaction.findMany({
-      where: { createdAt: { gte: todayStart } },
+      where: ventureFilter ? { createdAt: { gte: todayStart }, venture: ventureFilter } : { createdAt: { gte: todayStart } },
     });
     todayTxs.forEach((tx: any) => {
       if (tx.transactionType === 'RECEIPT') todayReceived += tx.quantityIn;
@@ -106,12 +116,14 @@ export default async function InventoryOverviewPage() {
     });
 
     // Pending requests
+    const pendingRequestWhere = ventureFilter ? { status: { in: ['SUBMITTED', 'PENDING_APPROVAL'] }, venture: ventureFilter } : { status: { in: ['SUBMITTED', 'PENDING_APPROVAL'] } };
+
     pendingRequestCount = await prisma.materialRequest.count({
-      where: { status: { in: ['SUBMITTED', 'PENDING_APPROVAL'] } },
+      where: pendingRequestWhere as any,
     });
 
     pendingRequests = await prisma.materialRequest.findMany({
-      where: { status: { in: ['SUBMITTED', 'PENDING_APPROVAL'] } },
+      where: pendingRequestWhere as any,
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {

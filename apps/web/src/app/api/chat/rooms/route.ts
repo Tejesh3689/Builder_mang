@@ -12,9 +12,24 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const ventureId = searchParams.get('ventureId');
+    const userRole = (session.user as any)?.role || 'USER';
+    const userId = (session.user as any)?.id;
+
+    let whereClause: any = {};
+    
+    if (ventureId) {
+      whereClause.ventureId = ventureId;
+    }
+    
+    if (userRole === 'MANAGER' && userId) {
+      whereClause.OR = [
+        { members: { some: { userId } } },
+        { venture: { projectManager: { userId } } }
+      ];
+    }
 
     const rooms = await prisma.chatRoom.findMany({
-      where: ventureId ? { ventureId } : undefined,
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
         venture: {
           select: { id: true, name: true, code: true }

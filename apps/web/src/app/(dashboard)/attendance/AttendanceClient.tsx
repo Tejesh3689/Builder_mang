@@ -68,8 +68,8 @@ export default function AttendanceClient({ userRole = 'ADMIN', sessionName = '' 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-black tracking-tight">Team Attendance</h1>
-          <p className="text-sm text-zinc-500 mt-1">Monitor daily attendance, logins, and field visits.</p>
+          <h1 className="text-2xl font-extrabold text-black tracking-tight">{isManager ? 'Extended Team Attendance' : isSupervisor ? 'Team Attendance' : 'Global Attendance'}</h1>
+          <p className="text-sm text-zinc-500 mt-1">{isManager ? 'Monitor daily attendance, logins, and field visits for your extended hierarchy.' : isSupervisor ? 'Monitor daily attendance, logins, and field visits for your crew.' : 'Monitor daily attendance, logins, and field visits organization-wide.'}</p>
         </div>
       </div>
 

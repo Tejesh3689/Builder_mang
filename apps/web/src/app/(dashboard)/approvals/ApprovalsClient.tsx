@@ -7,7 +7,7 @@ interface ApprovalRequest {
   employeeName: string;
   employeeId: string;
   managerName: string;
-  type: 'Leave' | 'Field Work' | 'Other';
+  type: 'Leave' | 'Field Work' | 'Materials' | 'Other';
   date: string;
   summary: string;
   status: 'Pending' | 'Approved' | 'Rejected';
@@ -32,6 +32,7 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
     { id: 'REQ-03', employeeName: 'Ravi Kumar', employeeId: 'EMP-1005', managerName: 'Another Manager', type: 'Leave', date: '2026-09-01', summary: 'Annual Leave (5 days)', status: 'Pending', submittedTime: '1 day ago' },
     { id: 'REQ-04', employeeName: 'Manoj Tiwari', employeeId: 'EMP-1010', managerName: sessionName, type: 'Other', date: '2026-08-10', summary: 'Expense claim for travel', status: 'Approved', submittedTime: '2 days ago' },
     { id: 'REQ-05', employeeName: 'Suresh Babu', employeeId: 'EMP-1012', managerName: sessionName, type: 'Field Work', date: '2026-08-11', summary: 'Vendor meeting at Whitefield', status: 'Pending', submittedTime: '3 days ago' },
+    { id: 'REQ-06', employeeName: 'Venture Alpha Team', employeeId: 'VEN-01', managerName: sessionName, type: 'Materials', date: '2026-08-14', summary: 'Critical Request: 200 bags of Cement', status: 'Pending', submittedTime: '1 hour ago' },
   ]);
 
   // Modals
@@ -49,6 +50,7 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
     if (activeCategory === 'All') return r.status === 'Pending'; // Show only pending by default for All
     if (activeCategory === 'Leave') return r.type === 'Leave' && r.status === 'Pending';
     if (activeCategory === 'Field Work') return r.type === 'Field Work' && r.status === 'Pending';
+    if (activeCategory === 'Materials') return r.type === 'Materials' && r.status === 'Pending';
     if (activeCategory === 'Other') return r.type === 'Other' && r.status === 'Pending';
     return false;
   });
@@ -68,6 +70,7 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
     switch (type) {
       case 'Leave': return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'Field Work': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'Materials': return 'bg-amber-50 text-amber-700 border-amber-200';
       default: return 'bg-zinc-50 text-zinc-700 border-zinc-200';
     }
   };
@@ -86,8 +89,8 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-xs">
         <div>
-          <h1 className="text-xl font-extrabold text-black tracking-tight">{isSupervisor ? 'Team Approvals' : 'Global Approvals'}</h1>
-          <p className="text-xs text-zinc-500 mt-1">{isSupervisor ? 'Review pending requests from your assigned crew' : 'Manage all organization-wide requests'}</p>
+          <h1 className="text-xl font-extrabold text-black tracking-tight">{isManager ? 'Extended Team Approvals' : isSupervisor ? 'Team Approvals' : 'Global Approvals'}</h1>
+          <p className="text-xs text-zinc-500 mt-1">{isManager ? 'Review pending requests from your extended hierarchy' : isSupervisor ? 'Review pending requests from your assigned crew' : 'Manage all organization-wide requests'}</p>
         </div>
       </div>
 
@@ -95,7 +98,7 @@ export default function ApprovalsClient({ userRole = 'ADMIN', sessionName = '' }
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
         {/* Tabs */}
         <div className="flex border-b border-zinc-200 overflow-x-auto bg-zinc-50/30">
-          {['All', 'Leave', 'Field Work', 'Other'].map((tab) => (
+          {(isManager ? ['All', 'Leave', 'Field Work', 'Materials', 'Other'] : ['All', 'Leave', 'Field Work', 'Other']).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveCategory(tab)}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import {
   Building2, Plus, Search, Filter, LayoutGrid, LayoutList,
   MapPin, Calendar, Users, TrendingUp, ShieldAlert, ArrowUpRight, FileSpreadsheet
@@ -13,6 +14,9 @@ export default function VenturesPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || 'USER';
 
   // Filters State
   const [search, setSearch] = useState('');
@@ -65,12 +69,14 @@ export default function VenturesPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            onClick={() => setIsWizardOpen(true)}
-            className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-xs transition-all hover:scale-[1.02]"
-          >
-            <Plus className="w-4 h-4" /> Create Venture
-          </button>
+          {userRole === 'ADMIN' && (
+            <button
+              onClick={() => setIsWizardOpen(true)}
+              className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-xs transition-all hover:scale-[1.02]"
+            >
+              <Plus className="w-4 h-4" /> Create Venture
+            </button>
+          )}
 
           <button className="px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs">
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" /> Export Data

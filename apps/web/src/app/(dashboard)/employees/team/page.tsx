@@ -17,7 +17,7 @@ export default async function TeamEmployeesPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-black tracking-tight">My Team</h1>
+        <h1 className="text-2xl font-extrabold text-black tracking-tight">{userRole === 'MANAGER' ? 'Extended Team' : 'My Team'}</h1>
         <p className="text-sm text-zinc-500 mt-1">Manage employees reporting directly to you or your reports.</p>
       </div>
       

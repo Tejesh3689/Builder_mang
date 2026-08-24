@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role || 'USER';
+    const userId = (session?.user as any)?.id;
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const type = searchParams.get('type');
@@ -10,6 +15,10 @@ export async function GET(request: Request) {
     const location = searchParams.get('location');
 
     let whereClause: any = {};
+
+    if (userRole === 'MANAGER' && userId) {
+      whereClause.projectManager = { userId: userId };
+    }
 
     if (status && status !== 'ALL') {
       whereClause.status = status;

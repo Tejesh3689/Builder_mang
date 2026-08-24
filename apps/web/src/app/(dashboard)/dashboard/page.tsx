@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
 import SupervisorDashboard from '@/components/dashboard/SupervisorDashboard';
+import ManagerDashboard from '@/components/dashboard/ManagerDashboard';
 
 export const revalidate = 0;
 
@@ -13,6 +14,10 @@ export default async function DashboardPage() {
 
   if (userRole === 'SUPERVISOR') {
     return <SupervisorDashboard />;
+  }
+
+  if (userRole === 'MANAGER') {
+    return <ManagerDashboard />;
   }
 
   let counts = { ventures: 5, employees: 12, materials: 9, requests: 2, issues: 3, vendors: 7 };

@@ -74,10 +74,10 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-xs">
         <div>
-          <h1 className="text-xl font-extrabold text-black tracking-tight">{isSupervisor ? 'Team Leave Management' : 'Global Leave Management'}</h1>
-          <p className="text-xs text-zinc-500 mt-1">{isSupervisor ? 'Manage leave requests for your assigned crew' : 'Manage and configure leave policies organization-wide'}</p>
+          <h1 className="text-xl font-extrabold text-black tracking-tight">{isManager ? 'Extended Team Leave Management' : isSupervisor ? 'Team Leave Management' : 'Global Leave Management'}</h1>
+          <p className="text-xs text-zinc-500 mt-1">{isManager ? 'Manage leave requests for your extended hierarchy' : isSupervisor ? 'Manage leave requests for your assigned crew' : 'Manage and configure leave policies organization-wide'}</p>
         </div>
-        {!isSupervisor && (
+        {!isSupervisor && !isManager && (
           <div className="flex items-center gap-2">
             <button className="px-4 py-2 border border-zinc-200 rounded-lg hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-colors">
               Leave Policies
