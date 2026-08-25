@@ -417,7 +417,7 @@ export default async function InventoryOverviewPage() {
               <Link href="/materials/new" className="flex items-center gap-3 px-4 py-2.5 bg-zinc-50 hover:bg-amber-50 hover:border-amber-300 border border-zinc-200 rounded-lg text-xs font-semibold text-zinc-700 hover:text-amber-700 transition-colors">
                 <Package className="w-4 h-4 text-amber-600" /> Add New Material
               </Link>
-              <Link href="/materials/requests" className="flex items-center gap-3 px-4 py-2.5 bg-zinc-50 hover:bg-amber-50 hover:border-amber-300 border border-zinc-200 rounded-lg text-xs font-semibold text-zinc-700 hover:text-amber-700 transition-colors">
+              <Link href="/materials/request" className="flex items-center gap-3 px-4 py-2.5 bg-zinc-50 hover:bg-amber-50 hover:border-amber-300 border border-zinc-200 rounded-lg text-xs font-semibold text-zinc-700 hover:text-amber-700 transition-colors">
                 <ClipboardList className="w-4 h-4 text-amber-600" /> Create Material Request
               </Link>
               <Link href="/materials/stock" className="flex items-center gap-3 px-4 py-2.5 bg-zinc-50 hover:bg-amber-50 hover:border-amber-300 border border-zinc-200 rounded-lg text-xs font-semibold text-zinc-700 hover:text-amber-700 transition-colors">
