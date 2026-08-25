@@ -12,7 +12,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'ventures:view',
     'materials:view', 'materials:request', 'materials:stock',
     'employees:view',
-    'employees:view_team', 
+    'employees:view_team',
     'attendance:manage_team',
     'leave:approve_team',
     'fieldwork:manage_team',

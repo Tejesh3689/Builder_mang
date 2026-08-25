@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-const ALLOWED_ROLES = ['ADMIN', 'PROJECT_MANAGER', 'STORE_MANAGER'];
+const ALLOWED_ROLES = ['ADMIN', 'PROJECT_MANAGER', 'STORE_MANAGER', 'SITE_ENGINEER'];
 
 export async function GET(req: Request) {
   try {
