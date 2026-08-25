@@ -13,7 +13,71 @@ export default async function DashboardPage() {
   const userRole = (session?.user as any)?.role || 'USER';
 
   if (userRole === 'SITE_ENGINEER') {
-    return <SupervisorDashboard />;
+    const sessionName = session?.user?.name || '';
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const team = await prisma.employee.findMany({
+      where: { reportingManager: sessionName },
+      select: { id: true, firstName: true, lastName: true, designation: true }
+    });
+    
+    const teamIds = team.map(t => t.id);
+    
+    const teamCount = await prisma.employee.count({ where: { reportingManager: sessionName } });
+
+    // Mock data for models that don't exist in Prisma yet
+    const present = Math.min(teamCount, 18);
+    const absent = teamCount > 18 ? 2 : 0;
+    const late = teamCount > 20 ? 1 : 0;
+    const onLeave = teamCount > 21 ? 3 : 0;
+    const fieldWork = teamCount > 24 ? 4 : 0;
+
+    const stats = [
+      { label: 'Total Team Members', count: teamCount, tone: { bg: 'bg-zinc-50 border-zinc-200', text: 'text-zinc-800', dot: 'bg-zinc-500' } },
+      { label: 'Present Today', count: present, tone: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', dot: 'bg-emerald-500' } },
+      { label: 'Absent Today', count: absent, tone: { bg: 'bg-red-50 border-red-200', text: 'text-red-800', dot: 'bg-red-500' } },
+      { label: 'Late Today', count: late, tone: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-800', dot: 'bg-amber-500' } },
+      { label: 'On Leave', count: onLeave, tone: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-800', dot: 'bg-blue-500' } },
+      { label: 'Field Work', count: fieldWork, tone: { bg: 'bg-purple-50 border-purple-200', text: 'text-purple-800', dot: 'bg-purple-500' } },
+    ];
+
+    const pendingLeaves = [
+      { emp: 'Ravi Kumar', type: 'Sick Leave', dates: '12 Aug - 13 Aug', status: 'Pending' },
+      { emp: 'Anil Desai', type: 'Casual Leave', dates: '15 Aug - 16 Aug', status: 'Pending' }
+    ];
+
+    const pendingFieldWork = [
+      { emp: 'Suresh Babu', task: 'Site Inspection', loc: 'Skyline Heights', status: 'Pending' }
+    ];
+
+    const teamActivities = [
+      { t: 'Ravi Kumar checked in at Green Valley Residency', ts: '10 min ago' },
+      { t: 'Anil Desai submitted field report for Block A', ts: '1 hr ago' },
+      { t: 'Suresh Babu marked absent', ts: '3 hr ago' }
+    ];
+
+    const teamAttendanceList = [
+      { name: 'Ravi Kumar', role: 'Electrician', timeIn: '08:00 AM', status: 'Present', tone: 'emerald' },
+      { name: 'Anil Desai', role: 'Plumber', timeIn: '08:15 AM', status: 'Late', tone: 'amber' },
+      { name: 'Suresh Babu', role: 'Mason', timeIn: '—', status: 'Absent', tone: 'red' },
+      { name: 'Manoj Tiwari', role: 'Helper', timeIn: '—', status: 'On Leave', tone: 'blue' },
+    ];
+
+    const quickActions = [
+      { label: 'Team Attendance', icon: 'users', href: '/attendance', color: 'text-emerald-600' },
+      { label: 'Pending Approvals', icon: 'check', href: '/approvals', color: 'text-amber-600' },
+      { label: 'Team Chat', icon: 'message-square', href: '/chat', color: 'text-blue-600' }
+    ];
+
+    return <SupervisorDashboard 
+      stats={stats} 
+      pendingLeaves={pendingLeaves} 
+      pendingFieldWork={pendingFieldWork} 
+      teamActivities={[]} 
+      teamAttendance={teamAttendanceList} 
+      quickActions={quickActions}
+    />;
   }
 
   if (userRole === 'MANAGER') {
