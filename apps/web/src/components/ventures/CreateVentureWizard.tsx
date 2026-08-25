@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Building2, MapPin, Calendar, Users, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 
 interface CreateVentureWizardProps {
   isOpen: boolean;
@@ -94,9 +95,10 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-3xl rounded-xl bg-white border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
+    <ModalPortal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
+        <div className="relative w-full max-w-3xl rounded-xl bg-white border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 bg-zinc-50/50">
           <div>
             <h2 className="text-xl font-bold text-zinc-900 flex items-center gap-2">
@@ -469,5 +471,6 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
         </div>
       </div>
     </div>
-  );
+  </ModalPortal>
+);
 }

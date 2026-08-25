@@ -31,7 +31,7 @@ export default async function InventoryOverviewPage() {
   const userRole = (session?.user as any)?.role || 'USER';
   const userId = (session?.user as any)?.id;
 
-  const ventureFilter = (userRole === 'MANAGER' && userId) ? { projectManager: { userId } } : undefined;
+  const ventureFilter = ((userRole === 'PROJECT_MANAGER' || userRole === 'MANAGER') && userId) ? { projectManager: { userId } } : undefined;
 
   // Today's aggregates
   let todayReceived = 0;

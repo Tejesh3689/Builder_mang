@@ -135,7 +135,13 @@ async function main() {
 
   const emp1 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-001' },
-    update: { userId: admin.id },
+    update: { 
+      userId: admin.id,
+      firstName: 'Rajesh',
+      lastName: 'Kumar',
+      designation: 'Project Director',
+      department: 'Management'
+    },
     create: {
       employeeId: 'EMP-001',
       userId: admin.id,
@@ -148,7 +154,13 @@ async function main() {
 
   const emp2 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-002' },
-    update: { userId: manager.id },
+    update: { 
+      userId: manager.id,
+      firstName: 'Suresh',
+      lastName: 'Verma',
+      designation: 'Senior Project Manager',
+      department: 'Construction'
+    },
     create: {
       employeeId: 'EMP-002',
       userId: manager.id,
@@ -161,7 +173,14 @@ async function main() {
 
   const emp3 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-003' },
-    update: { userId: supervisor.id },
+    update: { 
+      userId: supervisor.id,
+      firstName: 'Krishna',
+      lastName: 'Rao',
+      designation: 'Site Supervisor',
+      department: 'Operations',
+      reportingManager: 'Suresh Verma'
+    },
     create: {
       employeeId: 'EMP-003',
       userId: supervisor.id,
@@ -175,7 +194,13 @@ async function main() {
 
   const emp4 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-004' },
-    update: { userId: engineer.id },
+    update: { 
+      userId: engineer.id,
+      firstName: 'Ajay',
+      lastName: 'Rao',
+      designation: 'Lead Site Engineer',
+      department: 'Engineering'
+    },
     create: {
       employeeId: 'EMP-004',
       userId: engineer.id,
@@ -188,7 +213,13 @@ async function main() {
 
   const emp5 = await prisma.employee.upsert({
     where: { employeeId: 'EMP-005' },
-    update: { userId: storeUser.id },
+    update: { 
+      userId: storeUser.id,
+      firstName: 'Vikram',
+      lastName: 'Singh',
+      designation: 'Store & Materials Manager',
+      department: 'Logistics'
+    },
     create: {
       employeeId: 'EMP-005',
       userId: storeUser.id,
@@ -415,24 +446,30 @@ async function main() {
     ],
   });
 
-  // 10. Scoped Chat Rooms (upsert for idempotency — prevents duplicates on re-seed)
-  const chatGeneral = await prisma.chatRoom.upsert({
-    where: { ventureId_name: { ventureId: greenHeights.id, name: 'General Discussion' } },
-    update: {},
-    create: {
-      ventureId: greenHeights.id,
-      name: 'General Discussion',
-    },
+  // 10. Scoped Chat Rooms (prevent duplicates on re-seed)
+  let chatGeneral = await prisma.chatRoom.findFirst({
+    where: { ventureId: greenHeights.id, name: 'General Discussion' }
   });
+  if (!chatGeneral) {
+    chatGeneral = await prisma.chatRoom.create({
+      data: {
+        ventureId: greenHeights.id,
+        name: 'General Discussion',
+      }
+    });
+  }
 
-  const chatSiteTeam = await prisma.chatRoom.upsert({
-    where: { ventureId_name: { ventureId: greenHeights.id, name: 'Site Engineers & Ops' } },
-    update: {},
-    create: {
-      ventureId: greenHeights.id,
-      name: 'Site Engineers & Ops',
-    },
+  let chatSiteTeam = await prisma.chatRoom.findFirst({
+    where: { ventureId: greenHeights.id, name: 'Site Engineers & Ops' }
   });
+  if (!chatSiteTeam) {
+    chatSiteTeam = await prisma.chatRoom.create({
+      data: {
+        ventureId: greenHeights.id,
+        name: 'Site Engineers & Ops',
+      }
+    });
+  }
 
   // Add ChatMember rows for users who participate in these rooms
   // (required by the membership check on GET /api/chat/rooms/[roomId]/messages)

@@ -43,7 +43,7 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-8 p-8 rounded-2xl bg-white border border-zinc-200/80 shadow-xl">
+    <div className="w-full max-w-[420px] space-y-8 p-8 sm:p-10 rounded-[2rem] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
       <div className="text-center">
         <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-800 border border-amber-500/20 mb-3">
           Builder Management System
@@ -146,10 +146,27 @@ function LoginFormContent() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#EAEAEA] px-4 py-12">
-      <Suspense fallback={<div className="text-zinc-500 text-xs">Loading sign in...</div>}>
-        <LoginFormContent />
-      </Suspense>
+    <div className="relative flex min-h-screen items-center justify-center bg-[#F4F4F5] px-4 py-12 overflow-hidden">
+      {/* Blueprint Background Overlay */}
+      <div 
+        className="absolute inset-0 z-0 opacity-[0.85] pointer-events-none mix-blend-multiply"
+        style={{ 
+          backgroundImage: 'url(/landing-bg.jpg)',
+          backgroundPosition: 'bottom center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover'
+        }}
+      />
+      
+      {/* Decorative Blob */}
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-amber-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse" />
+      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-amber-600/10 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse" style={{ animationDelay: '2s' }} />
+
+      <div className="relative z-10 w-full flex justify-center">
+        <Suspense fallback={<div className="text-zinc-500 text-xs">Loading sign in...</div>}>
+          <LoginFormContent />
+        </Suspense>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { Send, ArrowLeft, Building2, User, MessageSquare } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { Send, ArrowLeft, Building2, User, MessageSquare, UserPlus } from 'lucide-react';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 
 export default function StandaloneChatRoomPage({ params }: { params: Promise<{ ventureId: string }> }) {
   const resolvedParams = use(params);
@@ -14,6 +16,62 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [sendError, setSendError] = useState('');
+
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || 'USER';
+  const canAddMember = userRole === 'ADMIN' || userRole === 'PROJECT_MANAGER';
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState('');
+
+  const handleOpenAddModal = async () => {
+    setShowAddModal(true);
+    try {
+      const res = await fetch('/api/employees');
+      const data = await res.json();
+      if (data.success && data.data) {
+        const emps = data.data.filter((e: any) => {
+          if (!e.user?.id) return false;
+          const desig = e.designation?.toLowerCase() || '';
+          return desig.includes('manager') || 
+                 desig.includes('director') || 
+                 desig.includes('supervisor') ||
+                 desig.includes('lead') ||
+                 desig.includes('engineer');
+        });
+        setEmployees(emps);
+        if (emps.length > 0) setSelectedUserId(emps[0].user.id);
+      }
+    } catch (err) {
+      console.error('Failed to fetch employees', err);
+    }
+  };
+
+  const handleAddMemberSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddError('');
+    setAddLoading(true);
+    try {
+      const res = await fetch(`/api/chat/rooms/${ventureId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUserId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowAddModal(false);
+      } else {
+        setAddError(data.error || 'Failed to add member');
+      }
+    } catch (err) {
+      setAddError('Network error');
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   const fetchRoomDetails = async () => {
     try {
@@ -124,7 +182,17 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
             )}
           </div>
         </div>
-        <Link href="/chat" className="text-xs font-semibold text-amber-700 hover:underline shrink-0">Exit Room</Link>
+        <div className="flex items-center gap-2">
+          {canAddMember && (
+            <button
+              onClick={handleOpenAddModal}
+              className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-semibold rounded-lg shrink-0 border border-zinc-200"
+            >
+              + Add Member
+            </button>
+          )}
+          <Link href="/chat" className="text-xs font-semibold text-amber-700 hover:underline shrink-0">Exit Room</Link>
+        </div>
       </div>
 
       {/* Messages Scroll Area */}
@@ -182,6 +250,33 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
           </button>
         </div>
       </form>
+
+      {/* Add Member Modal */}
+      {showAddModal && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <form onSubmit={handleAddMemberSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-sm w-full space-y-4">
+            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Member to Room</h3>
+            {addError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{addError}</p>}
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-zinc-700 mb-1">Select Employee</label>
+                <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                  {employees.map((e) => (
+                    <option key={e.id} value={e.user.id}>{e.firstName} {e.lastName} ({e.designation})</option>
+                  ))}
+                  {employees.length === 0 && <option value="">Loading...</option>}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
+              <button type="button" onClick={() => setShowAddModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
+              <button type="submit" disabled={addLoading || !selectedUserId} className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg">Add Member</button>
+            </div>
+          </form>
+          </div>
+        </ModalPortal>
+      )}
     </div>
   );
 }

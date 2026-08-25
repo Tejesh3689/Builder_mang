@@ -34,7 +34,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     .toUpperCase()
     .substring(0, 2);
 
-  const getNavGroups = (role: string) => {
+  type NavItem = { href: string; label: string; icon: string; count?: number | string; alert?: boolean };
+  type NavGroup = { group: string | null; items: NavItem[] };
+
+  const getNavGroups = (role: string): NavGroup[] => {
     if (role === 'SITE_ENGINEER') {
       return [
         {
@@ -59,6 +62,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             { href: '/reports/team', label: 'Reports', icon: 'file' },
             { href: '/meetings', label: 'Meetings', icon: 'users' },
             { href: '/assets', label: 'Assets', icon: 'box' },
+          ],
+        },
+        {
+          group: 'Inventory',
+          items: [
+            { href: '/materials', label: 'Inventory Overview', icon: 'box' },
+            { href: '/materials/list', label: 'Materials', icon: 'cube' },
+            { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
+          ],
+        },
+        {
+          group: 'Communication',
+          items: [
+            { href: '/chat', label: 'Venture Chat', icon: 'chat' },
           ],
         },
         {
@@ -104,6 +121,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ],
         },
         {
+          group: 'Inventory',
+          items: [
+            { href: '/materials', label: 'Inventory Overview', icon: 'box' },
+            { href: '/materials/list', label: 'Materials', icon: 'cube' },
+            { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
+          ],
+        },
+        {
+          group: 'Communication',
+          items: [
+            { href: '/chat', label: 'Venture Chat', icon: 'chat' },
+          ],
+        },
+        {
           group: 'System',
           items: [
             { href: '/notifications', label: 'Notifications', icon: 'bell', count: 6, alert: true },
@@ -113,7 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ];
     }
 
-    const groups = [
+    const groups: NavGroup[] = [
       {
         group: null,
         items: [
@@ -139,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         group: 'Inventory',
         items: [
           { href: '/materials', label: 'Inventory Overview', icon: 'box' },
-          { href: '/materials', label: 'Materials', icon: 'cube' },
+          { href: '/materials/list', label: 'Materials', icon: 'cube' },
           { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
         ],
       },
@@ -387,7 +418,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar Header */}
         <header className="h-16 glass-topbar flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
           <div className="flex items-center gap-3">

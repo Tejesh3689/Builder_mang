@@ -117,12 +117,17 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         const res = await fetch('/api/employees');
         const data = await res.json();
         if (data.success && data.data) {
-          const managers = data.data.filter((e: any) => 
-            e.designation?.toLowerCase().includes('manager') || 
-            e.designation?.toLowerCase().includes('director') || 
-            e.designation?.toLowerCase().includes('supervisor') ||
-            e.designation?.toLowerCase().includes('lead')
-          );
+          const managers = data.data
+            .filter((e: any) => 
+              e.designation?.toLowerCase().includes('manager') || 
+              e.designation?.toLowerCase().includes('director') || 
+              e.designation?.toLowerCase().includes('supervisor') ||
+              e.designation?.toLowerCase().includes('lead')
+            )
+            .map((e: any) => ({
+              name: `${e.firstName} ${e.lastName}`,
+              designation: e.designation
+            }));
           setSeniorEmployees(managers);
         }
       } catch (err) {

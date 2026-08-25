@@ -3,8 +3,20 @@ import Link from 'next/link';
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#EAEAEA] text-zinc-900 px-4">
-      <div className="max-w-3xl text-center space-y-6">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#F4F4F5] text-zinc-900 px-4 overflow-hidden">
+      {/* Blueprint Background Overlay */}
+      <div 
+        className="absolute inset-0 z-0 opacity-[0.85] pointer-events-none mix-blend-multiply"
+        style={{ 
+          backgroundImage: 'url(/landing-bg.jpg)',
+          backgroundPosition: 'bottom center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover'
+        }}
+      />
+      
+      <div className="relative z-10 flex flex-col items-center w-full">
+        <div className="max-w-3xl text-center space-y-6">
         <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-800 border border-amber-500/25 backdrop-blur-md">
           Builder Management System v1.0
         </div>
@@ -43,6 +55,7 @@ export default function LandingPage() {
             Secure WebSocket chat rooms isolated by site membership for lightning-fast updates.
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

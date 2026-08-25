@@ -25,7 +25,7 @@ export async function GET(
         where: { id: userId },
         include: { employee: { include: { assignments: { where: { ventureId, status: 'ACTIVE' } } } } }
       });
-      const isAssigned = user?.employee?.assignments?.length > 0;
+      const isAssigned = (user?.employee?.assignments?.length ?? 0) > 0;
       if (!isAssigned) {
         return NextResponse.json(
           { success: false, error: 'Forbidden: You are not assigned to this venture' },
