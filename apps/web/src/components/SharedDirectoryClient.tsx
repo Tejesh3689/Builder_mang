@@ -37,11 +37,11 @@ export default function SharedDirectoryClient({
   const fetchData = async () => {
     try {
       const [empRes, venRes] = await Promise.all([
-        api.get<any[]>('/api/employees'),
-        api.get<any[]>('/api/ventures')
+        api.get<{success: boolean, data?: any[]}>('/api/employees'),
+        api.get<{success: boolean, data?: any[]}>('/api/ventures')
       ]);
-      if (Array.isArray(empRes)) setEmployees(empRes);
-      if (Array.isArray(venRes)) setVentures(venRes);
+      if (empRes.success && empRes.data) setEmployees(empRes.data);
+      if (venRes.success && venRes.data) setVentures(venRes.data);
     } catch (err) {
       console.error('Failed loading directory data:', err);
     } finally {

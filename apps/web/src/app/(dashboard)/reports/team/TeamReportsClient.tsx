@@ -5,9 +5,16 @@ import React, { useState } from 'react';
 interface TeamReportsClientProps {
   userRole?: string;
   sessionName?: string;
+  initialAttendance?: any[];
+  initialLeaves?: any[];
 }
 
-export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = '' }: TeamReportsClientProps) {
+export default function TeamReportsClient({ 
+  userRole = 'ADMIN', 
+  sessionName = '',
+  initialAttendance = [],
+  initialLeaves = []
+}: TeamReportsClientProps) {
   const isSupervisor = userRole === 'SITE_ENGINEER';
   const isManager = userRole === 'PROJECT_MANAGER';
   
@@ -15,18 +22,6 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
   const [dateRange, setDateRange] = useState('This Month');
   const [employeeFilter, setEmployeeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
-
-  // Dummy data tailored for reports
-  const mockAttendance = [
-    { id: 'ATT-1', date: '2026-08-20', employeeName: 'Krishna Rao', status: 'Present', login: '08:00 AM', logout: '05:00 PM', hours: 9, site: 'Site A' },
-    { id: 'ATT-2', date: '2026-08-20', employeeName: 'Anil Desai', status: 'Present', login: '08:15 AM', logout: '05:00 PM', hours: 8.75, site: 'Site B' },
-    { id: 'ATT-3', date: '2026-08-20', employeeName: 'Ravi Kumar', status: 'Absent', login: '-', logout: '-', hours: 0, site: '-' },
-  ];
-
-  const mockLeave = [
-    { id: 'LEV-1', employeeName: 'Manoj Tiwari', type: 'Sick Leave', startDate: '2026-08-10', endDate: '2026-08-11', duration: 2, status: 'Approved' },
-    { id: 'LEV-2', employeeName: 'Suresh Babu', type: 'Casual Leave', startDate: '2026-08-15', endDate: '2026-08-15', duration: 1, status: 'Approved' },
-  ];
 
   const mockFieldWork = [
     { id: 'FW-1', date: '2026-08-18', employeeName: 'Krishna Rao', client: 'Alpha Corp', location: 'Whitefield', duration: 4, status: 'Completed' },
@@ -42,8 +37,8 @@ export default function TeamReportsClient({ userRole = 'ADMIN', sessionName = ''
     });
   };
 
-  const filteredAttendance = getFilteredData(mockAttendance);
-  const filteredLeave = getFilteredData(mockLeave);
+  const filteredAttendance = getFilteredData(initialAttendance);
+  const filteredLeave = getFilteredData(initialLeaves);
   const filteredFieldWork = getFilteredData(mockFieldWork);
 
   const handleExport = () => {

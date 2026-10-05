@@ -39,6 +39,7 @@ export async function GET(
           announcements: { orderBy: { createdAt: 'desc' } },
           chatRooms: true,
           settings: true,
+          requests: { select: { status: true } },
           auditLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
         },
       });
@@ -67,6 +68,7 @@ const PATCHABLE_FIELDS = [
   'estimatedBudget', 'progressPercentage',
   'projectDirectorId', 'projectManagerId', 'siteManagerId',
   'constructionManagerId', 'financeManagerId', 'purchaseManagerId',
+  'settings'
 ];
 
 export async function PATCH(
@@ -103,6 +105,40 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ ventureId: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    
+    // Only ADMIN or PROJECT_MANAGER can delete ventures
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Admin or Project Manager access required' }, 
+        { status: 403 }
+      );
+    }
+
+    const resolvedParams = await params;
+    const { ventureId } = resolvedParams;
+
+    // Delete the venture
+    await prisma.venture.delete({
+      where: { id: ventureId },
+    });
+    
+    // We don't need to create an audit log if the venture is deleted since its relations might cascade delete
+    // If we wanted to, we would log it globally without linking the deleted ventureId
+
+    return NextResponse.json({ success: true, message: 'Venture deleted successfully' });
+  } catch (error: any) {
+    console.error('Failed to delete venture:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

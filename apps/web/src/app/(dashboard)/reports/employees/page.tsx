@@ -1,14 +1,43 @@
 import React from 'react';
 import Link from 'next/link';
+import prisma from '@/lib/db';
+import { requireAuth } from '@/lib/authorization';
 
-const mockEmployees = [
-  { id: 'E-001', name: 'John Doe', role: 'Site Manager', department: 'Operations', hours: 160, rating: 'Excellent' },
-  { id: 'E-002', name: 'Sarah Smith', role: 'Civil Engineer', department: 'Engineering', hours: 172, rating: 'Good' },
-  { id: 'E-003', name: 'Michael Brown', role: 'Safety Officer', department: 'Compliance', hours: 155, rating: 'Excellent' },
-  { id: 'E-004', name: 'Emily Davis', role: 'Architect', department: 'Design', hours: 140, rating: 'Average' },
-];
+export default async function EmployeeReportsPage() {
+  await requireAuth();
 
-export default function EmployeeReportsPage() {
+  const employeesData = await prisma.employee.findMany({
+    orderBy: { firstName: 'asc' },
+    select: {
+      employeeId: true,
+      firstName: true,
+      lastName: true,
+      designation: true,
+      department: true,
+      performanceRating: true,
+      attendance: true
+    }
+  });
+
+  const employees = employeesData.map(e => {
+    const presentDays = e.attendance.filter(a => a.status === 'PRESENT').length;
+    // rough approximation for mock metric replacement
+    const hours = presentDays * 8;
+    
+    let rating = 'Average';
+    if (e.performanceRating && e.performanceRating >= 4.5) rating = 'Excellent';
+    else if (e.performanceRating && e.performanceRating >= 3.5) rating = 'Good';
+
+    return {
+      id: e.employeeId,
+      name: `${e.firstName} ${e.lastName}`.trim(),
+      role: e.designation,
+      department: e.department,
+      hours,
+      rating
+    };
+  });
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -30,7 +59,7 @@ export default function EmployeeReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 text-zinc-800">
-              {mockEmployees.map(e => (
+              {employees.map(e => (
                 <tr key={e.id} className="hover:bg-zinc-50/50">
                   <td className="px-6 py-4 font-medium text-zinc-900">{e.id}</td>
                   <td className="px-6 py-4">{e.name}</td>
@@ -46,6 +75,13 @@ export default function EmployeeReportsPage() {
                   </td>
                 </tr>
               ))}
+              {employees.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
+                    No employee records found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

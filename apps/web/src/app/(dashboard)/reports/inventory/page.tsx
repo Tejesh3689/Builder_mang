@@ -1,14 +1,33 @@
 import React from 'react';
 import Link from 'next/link';
+import prisma from '@/lib/db';
+import { requireAuth } from '@/lib/authorization';
 
-const mockInventory = [
-  { id: 'INV-101', item: 'Portland Cement (50kg)', category: 'Materials', stock: 450, reorder: 200, status: 'In Stock' },
-  { id: 'INV-102', item: 'Steel Rebar (12mm)', category: 'Materials', stock: 120, reorder: 150, status: 'Low Stock' },
-  { id: 'INV-103', item: 'Safety Helmets', category: 'Equipment', stock: 85, reorder: 50, status: 'In Stock' },
-  { id: 'INV-104', item: 'Excavator Fuel (L)', category: 'Fuel', stock: 1500, reorder: 2000, status: 'Reorder Now' },
-];
+export default async function InventoryReportsPage() {
+  await requireAuth();
 
-export default function InventoryReportsPage() {
+  const materials = await prisma.material.findMany({
+    include: {
+      category: true,
+      stocks: true,
+    },
+    orderBy: { name: 'asc' }
+  });
+
+  const inventory = materials.map(mat => {
+    const totalStock = mat.stocks.reduce((acc, stock) => acc + stock.physicalQuantity, 0);
+    const status = totalStock <= 0 ? 'Out of Stock' : (totalStock <= mat.reorderLevel ? 'Low Stock' : 'In Stock');
+    
+    return {
+      id: mat.code,
+      item: mat.name,
+      category: mat.category?.name || 'Uncategorized',
+      stock: totalStock,
+      reorder: mat.reorderLevel,
+      status
+    };
+  });
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -30,7 +49,7 @@ export default function InventoryReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 text-zinc-800">
-              {mockInventory.map(item => (
+              {inventory.map(item => (
                 <tr key={item.id} className="hover:bg-zinc-50/50">
                   <td className="px-6 py-4 font-medium text-zinc-900">{item.id}</td>
                   <td className="px-6 py-4">{item.item}</td>
@@ -46,6 +65,13 @@ export default function InventoryReportsPage() {
                   </td>
                 </tr>
               ))}
+              {inventory.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
+                    No inventory records found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

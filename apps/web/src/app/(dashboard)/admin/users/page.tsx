@@ -1,14 +1,25 @@
 import React from 'react';
 import Link from 'next/link';
+import prisma from '@/lib/db';
+import { requireAuth } from '@/lib/authorization';
 
-const mockUsers = [
-  { id: 'USR-001', name: 'Admin Manager', email: 'admin@builder.com', role: 'Super Admin', status: 'Active' },
-  { id: 'USR-002', name: 'John Doe', email: 'john@builder.com', role: 'Project Manager', status: 'Active' },
-  { id: 'USR-003', name: 'Jane Smith', email: 'jane@builder.com', role: 'Supervisor', status: 'Inactive' },
-  { id: 'USR-004', name: 'Mike Johnson', email: 'mike@builder.com', role: 'Site Manager', status: 'Active' },
-];
+export default async function UsersPage() {
+  const userAuth = await requireAuth();
+  
+  if ((userAuth as any).role !== 'ADMIN') {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
+        <p className="mt-2 text-zinc-600">You must be an administrator to view this page.</p>
+      </div>
+    );
+  }
 
-export default function UsersPage() {
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, name: true, email: true, role: true, isActive: true }
+  });
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -29,15 +40,15 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 text-zinc-800">
-              {mockUsers.map(user => (
+              {users.map(user => (
                 <tr key={user.id} className="hover:bg-zinc-50/50">
                   <td className="px-6 py-4 font-medium text-zinc-900">{user.name}</td>
                   <td className="px-6 py-4">{user.email}</td>
                   <td className="px-6 py-4">{user.role}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      user.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-600'
-                    }`}>{user.status}</span>
+                      user.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-600'
+                    }`}>{user.isActive ? 'Active' : 'Inactive'}</span>
                   </td>
                   <td className="px-6 py-4 text-right whitespace-nowrap">
                     <Link href={`/admin/users/${user.id}/edit`} className="text-amber-600 hover:text-amber-800 font-semibold mr-3">Edit</Link>

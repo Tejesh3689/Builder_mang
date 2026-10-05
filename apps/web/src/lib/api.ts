@@ -40,11 +40,7 @@ export async function fetchApi<T>(url: string, options: RequestInit = {}): Promi
       throw new ApiError(response.status, errorMessage, data);
     }
 
-    // Standard API response shape is often { success: true, data: T }
-    // We'll return the raw data if it matches our shape or just the parsed JSON.
-    if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
-      return data.data as T;
-    }
+    // Return the parsed JSON directly so callers can check .success and .data
 
     return data as T;
   } catch (error) {

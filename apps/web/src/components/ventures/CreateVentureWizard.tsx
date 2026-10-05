@@ -20,11 +20,11 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
   // Fetch employees from DB for leadership dropdowns
   useEffect(() => {
     if (isOpen) {
-      api.get<any[]>('/api/employees')
+      api.get<{success: boolean, data?: any[]}>('/api/employees')
 
         .then((data) => {
-          if (Array.isArray(data)) {
-            setEmployees(data);
+          if (data.success && data.data) {
+            setEmployees(data.data);
           }
         })
         .catch((err) => console.error('Failed to fetch employees:', err));

@@ -139,58 +139,30 @@ export default async function InventoryOverviewPage() {
   }
 
   // ─── Fallback Data ───────────────────────────────────────────────
-  if (totalMaterials === 0) {
-    totalMaterials = 9;
-  }
 
-  const displayLowStock = lowStockItems.length > 0
-    ? lowStockItems
-    : [
-        { id: '1', name: 'Steel — TMT Bars 12mm', available: 14.2, minLevel: 20, uom: 'MT', level: 'LOW' },
-        { id: '2', name: 'Red Clay Bricks', available: 48, minLevel: 60, uom: 'Nos (thousand)', level: 'LOW' },
-        { id: '3', name: 'Exterior Emulsion Paint', available: 6, minLevel: 80, uom: 'Litres', level: 'CRITICAL' },
-      ];
+  const displayLowStock = lowStockItems;
 
-  const displayTransactions = recentTransactions.length > 0
-    ? recentTransactions.map((tx: any) => ({
-        id: tx.id,
-        date: new Date(tx.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-        type: tx.transactionType,
-        qty: tx.quantityIn > 0 ? `+${tx.quantityIn}` : `-${tx.quantityOut}`,
-        uom: tx.material?.unitOfMeasure?.name || 'Bags',
-        fromTo: `${tx.stockLocation?.name || 'Main Store'} → ${tx.venture?.name || 'Site'}`,
-        by: tx.performedBy?.name || 'System',
-        ref: tx.transactionNumber,
-      }))
-    : [
-        { id: '1', date: '11 Aug 2026, 15:40', type: 'RECEIPT', qty: '+500', uom: 'bags', fromTo: 'UltraTech Distributors → GVR Central Store', by: 'Krishna Rao', ref: 'PO-3341' },
-        { id: '2', date: '10 Aug 2026, 15:40', type: 'ISSUE', qty: '-120', uom: 'bags', fromTo: 'GVR Central Store → GVR Tower A — Floor 9', by: 'Ramesh Babu', ref: 'MR-1839' },
-        { id: '3', date: '09 Aug 2026, 11:02', type: 'TRANSFER', qty: '80', uom: 'bags', fromTo: 'RFT Store → GVR Central Store', by: 'Arjun Reddy', ref: 'TRF-0091' },
-        { id: '4', date: '08 Aug 2026, 08:55', type: 'ADJUSTMENT', qty: '-6', uom: 'bags', fromTo: 'GVR Central Store → Damaged / Write-off', by: 'Krishna Rao', ref: 'ADJ-0021' },
-      ];
+  const displayTransactions = recentTransactions.map((tx: any) => ({
+    id: tx.id,
+    date: new Date(tx.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    type: tx.transactionType,
+    qty: tx.quantityIn > 0 ? `+${tx.quantityIn}` : `-${tx.quantityOut}`,
+    uom: tx.material?.unitOfMeasure?.name || 'Bags',
+    fromTo: `${tx.stockLocation?.name || 'Main Store'} → ${tx.venture?.name || 'Site'}`,
+    by: tx.performedBy?.name || 'System',
+    ref: tx.transactionNumber,
+  }));
 
-  const displayPending = pendingRequests.length > 0
-    ? pendingRequests.map((r: any) => ({
-        id: r.id,
-        number: r.requestNumber,
-        material: r.items?.[0]?.material?.name || 'Cement',
-        priority: r.priority,
-      }))
-    : [
-        { id: '1', number: 'MR-1042', material: 'Cement', priority: 'HIGH' },
-        { id: '2', number: 'MR-1041', material: 'Steel', priority: 'CRITICAL' },
-      ];
+  const displayPending = pendingRequests.map((r: any) => ({
+    id: r.id,
+    number: r.requestNumber,
+    material: r.items?.[0]?.material?.name || 'Material',
+    priority: r.priority,
+  }));
 
-  const displaySiteStock = siteStockData.length > 0
-    ? siteStockData
-    : [
-        { locationName: 'GVR Central Store', totalQty: 1240, uom: 'bags' },
-        { locationName: 'SKH Yard', totalQty: 330, uom: 'bags' },
-        { locationName: 'RFT Store', totalQty: 210, uom: 'bags' },
-        { locationName: 'SRV Store', totalQty: 95, uom: 'bags' },
-      ];
+  const displaySiteStock = siteStockData;
 
-  const maxSiteQty = Math.max(...displaySiteStock.map((s: any) => s.totalQty));
+  const maxSiteQty = displaySiteStock.length > 0 ? Math.max(...displaySiteStock.map((s: any) => s.totalQty)) : 1;
 
   const getTxTypeStyle = (type: string) => {
     const t = type.toUpperCase();
@@ -244,19 +216,19 @@ export default async function InventoryOverviewPage() {
         <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-1">
           <p className="text-[10px] text-zinc-400 uppercase font-semibold tracking-wider">Today's Received</p>
           <p className="text-2xl font-black text-emerald-500">
-            {todayReceived > 0 ? `${todayReceived} bags` : '500 bags'}
+            {todayReceived > 0 ? `${todayReceived}` : '0'}
           </p>
         </div>
         <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-1">
           <p className="text-[10px] text-zinc-400 uppercase font-semibold tracking-wider">Today's Issued</p>
           <p className="text-2xl font-black text-amber-700">
-            {todayIssued > 0 ? `${todayIssued} bags` : '120 bags'}
+            {todayIssued > 0 ? `${todayIssued}` : '0'}
           </p>
         </div>
         <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-1">
           <p className="text-[10px] text-zinc-400 uppercase font-semibold tracking-wider">Today's Transfers</p>
           <p className="text-2xl font-black text-blue-500">
-            {todayTransfers > 0 ? `${todayTransfers} bags` : '80 bags'}
+            {todayTransfers > 0 ? `${todayTransfers}` : '0'}
           </p>
         </div>
       </div>
@@ -299,6 +271,11 @@ export default async function InventoryOverviewPage() {
                       </td>
                     </tr>
                   ))}
+                  {displayLowStock.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-zinc-400 text-xs">No low stock items</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -342,6 +319,11 @@ export default async function InventoryOverviewPage() {
                       </tr>
                     );
                   })}
+                  {displayTransactions.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-zinc-400 text-xs">No recent transactions</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -380,6 +362,11 @@ export default async function InventoryOverviewPage() {
                       </td>
                     </tr>
                   ))}
+                  {displayPending.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="py-8 text-center text-zinc-400 text-xs">No pending requests</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -387,7 +374,7 @@ export default async function InventoryOverviewPage() {
 
           {/* Site-wise Stock */}
           <div className="bg-white border border-zinc-200 rounded-xl p-5 space-y-4">
-            <h3 className="font-bold text-sm text-black">Site-wise Stock (Cement)</h3>
+            <h3 className="font-bold text-sm text-black">Site-wise Stock</h3>
             <div className="space-y-3">
               {displaySiteStock.map((site: any, idx: number) => {
                 const pct = Math.round((site.totalQty / maxSiteQty) * 100);
@@ -407,6 +394,9 @@ export default async function InventoryOverviewPage() {
                   </div>
                 );
               })}
+              {displaySiteStock.length === 0 && (
+                <div className="py-6 text-center text-zinc-400 text-xs">No site stock data available</div>
+              )}
             </div>
           </div>
 

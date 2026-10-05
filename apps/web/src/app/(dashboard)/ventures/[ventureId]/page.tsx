@@ -139,14 +139,31 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
       await api.patch(`/api/ventures/${venture.id}`, {
         settings: {
-          update: {
-            [field]: val,
+          upsert: {
+            create: { [field]: val },
+            update: { [field]: val },
           },
         },
       });
     } catch (err) {
       console.error('Failed to update settings in DB:', err);
       // Optional: rollback state here if needed
+    }
+  };
+
+  const handleDeleteVenture = async () => {
+    if (!confirm('Are you sure you want to delete this venture? This action is permanent.')) return;
+    
+    try {
+      const res = await api.delete<{success: boolean}>(`/api/ventures/${venture.id}`);
+      if (res.success) {
+        window.location.href = '/ventures';
+      } else {
+        alert('Failed to delete venture.');
+      }
+    } catch (err) {
+      console.error('Error deleting venture:', err);
+      alert('Error deleting venture.');
     }
   };
 
@@ -223,31 +240,33 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
         <div className="p-4 rounded-xl bg-white border border-zinc-200 space-y-1">
           <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider block">Assigned Staff</span>
-          <div className="text-xl font-extrabold text-black">{venture.assignments?.length || 42}</div>
+          <div className="text-xl font-extrabold text-black">{venture.assignments?.length || 0}</div>
           <span className="text-[10px] text-emerald-400 font-semibold">Active on Site</span>
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-zinc-200 space-y-1">
           <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider block">Material Items</span>
-          <div className="text-xl font-extrabold text-black">{venture.stocks?.length || 128}</div>
+          <div className="text-xl font-extrabold text-black">{venture.stocks?.length || 0}</div>
           <span className="text-[10px] text-amber-700 font-semibold">Inventory Tracked</span>
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-zinc-200 space-y-1">
           <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider block">Pending Requests</span>
-          <div className="text-xl font-extrabold text-amber-400">14</div>
+          <div className="text-xl font-extrabold text-amber-400">{(venture.requests || []).filter((r: any) => r.status === 'PENDING').length}</div>
           <span className="text-[10px] text-amber-400/80">Needs Approval</span>
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-zinc-200 space-y-1">
           <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider block">Total Budget</span>
-          <div className="text-xl font-extrabold text-emerald-400">₹{((venture.estimatedBudget || 82000000) / 10000000).toFixed(2)} Cr</div>
+          <div className="text-xl font-extrabold text-emerald-400">₹{((venture.estimatedBudget || 0) / 10000000).toFixed(2)} Cr</div>
           <span className="text-[10px] text-zinc-400">Sanctioned</span>
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-zinc-200 space-y-1">
           <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider block">Budget Utilization</span>
-          <div className="text-xl font-extrabold text-black">64%</div>
+          <div className="text-xl font-extrabold text-black">
+            {venture.estimatedBudget ? '0%' : 'N/A'}
+          </div>
           <span className="text-[10px] text-emerald-400 font-semibold">Within Target</span>
         </div>
       </div>
@@ -728,9 +747,12 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
               {/* Danger Zone */}
               <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-3 pt-3">
                 <h4 className="font-bold text-rose-400 text-xs">Danger Zone</h4>
-                <p className="text-[11px] text-rose-300/80">Archiving will lock venture access while preserving complete audit logs.</p>
-                <button className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-xs">
-                  <Archive className="w-4 h-4" /> Archive Venture
+                <p className="text-[11px] text-rose-300/80">Deleting a venture is permanent and will remove all associated data.</p>
+                <button 
+                  onClick={handleDeleteVenture}
+                  className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                >
+                  Delete Venture
                 </button>
               </div>
             </div>
