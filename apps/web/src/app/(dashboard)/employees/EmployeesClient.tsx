@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { EmployeeProfile } from '@/lib/mockDatabase';
+import { EmployeeProfile } from '@/lib/types';
+
+import { api } from '@/lib/api';
 
 export default function EmployeesClient({ 
   userRole = 'ADMIN', 
@@ -21,8 +23,7 @@ export default function EmployeesClient({
   useEffect(() => {
     async function fetchEmployees() {
       try {
-        const res = await fetch('/api/employees');
-        const json = await res.json();
+        const json = await api.get<{ success: boolean, data: any[] }>('/api/employees');
         if (json.success && json.data) {
           // Map backend schema shape to frontend profile shape
           const mapped: EmployeeProfile[] = json.data.map((item: any) => {
@@ -42,7 +43,7 @@ export default function EmployeesClient({
               onboardingStatus: item.onboardingStatus || 'Active',
               currentProject: activeAssignment?.venture?.name || 'Unassigned',
               currentSite: activeAssignment?.roleAtSite || '—',
-              reportingManager: item.reportingManager || '—',
+              reportingManager: item.reportingManager ? `${item.reportingManager.firstName} ${item.reportingManager.lastName}` : '—',
               employmentType: item.employmentType || 'Permanent',
               attendanceRate: item.attendanceRate || '100%',
               performanceRating: item.performanceRating || 5.0,
@@ -170,10 +171,7 @@ export default function EmployeesClient({
   const handleDeactivate = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to deactivate employee ${name}?`)) {
       try {
-        const res = await fetch(`/api/employees/${id}`, {
-          method: 'DELETE',
-        });
-        const json = await res.json();
+        const json = await api.delete<{ success: boolean, data?: any, error?: string }>(`/api/employees/${id}`);
         if (json.success) {
           setEmployees((prev) =>
             prev.map((emp) => {
@@ -186,9 +184,9 @@ export default function EmployeesClient({
         } else {
           alert(json.error || 'Failed to deactivate employee.');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to deactivate employee:', err);
-        alert('An error occurred while deactivating the employee.');
+        alert(err.message || 'An error occurred while deactivating the employee.');
       }
     }
   };

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Building2, MapPin, Calendar, Users, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { api } from '@/lib/api';
 
 interface CreateVentureWizardProps {
   isOpen: boolean;
@@ -19,11 +20,11 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
   // Fetch employees from DB for leadership dropdowns
   useEffect(() => {
     if (isOpen) {
-      fetch('/api/employees')
-        .then((res) => res.json())
+      api.get<any[]>('/api/employees')
+
         .then((data) => {
-          if (data.success) {
-            setEmployees(data.data);
+          if (Array.isArray(data)) {
+            setEmployees(data);
           }
         })
         .catch((err) => console.error('Failed to fetch employees:', err));
@@ -33,24 +34,24 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
   // Form State
   const [formData, setFormData] = useState({
     name: '',
-    code: `VNT-2026-${Math.floor(100 + Math.random() * 900)}`,
+    code: '',
     type: 'RESIDENTIAL',
     description: '',
     status: 'ACTIVE',
     regAddressLine1: '',
-    regCity: 'Vijayawada',
-    regState: 'Andhra Pradesh',
-    regPincode: '520008',
+    regCity: '',
+    regState: '',
+    regPincode: '',
     siteAddressLine1: '',
-    siteCity: 'Vijayawada',
-    siteState: 'Andhra Pradesh',
-    sitePincode: '520010',
-    latitude: '16.5062',
-    longitude: '80.6480',
+    siteCity: '',
+    siteState: '',
+    sitePincode: '',
+    latitude: '',
+    longitude: '',
     planningStartDate: '',
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: '',
     expectedCompletionDate: '',
-    estimatedBudget: '82000000',
+    estimatedBudget: '',
     projectManagerId: '',
     siteManagerId: '',
   });
@@ -75,17 +76,17 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/ventures', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (data.success) {
-        onSuccess(data.data);
+      const res = await api.post<{success: boolean, data?: any, error?: string}>('/api/ventures', formData);
+
+
+
+
+
+      if (res.success && res.data) {
+        onSuccess(res.data);
         onClose();
       } else {
-        setError(data.error || 'Failed to create venture');
+        setError(res.error || 'Failed to create venture');
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
@@ -376,9 +377,10 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                   <select
                     value={formData.projectManagerId}
                     onChange={(e) => setFormData({ ...formData, projectManagerId: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850"
+                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850 disabled:opacity-50"
+                    disabled={employees.length === 0}
                   >
-                    <option value="">Select Employee...</option>
+                    <option value="">{employees.length === 0 ? 'No employees available' : 'Select Employee...'}</option>
                     {employees.map((emp: any) => (
                       <option key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName} (#{emp.employeeId})
@@ -391,9 +393,10 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                   <select
                     value={formData.siteManagerId}
                     onChange={(e) => setFormData({ ...formData, siteManagerId: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850"
+                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850 disabled:opacity-50"
+                    disabled={employees.length === 0}
                   >
-                    <option value="">Select Employee...</option>
+                    <option value="">{employees.length === 0 ? 'No employees available' : 'Select Employee...'}</option>
                     {employees.map((emp: any) => (
                       <option key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName} (#{emp.employeeId})

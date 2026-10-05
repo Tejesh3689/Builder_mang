@@ -8,6 +8,7 @@ import {
   MapPin, Calendar, Users, TrendingUp, ShieldAlert, ArrowUpRight, FileSpreadsheet
 } from 'lucide-react';
 import { CreateVentureWizard } from '@/components/ventures/CreateVentureWizard';
+import { api } from '@/lib/api';
 
 export default function VenturesPage() {
   const [ventures, setVentures] = useState<any[]>([]);
@@ -31,13 +32,16 @@ export default function VenturesPage() {
       if (statusFilter !== 'ALL') query.append('status', statusFilter);
       if (typeFilter !== 'ALL') query.append('type', typeFilter);
 
-      const res = await fetch(`/api/ventures?${query.toString()}`);
-      const data = await res.json();
-      if (data.success) {
-        setVentures(data.data);
+      const res = await api.get<{success: boolean, data: any[], error?: string}>(`/api/ventures?${query.toString()}`);
+      if (res.success && Array.isArray(res.data)) {
+        setVentures(res.data);
+      } else {
+        console.error('Failed fetching ventures:', res.error);
+        setVentures([]);
       }
     } catch (err) {
       console.error('Failed fetching ventures:', err);
+      setVentures([]);
     } finally {
       setLoading(false);
     }

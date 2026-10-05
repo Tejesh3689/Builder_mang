@@ -9,9 +9,12 @@ generator client {
 
 enum UserRole {
   ADMIN
+  MANAGER
+  SUPERVISOR
+  STORE_MANAGER
+  // Legacy roles kept for safe migration
   PROJECT_MANAGER
   SITE_ENGINEER
-  STORE_MANAGER
 }
 
 enum VentureStatus {
@@ -89,6 +92,9 @@ model User {
   adjustmentsPerformed  StockAdjustment[]     @relation("AdjustmentPerformedBy")
   consumptionsReported  MaterialConsumption[] @relation("ConsumptionReportedBy")
   materialAttachments   MaterialAttachment[]  @relation("AttachmentUploadedBy")
+
+  attendanceMarked      Attendance[]          @relation("AttendanceMarkedBy")
+  leavesApproved        LeaveRequest[]        @relation("LeaveApprovedBy")
 
   @@map("users")
 }
@@ -192,7 +198,9 @@ model Employee {
   phone              String?
   email              String?
   joiningDate        String?
-  reportingManager   String?
+  reportingManagerId String?
+  reportingManager   Employee?                   @relation("ReportingManager", fields: [reportingManagerId], references: [id])
+  subordinates       Employee[]                  @relation("ReportingManager")
   employmentType     String?
   attendanceRate     String?                     @default("100%")
   performanceRating  Float?                      @default(5.0)
@@ -206,6 +214,8 @@ model Employee {
   assignments        EmployeeVentureAssignment[]
   skills             EmployeeSkill[]
   certifications     EmployeeCertification[]
+  attendance         Attendance[]
+  leaveRequests      LeaveRequest[]
 
   // Leadership relations
   directedVentures            Venture[] @relation("ProjectDirector")
@@ -869,4 +879,63 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@map("audit_logs")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  ON_LEAVE
+  FIELD_WORK
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  PAID
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model Attendance {
+  id         String           @id @default(uuid())
+  employeeId String
+  employee   Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     AttendanceStatus @default(ABSENT)
+  location   String?
+  markedById String
+  markedBy   User             @relation("AttendanceMarkedBy", fields: [markedById], references: [id])
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  // Assume one attendance record per employee per date
+  @@unique([employeeId, date])
+  @@map("attendance")
+}
+
+model LeaveRequest {
+  id           String      @id @default(uuid())
+  employeeId   String
+  employee     Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type         LeaveType
+  startDate    DateTime
+  endDate      DateTime
+  status       LeaveStatus @default(PENDING)
+  reason       String?
+  approvedById String?
+  approvedBy   User?       @relation("LeaveApprovedBy", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("leave_requests")
 }

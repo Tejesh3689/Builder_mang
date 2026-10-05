@@ -1,14 +1,57 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLocalEmployees, saveLocalEmployees, EmployeeProfile } from '@/lib/mockDatabase';
+import { EmployeeProfile } from '@/lib/types';
+import { api } from '@/lib/api';
 
 export default function OnboardingPage() {
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<EmployeeProfile | null>(null);
 
   useEffect(() => {
-    setEmployees(getLocalEmployees());
+    async function loadWorkforce() {
+      try {
+        const json = await api.get<{success: boolean, data: any[]}>('/api/employees');
+        if (json.success && Array.isArray(json.data)) {
+          const mapped: EmployeeProfile[] = json.data.map(item => {
+            const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
+            return {
+              id: item.id,
+              employeeId: item.employeeId,
+              firstName: item.firstName,
+              lastName: item.lastName,
+              phone: item.phone || '',
+              email: item.email || '',
+              designation: item.designation,
+              department: item.department,
+              status: item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated',
+              joiningDate: item.joiningDate || '',
+              onboardingStage: item.onboardingStage || 'Active',
+              onboardingStatus: item.onboardingStatus || 'Active',
+              currentProject: activeAssignment?.venture?.name || 'Unassigned',
+              currentSite: activeAssignment?.roleAtSite || '—',
+              reportingManager: item.reportingManager ? `${item.reportingManager.firstName} ${item.reportingManager.lastName}` : '—',
+              employmentType: item.employmentType || 'Permanent',
+              attendanceRate: item.attendanceRate || '100%',
+              performanceRating: item.performanceRating || 5.0,
+              leaveBalancePaid: item.leaveBalancePaid ?? 12,
+              leaveBalanceSick: item.leaveBalanceSick ?? 8,
+              leaveBalanceCasual: item.leaveBalanceCasual ?? 10,
+              skills: item.skills || [],
+              certifications: item.certifications || [],
+              documents: item.documents || [],
+              trainingSafety: item.trainingSafety || [],
+              assignmentHistory: [],
+              activities: []
+            };
+          });
+          setEmployees(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load employees for onboarding page:', err);
+      }
+    }
+    loadWorkforce();
   }, []);
 
   const candidates = employees.filter((e) => e.onboardingStage !== 'Active');
@@ -34,7 +77,7 @@ export default function OnboardingPage() {
   };
 
   // Move candidate to next stage or complete onboarding
-  const handleAdvanceStage = () => {
+  const handleAdvanceStage = async () => {
     if (!selectedCandidate) return;
 
     const currentIdx = STAGES.indexOf(selectedCandidate.onboardingStage);
@@ -57,33 +100,47 @@ export default function OnboardingPage() {
       nextStatus = 'Active';
     }
 
-    const updated = employees.map((emp) => {
-      if (emp.id === selectedCandidate.id) {
-        const up = {
-          ...emp,
-          onboardingStage: nextStage,
-          onboardingStatus: nextStatus,
-          activities: [
-            { action: `Advanced onboarding stage to ${nextStage}`, timestamp: 'Just now' },
-            ...emp.activities
-          ]
-        };
-        // If advanced to Active, make sure we assign standard site if unassigned
-        if (nextStage === 'Active') {
-          up.currentProject = 'Green Heights Luxury Apartments';
-          up.currentSite = 'Site A';
-        }
-        return up;
+    try {
+      const payload: any = {
+        onboardingStage: nextStage,
+        onboardingStatus: nextStatus
+      };
+      if (nextStage === 'Active') {
+        payload.status = 'ACTIVE';
       }
-      return emp;
-    });
 
-    setEmployees(updated);
-    saveLocalEmployees(updated);
+      const res = await api.patch<{success: boolean, error?: string}>(`/api/employees/${selectedCandidate.id}`, payload);
+      if (res.success) {
+        const updated = employees.map((emp) => {
+          if (emp.id === selectedCandidate.id) {
+            const up = {
+              ...emp,
+              onboardingStage: nextStage,
+              onboardingStatus: nextStatus,
+              activities: [
+                { action: `Advanced onboarding stage to ${nextStage}`, timestamp: 'Just now' },
+                ...emp.activities
+              ]
+            };
+            if (nextStage === 'Active') {
+              up.status = 'Active';
+              up.currentProject = 'Green Heights Luxury Apartments';
+              up.currentSite = 'Site A';
+            }
+            return up;
+          }
+          return emp;
+        });
 
-    // Update selected ref
-    const nextSelected = updated.find((emp) => emp.id === selectedCandidate.id) || null;
-    setSelectedCandidate(nextSelected);
+        setEmployees(updated);
+        const nextSelected = updated.find((emp) => emp.id === selectedCandidate.id) || null;
+        setSelectedCandidate(nextSelected);
+      } else {
+        alert(res.error || 'Failed to update onboarding stage.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'An error occurred while updating onboarding stage.');
+    }
   };
 
   return (

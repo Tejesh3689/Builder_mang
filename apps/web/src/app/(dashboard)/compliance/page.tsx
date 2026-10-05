@@ -2,14 +2,57 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getLocalEmployees, EmployeeProfile } from '@/lib/mockDatabase';
+import { EmployeeProfile } from '@/lib/types';
+import { api } from '@/lib/api';
 
 export default function CompliancePage() {
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [activeTab, setActiveTab] = useState('Certifications');
 
   useEffect(() => {
-    setEmployees(getLocalEmployees());
+    async function loadWorkforce() {
+      try {
+        const json = await api.get<{success: boolean, data: any[]}>('/api/employees');
+        if (json.success && Array.isArray(json.data)) {
+          const mapped: EmployeeProfile[] = json.data.map(item => {
+            const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
+            return {
+              id: item.id,
+              employeeId: item.employeeId,
+              firstName: item.firstName,
+              lastName: item.lastName,
+              phone: item.phone || '',
+              email: item.email || '',
+              designation: item.designation,
+              department: item.department,
+              status: item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated',
+              joiningDate: item.joiningDate || '',
+              onboardingStage: item.onboardingStage || 'Active',
+              onboardingStatus: item.onboardingStatus || 'Active',
+              currentProject: activeAssignment?.venture?.name || 'Unassigned',
+              currentSite: activeAssignment?.roleAtSite || '—',
+              reportingManager: item.reportingManager ? `${item.reportingManager.firstName} ${item.reportingManager.lastName}` : '—',
+              employmentType: item.employmentType || 'Permanent',
+              attendanceRate: item.attendanceRate || '100%',
+              performanceRating: item.performanceRating || 5.0,
+              leaveBalancePaid: item.leaveBalancePaid ?? 12,
+              leaveBalanceSick: item.leaveBalanceSick ?? 8,
+              leaveBalanceCasual: item.leaveBalanceCasual ?? 10,
+              skills: item.skills || [],
+              certifications: item.certifications || [],
+              documents: item.documents || [],
+              trainingSafety: item.trainingSafety || [],
+              assignmentHistory: [],
+              activities: []
+            };
+          });
+          setEmployees(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load employees for compliance page:', err);
+      }
+    }
+    loadWorkforce();
   }, []);
 
   const activeStaff = employees.filter((e) => e.onboardingStage === 'Active');

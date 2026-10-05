@@ -38,3 +38,23 @@ export const StockAdjustmentSchema = z.object({
   targetVentureId: z.string().optional(), // required only for STOCK_TRANSFER
   remarks: z.string().optional(),
 });
+
+export const AttendanceSchema = z.object({
+  employeeId: z.string().uuid({ message: "Invalid Employee ID" }),
+  date: z.string().datetime({ message: "Invalid date format" }),
+  status: z.enum(['PRESENT', 'ABSENT', 'LATE', 'ON_LEAVE', 'FIELD_WORK'], { message: "Invalid status" }),
+  checkIn: z.string().datetime().optional(),
+  checkOut: z.string().datetime().optional(),
+  location: z.string().optional(),
+});
+
+export const LeaveRequestSchema = z.object({
+  employeeId: z.string().uuid({ message: "Invalid Employee ID" }),
+  type: z.enum(['SICK', 'CASUAL', 'PAID', 'UNPAID'], { message: "Invalid leave type" }),
+  startDate: z.string().datetime({ message: "Invalid start date format" }),
+  endDate: z.string().datetime({ message: "Invalid end date format" }),
+  reason: z.string().optional(),
+}).refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
+  message: "End date cannot be earlier than start date",
+  path: ["endDate"]
+});

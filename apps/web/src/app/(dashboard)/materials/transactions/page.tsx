@@ -24,22 +24,17 @@ export default async function MaterialTransactionsPage() {
     console.error('Failed to load transaction ledger logs:', err);
   }
 
-  const transactions = dbTransactions.length > 0
-    ? dbTransactions.map((tx: any) => ({
-        id: tx.id,
-        txNumber: tx.transactionNumber,
-        type: tx.transactionType,
-        materialName: tx.material?.name || 'Cement',
-        uom: tx.material?.unitOfMeasure?.name || 'Bags',
-        ventureName: tx.venture?.name || 'Green Heights',
-        quantity: tx.quantityIn > 0 ? `+${tx.quantityIn}` : `-${tx.quantityOut}`,
-        date: tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'Just now',
-        performedBy: tx.performedBy?.name || 'System'
-      }))
-    : [
-        { id: 'tx-1', txNumber: 'TX-9021', type: 'RECEIPT', materialName: 'OPC Cement 53 Grade', uom: 'Bags', ventureName: 'Green Heights Luxury Apartments', quantity: '+420', date: '10 Feb 2026 09:30 AM', performedBy: 'Suresh Verma' },
-        { id: 'tx-2', txNumber: 'TX-9022', type: 'ISSUE', materialName: 'TMT Steel Rebars 12mm', uom: 'Tons', ventureName: 'Green Heights Luxury Apartments', quantity: '-1.2', date: '12 Feb 2026 02:45 PM', performedBy: 'Ajay Rao' }
-      ];
+  const transactions = dbTransactions.map((tx: any) => ({
+    id: tx.id,
+    txNumber: tx.transactionNumber,
+    type: tx.transactionType,
+    materialName: tx.material?.name || 'Cement',
+    uom: tx.material?.unitOfMeasure?.name || 'Bags',
+    ventureName: tx.venture?.name || 'Green Heights',
+    quantity: tx.quantityIn > 0 ? `+${tx.quantityIn}` : `-${tx.quantityOut}`,
+    date: tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'Just now',
+    performedBy: tx.performedBy?.name || 'System'
+  }));
 
   return (
     <div className="space-y-6 w-full text-sm">

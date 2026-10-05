@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Send, ArrowLeft, Building2, User, MessageSquare, UserPlus } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { api } from '@/lib/api';
 
 export default function StandaloneChatRoomPage({ params }: { params: Promise<{ ventureId: string }> }) {
   const resolvedParams = use(params);
@@ -122,22 +123,30 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
     setSendError('');
 
     try {
-      const res = await fetch(`/api/chat/rooms/${ventureId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newMsg }),
-      });
-      const data = await res.json();
-      if (res.status === 403) {
-        setSendError('You are not a member of this room and cannot send messages.');
+      const res = await api.post<{success: boolean, error?: string}>(`/api/chat/rooms/${ventureId}/messages`, { content: newMsg });
+
+
+
+
+
+
+
+
+
+
+      if (!res.success) {
+        if (res.error?.includes('403') || res.error?.toLowerCase().includes('not a member')) {
+          setSendError('You are not a member of this room and cannot send messages.');
+        } else {
+          setSendError(res.error || 'Failed to send message.');
+        }
         return;
       }
-      if (data.success) {
-        setNewMsg('');
-        fetchMessages();
-      } else {
-        setSendError(data.error || 'Failed to send message.');
-      }
+      setNewMsg('');
+      fetchMessages();
+
+
+
     } catch (err) {
       console.error('Error sending message:', err);
       setSendError('Network error. Please try again.');

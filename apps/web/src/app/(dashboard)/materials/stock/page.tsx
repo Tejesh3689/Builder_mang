@@ -24,21 +24,15 @@ export default async function StockLedgerPage() {
     console.error('Failed to fetch stock ledger from DB:', err);
   }
 
-  const stocks = dbStocks.length > 0
-    ? dbStocks.map((s: any) => ({
-        id: s.id,
-        materialName: s.material?.name || 'Cement',
-        materialCode: s.material?.code || 'MAT-CEM',
-        category: s.material?.category?.name || 'Structural',
-        ventureName: s.venture?.name || 'Green Heights Apartments',
-        quantity: s.physicalQuantity || 0,
-        uom: s.material?.unitOfMeasure?.name || 'Bags'
-      }))
-    : [
-        { id: 'stk-1', materialName: 'OPC Cement 53 Grade', materialCode: 'MAT-CEM-53', category: 'Structural', ventureName: 'Green Heights Luxury Apartments', quantity: 420, uom: 'Bags' },
-        { id: 'stk-2', materialName: 'TMT Steel Rebars 12mm', materialCode: 'MAT-STL-12', category: 'Structural', ventureName: 'Green Heights Luxury Apartments', quantity: 8.4, uom: 'Tons' },
-        { id: 'stk-3', materialName: 'Vitrified Floor Tiles 600x600', materialCode: 'MAT-TIL-VIT', category: 'Finishing', ventureName: 'Green Heights Luxury Apartments', quantity: 320, uom: 'Boxes' }
-      ];
+  const stocks = dbStocks.map((s: any) => ({
+    id: s.id,
+    materialName: s.material?.name || 'Cement',
+    materialCode: s.material?.code || 'MAT-CEM',
+    category: s.material?.category?.name || 'Structural',
+    ventureName: s.venture?.name || 'Green Heights Apartments',
+    quantity: s.physicalQuantity || 0,
+    uom: s.material?.unitOfMeasure?.name || 'Bags'
+  }));
 
   return (
     <div className="space-y-6 w-full text-sm">

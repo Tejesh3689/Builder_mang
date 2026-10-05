@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
 
 interface AttendanceClientProps {
   userRole?: string;
@@ -13,20 +14,38 @@ export default function AttendanceClient({ userRole = 'ADMIN', sessionName = '' 
   
   const [activeTab, setActiveTab] = useState('Overview');
   const [dateFilter, setDateFilter] = useState('Today');
-  
-  // Mock Attendance Data
-  const attendanceData = [
-    { id: 1, employeeName: 'Ravi Kumar', date: '2026-08-24', loginTime: '08:50 AM', logoutTime: '06:10 PM', status: 'Present', location: 'Site A', hours: '9h 20m', managerName: 'Suresh Verma' },
-    { id: 2, employeeName: 'Priya Sharma', date: '2026-08-24', loginTime: '09:15 AM', logoutTime: '--', status: 'Late', location: 'Site B', hours: '--', managerName: 'Suresh Verma' },
-    { id: 3, employeeName: 'Amit Patel', date: '2026-08-24', loginTime: '--', logoutTime: '--', status: 'Absent', location: 'Site A', hours: '--', managerName: 'Krishna Rao Supervisor' },
-    { id: 4, employeeName: 'Sneha Gupta', date: '2026-08-24', loginTime: '08:45 AM', logoutTime: '05:30 PM', status: 'Present', location: 'HQ', hours: '8h 45m', managerName: 'Krishna Rao Supervisor' },
-  ];
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter based on role
-  const scopedData = attendanceData.filter(d => {
-    if (isSupervisor) return d.managerName === sessionName;
-    return true; // Manager and Admin see all in this mock
-  });
+  useEffect(() => {
+    async function loadAttendance() {
+      try {
+        const res = await api.get<{success: boolean, data: any[]}>('/api/attendance');
+        if (res.success && Array.isArray(res.data)) {
+          const mapped = res.data.map(a => ({
+            id: a.id,
+            employeeName: a.employee ? `${a.employee.firstName} ${a.employee.lastName}` : 'Unknown',
+            date: new Date(a.date).toLocaleDateString('en-GB'),
+            loginTime: a.loginTime ? new Date(a.loginTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--',
+            logoutTime: a.logoutTime ? new Date(a.logoutTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--',
+            status: a.status === 'PRESENT' ? 'Present' : a.status === 'ABSENT' ? 'Absent' : a.status === 'LATE' ? 'Late' : 'On Leave',
+            location: a.location || '--',
+            hours: a.workingHours ? `${Math.floor(a.workingHours)}h ${Math.round((a.workingHours % 1) * 60)}m` : '--',
+            managerName: a.employee?.reportingManager ? `${a.employee.reportingManager.firstName} ${a.employee.reportingManager.lastName}` : 'Direct Report'
+          }));
+          setAttendanceData(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load attendance', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAttendance();
+  }, []);
+
+  // Filter based on role handled by backend API scoping, so we can just use the returned data directly
+  const scopedData = attendanceData;
 
   const columns = [
     { key: 'employeeName', label: 'Employee Name' },

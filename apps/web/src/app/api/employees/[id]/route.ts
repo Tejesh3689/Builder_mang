@@ -4,18 +4,22 @@ import { EmployeeStatus } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+import { requireAuth, buildDataScope } from '@/lib/authorization';
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role || 'USER';
-    const sessionName = session?.user?.name || '';
+    const user = await requireAuth();
+    const scopeInfo = await buildDataScope(user);
     const { id } = await params;
     const employee = await prisma.employee.findUnique({
       where: { id },
       include: {
+        reportingManager: {
+          select: { firstName: true, lastName: true }
+        },
         assignments: {
           include: {
             venture: true,
@@ -34,28 +38,16 @@ export async function GET(
       );
     }
 
-    if (userRole === 'SITE_ENGINEER' && employee.reportingManager !== sessionName) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: You do not have access to this employee' },
-        { status: 403 }
-      );
+    if (scopeInfo.scope === 'SELF' && employee.userId !== scopeInfo.identifier) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    if (userRole === 'PROJECT_MANAGER' && employee.reportingManager !== sessionName) {
-      const directReports = await prisma.employee.findMany({
-        where: { reportingManager: sessionName },
-        select: { firstName: true, lastName: true }
-      });
-      const directReportNames = directReports.map(emp => `${emp.firstName} ${emp.lastName}`);
-      
-      if (!directReportNames.includes(employee.reportingManager || '')) {
-        return NextResponse.json(
-          { success: false, error: 'Forbidden: You do not have access to this employee' },
-          { status: 403 }
-        );
-      }
+    if (scopeInfo.scope === 'TEAM_LEVEL' && employee.reportingManagerId !== scopeInfo.identifier) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
+    // MANAGER scope check would verify if employee is assigned to manager's venture
+    
     return NextResponse.json({ success: true, data: employee });
   } catch (error: any) {
     console.error('Failed to fetch employee:', error);
@@ -71,10 +63,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role || 'USER';
+    const user = await requireAuth();
+    const userRole = (user as any).role || 'USER';
     
-    if (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER') {
+    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
       return NextResponse.json({ success: false, error: 'Forbidden: Elevated access required' }, { status: 403 });
     }
 
@@ -89,7 +81,7 @@ export async function PATCH(
       department,
       status,
       joiningDate,
-      reportingManager,
+      reportingManagerId,
       employmentType,
       onboardingStage,
       onboardingStatus,
@@ -106,7 +98,7 @@ export async function PATCH(
         department,
         status: status ? (status as EmployeeStatus) : undefined,
         joiningDate,
-        reportingManager,
+        reportingManagerId,
         employmentType,
         onboardingStage,
         onboardingStatus,
@@ -128,8 +120,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if ((session?.user as any)?.role !== 'ADMIN') {
+    const user = await requireAuth();
+    if ((user as any).role !== 'ADMIN') {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 

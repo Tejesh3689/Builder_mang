@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { EmployeeProfile, Skill, Certification, Document } from '@/lib/mockDatabase';
+import { EmployeeProfile, Skill, Certification, Document } from '@/lib/types';
+import { api } from '@/lib/api';
 
 interface EmployeeProfileProps {
   employeeId: string;
@@ -25,8 +26,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
   useEffect(() => {
     async function loadVentures() {
       try {
-        const res = await fetch('/api/ventures');
-        const json = await res.json();
+        const json = await api.get<{success: boolean, data: any[]}>('/api/ventures');
         if (json.success && Array.isArray(json.data)) {
           setVentureOptions(json.data.map((v: any) => ({ id: v.id, name: v.name })));
         }
@@ -41,8 +41,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
   useEffect(() => {
     async function loadEmployee() {
       try {
-        const res = await fetch(`/api/employees/${employeeId}`);
-        const json = await res.json();
+        const json = await api.get<{success: boolean, data: any}>(`/api/employees/${employeeId}`);
         if (json.success && json.data) {
           const item = json.data;
           const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
@@ -62,7 +61,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
             onboardingStatus: item.onboardingStatus || 'Active',
             currentProject: activeAssignment?.venture?.name || 'Unassigned',
             currentSite: activeAssignment?.roleAtSite || '—',
-            reportingManager: item.reportingManager || '—',
+            reportingManager: item.reportingManager ? `${item.reportingManager.firstName} ${item.reportingManager.lastName}` : '—',
             employmentType: item.employmentType || 'Permanent',
             attendanceRate: item.attendanceRate || '100%',
             performanceRating: item.performanceRating || 5.0,

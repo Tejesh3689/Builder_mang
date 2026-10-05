@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MessageSquare, Building2, Plus, Sparkles } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function ChatRoomsPage() {
   const [rooms, setRooms] = useState<any[]>([]);
@@ -14,10 +15,9 @@ export default function ChatRoomsPage() {
 
   const fetchRooms = async () => {
     try {
-      const res = await fetch('/api/chat/rooms');
-      const data = await res.json();
-      if (data.success) {
-        setRooms(data.data);
+      const res = await api.get<{success: boolean, data: any[]}>('/api/chat/rooms');
+      if (res.success && Array.isArray(res.data)) {
+        setRooms(res.data);
       }
     } catch (err) {
       console.error('Failed to load chat rooms:', err);
@@ -28,10 +28,9 @@ export default function ChatRoomsPage() {
 
   const fetchVentures = async () => {
     try {
-      const res = await fetch('/api/ventures');
-      const data = await res.json();
-      if (data.success) {
-        setVentures(data.data);
+      const res = await api.get<{success: boolean, data: any[]}>('/api/ventures');
+      if (res.success && Array.isArray(res.data)) {
+        setVentures(res.data);
       }
     } catch (err) {
       console.error('Failed to load ventures:', err);
@@ -48,23 +47,21 @@ export default function ChatRoomsPage() {
     if (!newRoomName.trim()) return;
 
     try {
-      const res = await fetch('/api/chat/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newRoomName,
-          ventureId: selectedVentureId || null
-        })
+      const res = await api.post<{success: boolean}>('/api/chat/rooms', {
+        name: newRoomName,
+        ventureId: selectedVentureId || null
       });
-      const data = await res.json();
-      if (data.success) {
+      if (res.success) {
         setNewRoomName('');
         setSelectedVentureId('');
         setShowAddModal(false);
         fetchRooms();
+      } else {
+        alert('Failed to create chat room. Verify permissions.');
       }
     } catch (err) {
       console.error('Failed to create chat room:', err);
+      alert('Error creating chat room.');
     }
   };
 

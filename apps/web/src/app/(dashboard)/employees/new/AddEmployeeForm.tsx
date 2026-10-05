@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 
 export default function AddEmployeeForm() {
   const router = useRouter();
@@ -22,13 +23,12 @@ export default function AddEmployeeForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const [seniorEmployees, setSeniorEmployees] = useState<{name: string, designation: string}[]>([]);
+  const [seniorEmployees, setSeniorEmployees] = useState<{id: string, name: string, designation: string}[]>([]);
 
   useEffect(() => {
     async function fetchManagers() {
       try {
-        const res = await fetch('/api/employees');
-        const data = await res.json();
+        const data = await api.get<{success: boolean, data: any[]}>('/api/employees');
         if (data.success && data.data) {
           // Filter to senior roles or managers
           const managers = data.data
@@ -39,6 +39,7 @@ export default function AddEmployeeForm() {
               e.designation?.toLowerCase().includes('lead')
             )
             .map((e: any) => ({
+              id: e.id,
               name: `${e.firstName} ${e.lastName}`,
               designation: e.designation
             }));
@@ -105,21 +106,13 @@ export default function AddEmployeeForm() {
         joiningDate: joiningDate || new Date().toISOString().split('T')[0],
         onboardingStage: 'Active',
         onboardingStatus: 'Active',
-        reportingManager: supervisor,
+        reportingManagerId: supervisor !== '—' ? supervisor : null,
         employmentType,
         ventureId: 'none', // Project assignments handled in Slice 2
       };
 
-      const res = await fetch('/api/employees', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
+      const json = await api.post<{success: boolean, error?: string}>('/api/employees', payload);
+      if (!json.success) {
         throw new Error(json.error || 'Failed to create employee in database.');
       }
 
@@ -292,11 +285,11 @@ export default function AddEmployeeForm() {
                 >
                   <option value="—">None / Direct Report</option>
                   {seniorEmployees.map((emp, idx) => (
-                    <option key={idx} value={`${emp.name}`}>
+                    <option key={idx} value={emp.id}>
                       {emp.name} ({emp.designation})
                     </option>
                   ))}
-                  {!seniorEmployees.some(e => e.name === supervisor) && supervisor !== '—' && supervisor && (
+                  {!seniorEmployees.some(e => e.id === supervisor) && supervisor !== '—' && supervisor && (
                     <option value={supervisor}>{supervisor} (Current)</option>
                   )}
                 </select>

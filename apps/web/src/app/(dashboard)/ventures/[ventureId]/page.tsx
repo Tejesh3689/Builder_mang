@@ -7,6 +7,7 @@ import {
   Settings, Activity, AlertTriangle, CheckCircle2, Clock, ShieldCheck, Plus, Upload, 
   Send, Lock, ChevronRight, BarChart3, Bell, Edit3, Trash2, Archive, Download, UserPlus
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function VentureDetailPage({ params }: { params: Promise<{ ventureId: string }> }) {
   const resolvedParams = use(params);
@@ -35,16 +36,18 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
   const fetchVentureDetail = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/ventures/${ventureId}`);
-      const data = await res.json();
-      if (data.success) {
-        setVenture(data.data);
-        if (data.data.chatRooms && data.data.chatRooms.length > 0 && !activeRoom) {
-          setActiveRoom(data.data.chatRooms[0]);
+      const res = await api.get<{success: boolean, data: any}>(`/api/ventures/${ventureId}`);
+      if (res.success) {
+        setVenture(res.data);
+        if (res.data.chatRooms && res.data.chatRooms.length > 0 && !activeRoom) {
+          setActiveRoom(res.data.chatRooms[0]);
         }
+      } else {
+        setVenture(null);
       }
     } catch (err) {
       console.error('Error fetching venture detail:', err);
+      setVenture(null);
     } finally {
       setLoading(false);
     }
@@ -52,10 +55,9 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
   const fetchChatMessages = async (roomId: string) => {
     try {
-      const res = await fetch(`/api/chat/rooms/${roomId}/messages`);
-      const data = await res.json();
-      if (data.success) {
-        setChatMessages(data.data);
+      const res = await api.get<{success: boolean, data: any[]}>(`/api/chat/rooms/${roomId}/messages`);
+      if (res.success && Array.isArray(res.data)) {
+        setChatMessages(res.data);
       }
     } catch (err) {
       console.error('Error fetching chat messages:', err);
@@ -64,10 +66,9 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
   const fetchAllEmployees = async () => {
     try {
-      const res = await fetch('/api/employees');
-      const data = await res.json();
-      if (data.success) {
-        setAllEmployees(data.data);
+      const res = await api.get<{success: boolean, data: any[]}>(`/api/employees`);
+      if (res.success && Array.isArray(res.data)) {
+        setAllEmployees(res.data);
       }
     } catch (err) {
       console.error('Error fetching employees list:', err);
@@ -94,13 +95,8 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
     e.preventDefault();
     if (!newChatMessage.trim() || !activeRoom?.id) return;
     try {
-      const res = await fetch(`/api/chat/rooms/${activeRoom.id}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newChatMessage }),
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await api.post<{success: boolean}>(`/api/chat/rooms/${activeRoom.id}/messages`, { content: newChatMessage });
+      if (res.success) {
         setNewChatMessage('');
         fetchChatMessages(activeRoom.id);
       }
@@ -113,23 +109,21 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
     e.preventDefault();
     if (!selectedEmpId) return;
     try {
-      const res = await fetch(`/api/employees/${selectedEmpId}/assignments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ventureId: venture.id,
-          roleAtSite: assignRole,
-          accessLevel: assignAccess,
-        }),
+      const res = await api.post<{success: boolean}>(`/api/employees/${selectedEmpId}/assignments`, {
+        ventureId: venture.id,
+        roleAtSite: assignRole,
+        accessLevel: assignAccess,
       });
-      const data = await res.json();
-      if (data.success) {
+      if (res.success) {
         setShowAssignModal(false);
         setSelectedEmpId('');
         fetchVentureDetail();
+      } else {
+        alert('Failed to assign employee. Verify backend permissions.');
       }
     } catch (err) {
       console.error('Error assigning employee:', err);
+      alert('Error assigning employee. Ensure you have the required role permissions.');
     }
   };
 
@@ -143,19 +137,16 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
         },
       }));
 
-      await fetch(`/api/ventures/${venture.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          settings: {
-            update: {
-              [field]: val,
-            },
+      await api.patch(`/api/ventures/${venture.id}`, {
+        settings: {
+          update: {
+            [field]: val,
           },
-        }),
+        },
       });
     } catch (err) {
       console.error('Failed to update settings in DB:', err);
+      // Optional: rollback state here if needed
     }
   };
 

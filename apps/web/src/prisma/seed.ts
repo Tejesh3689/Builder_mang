@@ -179,7 +179,7 @@ async function main() {
       lastName: 'Rao',
       designation: 'Site Supervisor',
       department: 'Operations',
-      reportingManager: 'Suresh Verma'
+      reportingManagerId: emp2.id
     },
     create: {
       employeeId: 'EMP-003',
@@ -188,7 +188,7 @@ async function main() {
       lastName: 'Rao',
       designation: 'Site Supervisor',
       department: 'Operations',
-      reportingManager: 'Suresh Verma'
+      reportingManagerId: emp2.id
     },
   });
 

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 
 interface LeaveRequest {
   id: string;
@@ -28,36 +29,65 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
   const [activeTab, setActiveTab] = useState('Pending');
   
   // Dummy data
-  const [leaves, setLeaves] = useState<LeaveRequest[]>([
-    { id: 'L-1', employeeName: 'Krishna Rao', employeeId: 'EMP-1002', managerName: sessionName, type: 'Sick Leave', startDate: '2026-08-12', endDate: '2026-08-13', duration: 2, reason: 'Viral fever', status: 'Pending' },
-    { id: 'L-2', employeeName: 'Anil Desai', employeeId: 'EMP-1003', managerName: sessionName, type: 'Casual Leave', startDate: '2026-08-15', endDate: '2026-08-16', duration: 2, reason: 'Personal work', status: 'Pending' },
-    { id: 'L-3', employeeName: 'Ravi Kumar', employeeId: 'EMP-1005', managerName: 'Another Manager', type: 'Annual Leave', startDate: '2026-09-01', endDate: '2026-09-05', duration: 5, reason: 'Family vacation', status: 'Pending' },
-    { id: 'L-4', employeeName: 'Manoj Tiwari', employeeId: 'EMP-1010', managerName: sessionName, type: 'Sick Leave', startDate: '2026-08-01', endDate: '2026-08-02', duration: 2, reason: 'Headache', status: 'Approved' },
-    { id: 'L-5', employeeName: 'Suresh Babu', employeeId: 'EMP-1012', managerName: sessionName, type: 'Casual Leave', startDate: '2026-08-10', endDate: '2026-08-10', duration: 1, reason: 'Bank work', status: 'Rejected' },
-  ]);
+  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadLeaves() {
+      try {
+        const res = await api.get<{success: boolean, data: any[]}>('/api/leaves');
+        if (res.success && Array.isArray(res.data)) {
+          const mapped = res.data.map(l => ({
+            id: l.id,
+            employeeName: l.employee ? `${l.employee.firstName} ${l.employee.lastName}` : 'Unknown',
+            employeeId: l.employee?.employeeId || 'Unknown',
+            managerName: l.approver ? `${l.approver.firstName} ${l.approver.lastName}` : (l.employee?.reportingManager ? `${l.employee.reportingManager.firstName} ${l.employee.reportingManager.lastName}` : 'Direct Report'),
+            type: l.leaveType === 'SICK' ? 'Sick Leave' : l.leaveType === 'CASUAL' ? 'Casual Leave' : 'Annual Leave',
+            startDate: l.startDate,
+            endDate: l.endDate,
+            duration: l.duration,
+            reason: l.reason,
+            status: l.status === 'PENDING' ? 'Pending' : l.status === 'APPROVED' ? 'Approved' : 'Rejected' as 'Pending' | 'Approved' | 'Rejected'
+          }));
+          setLeaves(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load leaves', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadLeaves();
+  }, []);
 
   // Modals
   const [viewModal, setViewModal] = useState<LeaveRequest | null>(null);
   const [actionModal, setActionModal] = useState<{ leave: LeaveRequest, action: 'Approve' | 'Reject' } | null>(null);
 
-  // Scope data for Supervisor / Manager
-  const scopedLeaves = leaves.filter(l => {
-    if (isSupervisor) return l.managerName === sessionName;
-    if (isManager) return true; // Manager sees extended hierarchy (mocked as true for this component)
-    return true;
-  });
+  // API scoping handles data access, we just filter by tabs
+  const filteredLeaves = leaves.filter(l => l.status === activeTab);
 
-  const filteredLeaves = scopedLeaves.filter(l => l.status === activeTab);
-
-  const handleAction = () => {
+  const handleAction = async () => {
     if (!actionModal) return;
-    setLeaves(prev => prev.map(l => {
-      if (l.id === actionModal.leave.id) {
-        return { ...l, status: actionModal.action === 'Approve' ? 'Approved' : 'Rejected' };
+    try {
+      const res = await api.patch<{success: boolean, data?: any, error?: string}>(`/api/leaves/${actionModal.leave.id}`, {
+        status: actionModal.action === 'Approve' ? 'APPROVED' : 'REJECTED'
+      });
+      if (res.success) {
+        setLeaves(prev => prev.map(l => {
+          if (l.id === actionModal.leave.id) {
+            return { ...l, status: actionModal.action === 'Approve' ? 'Approved' : 'Rejected' };
+          }
+          return l;
+        }));
+      } else {
+        alert(res.error || `Failed to ${actionModal.action.toLowerCase()} leave request.`);
       }
-      return l;
-    }));
-    setActionModal(null);
+    } catch (err: any) {
+      alert(err.message || `An error occurred while trying to ${actionModal.action.toLowerCase()} the request.`);
+    } finally {
+      setActionModal(null);
+    }
   };
 
   const getStatusColor = (status: string) => {

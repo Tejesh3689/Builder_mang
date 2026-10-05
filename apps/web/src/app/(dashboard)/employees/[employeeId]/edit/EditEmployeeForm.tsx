@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { EmployeeProfile } from '@/lib/mockDatabase';
+import { EmployeeProfile } from '@/lib/types';
+import { api } from '@/lib/api';
 
 interface EditEmployeeFormProps {
   employeeId: string;
@@ -24,21 +25,26 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
   const [status, setStatus] = useState<'Active' | 'On Leave' | 'Terminated'>('Active');
   const [employmentType, setEmploymentType] = useState<'Full-Time Contractor' | 'Permanent' | 'Daily Wage'>('Permanent');
   
-  const [seniorEmployees, setSeniorEmployees] = useState<{name: string, designation: string}[]>([]);
+  const [seniorEmployees, setSeniorEmployees] = useState<{id: string, name: string, designation: string}[]>([]);
 
   useEffect(() => {
     async function fetchManagers() {
       try {
-        const res = await fetch('/api/employees');
-        const data = await res.json();
+        const data = await api.get<{success: boolean, data: any[]}>('/api/employees');
         if (data.success && data.data) {
           // Filter to senior roles or managers
-          const managers = data.data.filter((e: any) => 
-            e.designation?.toLowerCase().includes('manager') || 
-            e.designation?.toLowerCase().includes('director') || 
-            e.designation?.toLowerCase().includes('supervisor') ||
-            e.designation?.toLowerCase().includes('lead')
-          );
+          const managers = data.data
+            .filter((e: any) => 
+              e.designation?.toLowerCase().includes('manager') || 
+              e.designation?.toLowerCase().includes('director') || 
+              e.designation?.toLowerCase().includes('supervisor') ||
+              e.designation?.toLowerCase().includes('lead')
+            )
+            .map((e: any) => ({
+              id: e.id,
+              name: `${e.firstName} ${e.lastName}`,
+              designation: e.designation
+            }));
           setSeniorEmployees(managers);
         }
       } catch (err) {
@@ -55,8 +61,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
   useEffect(() => {
     async function loadEmployee() {
       try {
-        const res = await fetch(`/api/employees/${employeeId}`);
-        const json = await res.json();
+        const json = await api.get<{success: boolean, data: any}>(`/api/employees/${employeeId}`);
         if (json.success && json.data) {
           const item = json.data;
           const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
@@ -76,7 +81,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
             onboardingStatus: item.onboardingStatus || 'Active',
             currentProject: activeAssignment?.venture?.name || 'Unassigned',
             currentSite: activeAssignment?.roleAtSite || '—',
-            reportingManager: item.reportingManager || '—',
+            reportingManager: item.reportingManager ? `${item.reportingManager.firstName} ${item.reportingManager.lastName}` : '—',
             employmentType: item.employmentType || 'Permanent',
             attendanceRate: item.attendanceRate || '100%',
             performanceRating: item.performanceRating || 5.0,
@@ -104,7 +109,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
           setEmail(item.email || '');
           setRole(item.designation);
           setVenture(activeAssignment?.venture?.name || '');
-          setSupervisor(item.reportingManager || '—');
+          setSupervisor(item.reportingManagerId || '—');
           setStatus(item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated');
           setEmploymentType(item.employmentType || 'Permanent');
         }
@@ -149,20 +154,13 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
         designation: role,
         department: deptMap[role] || 'Site Operations',
         status: status === 'Active' ? 'ACTIVE' : status === 'On Leave' ? 'ON_LEAVE' : 'TERMINATED',
-        reportingManager: supervisor,
+        reportingManagerId: supervisor !== '—' ? supervisor : null,
         employmentType,
       };
 
-      const res = await fetch(`/api/employees/${employee.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const json = await api.patch<{success: boolean, error?: string}>(`/api/employees/${employee.id}`, payload);
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
+      if (!json.success) {
         throw new Error(json.error || 'Failed to update employee in database.');
       }
 
@@ -330,12 +328,12 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                 >
                   <option value="—">None / Direct Report</option>
                   {seniorEmployees.map((emp, idx) => (
-                    <option key={idx} value={`${emp.name}`}>
+                    <option key={idx} value={emp.id}>
                       {emp.name} ({emp.designation})
                     </option>
                   ))}
-                  {!seniorEmployees.some(e => e.name === supervisor) && supervisor !== '—' && supervisor && (
-                    <option value={supervisor}>{supervisor} (Current)</option>
+                  {!seniorEmployees.some(e => e.id === supervisor) && supervisor !== '—' && supervisor && (
+                    <option value={supervisor}>Current ID: {supervisor}</option>
                   )}
                 </select>
               </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface SharedDirectoryClientProps {
   title: string;
@@ -36,13 +37,11 @@ export default function SharedDirectoryClient({
   const fetchData = async () => {
     try {
       const [empRes, venRes] = await Promise.all([
-        fetch('/api/employees'),
-        fetch('/api/ventures')
+        api.get<any[]>('/api/employees'),
+        api.get<any[]>('/api/ventures')
       ]);
-      const empData = await empRes.json();
-      const venData = await venRes.json();
-      if (empData.success) setEmployees(empData.data);
-      if (venData.success) setVentures(venData.data);
+      if (Array.isArray(empRes)) setEmployees(empRes);
+      if (Array.isArray(venRes)) setVentures(venRes);
     } catch (err) {
       console.error('Failed loading directory data:', err);
     } finally {

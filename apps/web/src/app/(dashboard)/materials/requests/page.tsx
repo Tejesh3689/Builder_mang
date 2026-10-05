@@ -28,19 +28,15 @@ export default async function MaterialRequestsPage() {
     console.error('Failed to load material requests:', err);
   }
 
-  const requests = dbRequests.length > 0
-    ? dbRequests.map((r: any) => ({
-        id: r.id,
-        reqNumber: r.requestNumber,
-        ventureName: r.venture?.name || 'Green Heights',
-        items: r.items?.map((item: any) => `${item.material?.name} (${item.requestedQuantity} ${item.material?.unitOfMeasure?.name})`).join(', ') || 'OPC Cement',
-        status: r.status,
-        requestedBy: r.createdBy?.name || 'Suresh PM',
-        date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'
-      }))
-    : [
-        { id: 'req-1', reqNumber: 'REQ-001', ventureName: 'Green Heights Luxury Apartments', items: 'OPC Cement 53 Grade (100 Bags)', status: 'PENDING_APPROVAL', requestedBy: 'Suresh PM', date: '20 Feb 2026' }
-      ];
+  const requests = dbRequests.map((r: any) => ({
+    id: r.id,
+    reqNumber: r.requestNumber,
+    ventureName: r.venture?.name || 'Green Heights',
+    items: r.items?.map((item: any) => `${item.material?.name} (${item.requestedQuantity} ${item.material?.unitOfMeasure?.name})`).join(', ') || 'OPC Cement',
+    status: r.status,
+    requestedBy: r.createdBy?.name || 'Suresh PM',
+    date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'
+  }));
 
   const getStatusStyle = (status: string) => {
     switch (status) {

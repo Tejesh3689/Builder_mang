@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Sparkles } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function NewMaterialPage() {
   const router = useRouter();
@@ -24,11 +25,10 @@ export default function NewMaterialPage() {
   useEffect(() => {
     async function loadMetadata() {
       try {
-        const res = await fetch('/api/materials?meta=true');
-        const data = await res.json();
-        if (data.success) {
-          setCategories(data.categories || []);
-          setUoms(data.uoms || []);
+        const res = await api.get<{success: boolean, categories: any[], uoms: any[]}>(`/api/materials?meta=true`);
+        if (res.success) {
+          setCategories(res.categories || []);
+          setUoms(res.uoms || []);
         }
       } catch (err) {
         console.error('Failed loading materials metadata:', err);
@@ -47,20 +47,16 @@ export default function NewMaterialPage() {
     setError(null);
 
     try {
-      const res = await fetch('/api/materials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          code,
-          categoryName,
-          uomName,
-          reorderLevel: parseFloat(reorderLevel) || 0
-        })
+      const res = await api.post<{success: boolean, error?: string}>('/api/materials', {
+        name,
+        code,
+        categoryName,
+        uomName,
+        reorderLevel: parseFloat(reorderLevel) || 0
       });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed saving material.');
+      
+      if (!res.success) {
+        throw new Error(res.error || 'Failed saving material.');
       }
 
       router.push('/materials');

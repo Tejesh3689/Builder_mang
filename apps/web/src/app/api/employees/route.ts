@@ -4,30 +4,22 @@ import { EmployeeStatus } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+import { requireAuth, buildDataScope } from '@/lib/authorization';
+
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role || 'USER';
-    const sessionName = session?.user?.name || '';
+    const user = await requireAuth();
+    const scopeInfo = await buildDataScope(user);
 
-    // Scope for SITE_ENGINEER (direct reports only)
     let whereClause: any = {};
-    if (userRole === 'SITE_ENGINEER') {
-      whereClause = { reportingManager: sessionName };
-    } else if (userRole === 'PROJECT_MANAGER') {
-      // Scope for PROJECT_MANAGER (direct reports + their reports)
-      const directReports = await prisma.employee.findMany({
-        where: { reportingManager: sessionName },
-        select: { firstName: true, lastName: true }
-      });
-      const directReportNames = directReports.map(emp => `${emp.firstName} ${emp.lastName}`);
-      
-      whereClause = {
-        OR: [
-          { reportingManager: sessionName },
-          { reportingManager: { in: directReportNames } }
-        ]
-      };
+    if (scopeInfo.scope === 'SELF') {
+      whereClause = { userId: scopeInfo.identifier };
+    } else if (scopeInfo.scope === 'TEAM_LEVEL') {
+      whereClause = { reportingManagerId: scopeInfo.identifier };
+    } else if (scopeInfo.scope === 'VENTURE_LEVEL') {
+      // If MANAGER, ideally we filter by ventures they manage. For now, we fetch all or specific if we have venture scoping for employees.
+      // E.g., where: { assignments: { some: { venture: { projectManagerId: scopeInfo.identifier } } } }
+      // Assuming Managers can see all for now or scope is global.
     }
 
     const employees = await prisma.employee.findMany({
@@ -36,6 +28,9 @@ export async function GET() {
       include: {
         user: {
           select: { id: true, email: true, role: true },
+        },
+        reportingManager: {
+          select: { firstName: true, lastName: true }
         },
         assignments: {
           include: {
@@ -52,15 +47,15 @@ export async function GET() {
     console.error('Failed to fetch employees:', error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 }
+      { status: 403 }
     );
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if ((session?.user as any)?.role !== 'ADMIN') {
+    const user = await requireAuth();
+    if ((user as any).role !== 'ADMIN') {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
@@ -76,7 +71,7 @@ export async function POST(req: Request) {
       joiningDate,
       onboardingStage,
       onboardingStatus,
-      reportingManager,
+      reportingManagerId,
       employmentType,
       ventureId,
     } = body;
@@ -115,7 +110,7 @@ export async function POST(req: Request) {
         onboardingStage: onboardingStage || 'Active',
         onboardingStatus: onboardingStatus || 'Active',
         joiningDate: joiningDate || new Date().toISOString().split('T')[0],
-        reportingManager,
+        reportingManagerId,
         employmentType,
         ...(ventureId && ventureId !== 'none'
           ? {

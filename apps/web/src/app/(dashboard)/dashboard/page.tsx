@@ -18,13 +18,13 @@ export default async function DashboardPage() {
     todayStart.setHours(0, 0, 0, 0);
 
     const team = await prisma.employee.findMany({
-      where: { reportingManager: sessionName },
+      where: { reportingManagerId: sessionName },
       select: { id: true, firstName: true, lastName: true, designation: true }
     });
     
     const teamIds = team.map(t => t.id);
     
-    const teamCount = await prisma.employee.count({ where: { reportingManager: sessionName } });
+    const teamCount = await prisma.employee.count({ where: { reportingManagerId: sessionName } });
 
     // Mock data for models that don't exist in Prisma yet
     const present = Math.min(teamCount, 18);

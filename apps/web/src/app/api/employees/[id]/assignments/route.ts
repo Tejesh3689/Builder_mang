@@ -90,7 +90,7 @@ export async function POST(
     if (body.reportingManager) {
       await prisma.employee.update({
         where: { id },
-        data: { reportingManager: body.reportingManager },
+        data: { reportingManagerId: body.reportingManager },
       });
     }
 

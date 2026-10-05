@@ -90,20 +90,7 @@ export default async function MaterialsListPage() {
     console.error('Error fetching materials list:', error);
   }
 
-  // Use fallback data exactly matching the screenshot if DB is empty or has very few records
-  if (materialsData.length < 5) {
-    materialsData = [
-      { id: '1', name: 'Cement — OPC 53 Grade', sku: 'CEM-OPC53', category: 'Cement', unit: 'Bags (50kg)', available: 1240, reserved: 180, minLevel: 800, location: 'GVR Central Store', status: 'Healthy', lastMovement: '2 hr ago' },
-      { id: '2', name: 'Steel — TMT Bars 12mm', sku: 'STL-TMT12', category: 'Steel', unit: 'MT', available: 14.2, reserved: 6.5, minLevel: 20, location: 'SKH Yard', status: 'Low Stock', lastMovement: '40 min ago' },
-      { id: '3', name: 'Steel — TMT Bars 16mm', sku: 'STL-TMT16', category: 'Steel', unit: 'MT', available: 22.8, reserved: 4, minLevel: 15, location: 'SKH Yard', status: 'Healthy', lastMovement: 'Yesterday' },
-      { id: '4', name: 'River Sand', sku: 'SND-RIV01', category: 'Sand', unit: 'Cu.m', available: 340, reserved: 60, minLevel: 150, location: 'GVR Central Store', status: 'Healthy', lastMovement: '3 hr ago' },
-      { id: '5', name: 'Red Clay Bricks', sku: 'BRK-CLY01', category: 'Bricks', unit: 'Nos (thousand)', available: 48, reserved: 12, minLevel: 60, location: 'RFT Store', status: 'Low Stock', lastMovement: '5 hr ago' },
-      { id: '6', name: 'Coarse Aggregate 20mm', sku: 'AGG-20MM', category: 'Aggregate', unit: 'Cu.m', available: 210, reserved: 40, minLevel: 100, location: 'SRV Store', status: 'Healthy', lastMovement: 'Yesterday' },
-      { id: '7', name: 'Exterior Emulsion Paint', sku: 'PNT-EXT01', category: 'Paint', unit: 'Litres', available: 6, reserved: 0, minLevel: 80, location: 'RFT Store', status: 'Critical', lastMovement: '2 days ago' },
-      { id: '8', name: 'Copper Wiring 2.5sqmm', sku: 'ELE-CU25', category: 'Electrical', unit: 'Coils (90m)', available: 64, reserved: 8, minLevel: 30, location: 'GVR Central Store', status: 'Healthy', lastMovement: 'Today' },
-      { id: '9', name: 'CPVC Pipes 1 inch', sku: 'PLM-CPVC1', category: 'Plumbing', unit: 'Lengths (3m)', available: 410, reserved: 50, minLevel: 150, location: 'SKH Yard', status: 'Healthy', lastMovement: 'Today' },
-    ];
-  }
+  // Remove fallback dummy data to ensure DB truth
 
   return (
     <div className="w-full text-sm">
