@@ -23,11 +23,11 @@ export default function AdminSettingsPage() {
                 <td className="py-3.5 px-6">All operations (Full Access)</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-semibold text-amber-700 whitespace-nowrap">PROJECT_MANAGER</td>
+                <td className="py-3.5 px-6 font-semibold text-amber-700 whitespace-nowrap">MANAGER</td>
                 <td className="py-3.5 px-6">View Ventures, Approve Requests, Assign Employees</td>
               </tr>
               <tr>
-                <td className="py-3.5 px-6 font-semibold text-amber-700 whitespace-nowrap">SITE_ENGINEER</td>
+                <td className="py-3.5 px-6 font-semibold text-amber-700 whitespace-nowrap">SUPERVISOR</td>
                 <td className="py-3.5 px-6">Request materials, view assigned ventures, site chat</td>
               </tr>
               <tr>

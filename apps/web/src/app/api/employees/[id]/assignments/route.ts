@@ -41,7 +41,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'MANAGER')) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Admin or Project Manager access required' },
         { status: 403 }

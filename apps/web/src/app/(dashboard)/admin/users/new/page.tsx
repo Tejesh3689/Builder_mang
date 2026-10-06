@@ -13,7 +13,7 @@ export default function NewUserPage() {
     lastName: '',
     email: '',
     password: '',
-    role: 'PROJECT_MANAGER',
+    role: 'MANAGER',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,8 +113,8 @@ export default function NewUserPage() {
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white"
             >
-              <option value="PROJECT_MANAGER">Project Manager</option>
-              <option value="SITE_ENGINEER">Site Engineer</option>
+              <option value="MANAGER">Project Manager</option>
+              <option value="SUPERVISOR">Site Engineer</option>
               <option value="SUPERVISOR">Supervisor</option>
               <option value="ADMIN">Admin</option>
               <option value="MANAGER">Manager</option>

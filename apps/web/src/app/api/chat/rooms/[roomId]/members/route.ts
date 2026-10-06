@@ -54,8 +54,8 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only ADMIN or PROJECT_MANAGER can add members
-    if (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER') {
+    // Only ADMIN or MANAGER can add members
+    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager required' }, { status: 403 });
     }
 
@@ -95,7 +95,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER') {
+    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager required' }, { status: 403 });
     }
 

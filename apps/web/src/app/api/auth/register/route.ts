@@ -40,8 +40,8 @@ export async function POST(req: Request) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Default role to SITE_ENGINEER if not specified or invalid
-    let assignedRole: UserRole = UserRole.SITE_ENGINEER;
+    // Default role to SUPERVISOR if not specified or invalid
+    let assignedRole: UserRole = UserRole.SUPERVISOR;
     if (role === 'ADMIN') {
       return NextResponse.json(
         { error: 'Cannot self-register as ADMIN.' },

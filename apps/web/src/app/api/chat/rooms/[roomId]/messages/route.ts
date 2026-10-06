@@ -18,13 +18,37 @@ export async function GET(
     const resolvedParams = await params;
     const { roomId } = resolvedParams;
 
+    // Verify active user status
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { employee: true }
+    });
+
+    if (!user || !user.isActive || (user.employee && user.employee.status === 'TERMINATED')) {
+      return NextResponse.json({ success: false, error: 'User is inactive or terminated' }, { status: 403 });
+    }
+
     // Enforce membership check for GET — non-ADMINs must be a member of the room
     if (userRole !== 'ADMIN') {
       const isMember = await prisma.chatMember.findUnique({
-        where: { roomId_userId: { roomId, userId } }
+        where: { roomId_userId: { roomId, userId } },
+        include: { room: true }
       });
       if (!isMember) {
         return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
+      }
+
+      // Ensure they are still actively assigned to the room's venture
+      const hasActiveAssignment = await prisma.assignment.findFirst({
+        where: {
+          employeeId: user.employee?.id,
+          ventureId: isMember.room.ventureId,
+          status: 'ACTIVE'
+        }
+      });
+
+      if (!hasActiveAssignment) {
+        return NextResponse.json({ success: false, error: 'User is no longer assigned to this venture' }, { status: 403 });
       }
     }
 
@@ -69,11 +93,34 @@ export async function POST(
     }
 
     if (userRole !== 'ADMIN') {
+      const user = await prisma.user.findUnique({
+        where: { id: senderId },
+        include: { employee: true }
+      });
+
+      if (!user || !user.isActive || (user.employee && user.employee.status === 'TERMINATED')) {
+        return NextResponse.json({ success: false, error: 'User is inactive or terminated' }, { status: 403 });
+      }
+
       const isMember = await prisma.chatMember.findUnique({
-        where: { roomId_userId: { roomId, userId: senderId } }
+        where: { roomId_userId: { roomId, userId: senderId } },
+        include: { room: true }
       });
       if (!isMember) {
         return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
+      }
+
+      // Ensure they are still actively assigned to the room's venture
+      const hasActiveAssignment = await prisma.assignment.findFirst({
+        where: {
+          employeeId: user.employee?.id,
+          ventureId: isMember.room.ventureId,
+          status: 'ACTIVE'
+        }
+      });
+
+      if (!hasActiveAssignment) {
+        return NextResponse.json({ success: false, error: 'User is no longer assigned to this venture' }, { status: 403 });
       }
     }
 

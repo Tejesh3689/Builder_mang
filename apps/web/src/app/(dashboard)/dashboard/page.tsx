@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const userRole = (session?.user as any)?.role || 'USER';
 
-  if (userRole === 'SITE_ENGINEER') {
+  if (userRole === 'SUPERVISOR') {
     const sessionName = session?.user?.name || '';
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);

@@ -24,6 +24,14 @@ export async function POST(req: Request) {
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     const requestNumber = `REQ-${timestamp}${random}`;
 
+    // Validate quantities strictly
+    for (const item of items) {
+      const qty = parseFloat(item.requestedQuantity);
+      if (isNaN(qty) || qty <= 0) {
+        return NextResponse.json({ success: false, error: 'Invalid requested quantity: must be greater than zero' }, { status: 400 });
+      }
+    }
+
     const newRequest = await prisma.materialRequest.create({
       data: {
         requestNumber,

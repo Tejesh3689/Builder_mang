@@ -15,8 +15,8 @@ export default function TeamReportsClient({
   initialAttendance = [],
   initialLeaves = []
 }: TeamReportsClientProps) {
-  const isSupervisor = userRole === 'SITE_ENGINEER';
-  const isManager = userRole === 'PROJECT_MANAGER';
+  const isSupervisor = userRole === 'SUPERVISOR';
+  const isManager = userRole === 'MANAGER';
   
   const [activeTab, setActiveTab] = useState('Team Attendance');
   const [dateRange, setDateRange] = useState('This Month');

@@ -12,9 +12,6 @@ enum UserRole {
   MANAGER
   SUPERVISOR
   STORE_MANAGER
-  // Legacy roles kept for safe migration
-  PROJECT_MANAGER
-  SITE_ENGINEER
 }
 
 enum VentureStatus {
@@ -69,7 +66,7 @@ model User {
   email         String         @unique
   passwordHash  String
   name          String
-  role          UserRole       @default(SITE_ENGINEER)
+  role          UserRole       @default(SUPERVISOR)
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

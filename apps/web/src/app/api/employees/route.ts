@@ -9,18 +9,13 @@ import { requireAuth, buildDataScope } from '@/lib/authorization';
 export async function GET() {
   try {
     const user = await requireAuth();
-    const scopeInfo = await buildDataScope(user);
-
-    let whereClause: any = {};
-    if (scopeInfo.scope === 'SELF') {
-      whereClause = { userId: scopeInfo.identifier };
-    } else if (scopeInfo.scope === 'TEAM_LEVEL') {
-      whereClause = { reportingManagerId: scopeInfo.identifier };
-    } else if (scopeInfo.scope === 'VENTURE_LEVEL') {
-      // If MANAGER, ideally we filter by ventures they manage. For now, we fetch all or specific if we have venture scoping for employees.
-      // E.g., where: { assignments: { some: { venture: { projectManagerId: scopeInfo.identifier } } } }
-      // Assuming Managers can see all for now or scope is global.
+    const { buildScopedWhere } = await import('@/lib/authorization');
+    const scopedWhere = await buildScopedWhere(user, 'employee');
+    
+    if (scopedWhere.id === 'DENY_ALL') {
+      return NextResponse.json({ success: true, data: [] });
     }
+    const whereClause = { ...scopedWhere };
 
     const employees = await prisma.employee.findMany({
       where: whereClause,

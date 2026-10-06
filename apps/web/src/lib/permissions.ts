@@ -2,7 +2,7 @@ import { UserRole } from '@builder/types';
 
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ADMIN: ['*'],
-  PROJECT_MANAGER: [
+  MANAGER: [
     'ventures:view', 'ventures:edit',
     'materials:view', 'materials:request', 'materials:approve', 'materials:stock',
     'employees:view', 'employees:assign',
@@ -14,7 +14,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'employees:view', 'employees:assign',
     'chat:access'
   ],
-  SITE_ENGINEER: [
+  SUPERVISOR: [
     'ventures:view',
     'materials:view', 'materials:request', 'materials:stock',
     'employees:view',

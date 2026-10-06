@@ -12,9 +12,9 @@ interface EmployeeProfileProps {
 }
 
 export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', sessionName = '' }: EmployeeProfileProps) {
-  const isSupervisor = userRole === 'SITE_ENGINEER';
-  const isManager = userRole === 'PROJECT_MANAGER';
-  const canEdit = userRole === 'ADMIN' || userRole === 'PROJECT_MANAGER';
+  const isSupervisor = userRole === 'SUPERVISOR';
+  const isManager = userRole === 'MANAGER';
+  const canEdit = userRole === 'ADMIN' || userRole === 'MANAGER';
   const canDeactivate = userRole === 'ADMIN';
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');

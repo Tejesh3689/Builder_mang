@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-const ALLOWED_ROLES = ['ADMIN', 'PROJECT_MANAGER', 'STORE_MANAGER', 'SITE_ENGINEER'];
+const ALLOWED_ROLES = ['ADMIN', 'MANAGER', 'STORE_MANAGER', 'SUPERVISOR'];
 
 export async function GET(req: Request) {
   try {
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'MANAGER')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
     }
 

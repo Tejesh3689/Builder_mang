@@ -6,8 +6,7 @@ import { authOptions } from '@/lib/auth';
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role || 'USER';
-    const userId = (session?.user as any)?.id;
+    const user = session?.user;
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const type = searchParams.get('type');
@@ -16,8 +15,13 @@ export async function GET(request: Request) {
 
     let whereClause: any = {};
 
-    if (userRole === 'MANAGER' && userId) {
-      whereClause.projectManager = { userId: userId };
+    // Apply strict data scope
+    const { buildScopedWhere } = await import('@/lib/authorization');
+    const scopedWhere = await buildScopedWhere(user, 'venture');
+    if (scopedWhere.id === 'DENY_ALL') {
+      return NextResponse.json({ success: true, data: [] });
+    } else {
+      whereClause = { ...whereClause, ...scopedWhere };
     }
 
     if (status && status !== 'ALL') {
@@ -33,31 +37,26 @@ export async function GET(request: Request) {
       ];
     }
     if (search) {
-      whereClause.OR = [
+      const searchOR = [
         { name: { contains: search, mode: 'insensitive' } },
         { code: { contains: search, mode: 'insensitive' } },
         { siteCity: { contains: search, mode: 'insensitive' } },
       ];
+      if (whereClause.OR) {
+        whereClause.AND = [ { OR: whereClause.OR }, { OR: searchOR } ];
+        delete whereClause.OR;
+      } else {
+        whereClause.OR = searchOR;
+      }
     }
 
     try {
       const ventures = await prisma.venture.findMany({
         where: whereClause,
         include: {
-          projectManager: {
-            select: { id: true, firstName: true, lastName: true, designation: true },
-          },
-          siteManager: {
-            select: { id: true, firstName: true, lastName: true, designation: true },
-          },
-          _count: {
-            select: {
-              assignments: true,
-              stocks: true,
-              documents: true,
-              requests: true,
-            },
-          },
+          projectManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
+          siteManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
+          _count: { select: { assignments: true, stocks: true, documents: true, requests: true } },
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -74,29 +73,19 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userRole = (session?.user as any)?.role;
+    if (userRole !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required to create ventures' }, { status: 403 });
+    }
+
     const body = await request.json();
     const {
-      name,
-      code,
-      type = 'RESIDENTIAL',
-      description,
-      status = 'ACTIVE',
-      regAddressLine1,
-      regCity,
-      regState,
-      regPincode,
-      siteAddressLine1,
-      siteCity,
-      siteState,
-      sitePincode,
-      latitude,
-      longitude,
-      startDate,
-      expectedCompletionDate,
-      estimatedBudget,
-      projectDirectorId,
-      projectManagerId,
-      siteManagerId,
+      name, code, type = 'RESIDENTIAL', description, status = 'ACTIVE',
+      regAddressLine1, regCity, regState, regPincode,
+      siteAddressLine1, siteCity, siteState, sitePincode,
+      latitude, longitude, startDate, expectedCompletionDate, estimatedBudget,
+      projectDirectorId, projectManagerId, siteManagerId,
     } = body;
 
     if (!name || !code) {
@@ -104,70 +93,47 @@ export async function POST(request: Request) {
     }
 
     try {
-      const session = await getServerSession(authOptions);
       const creatorUserId = (session?.user as any)?.id;
 
-      const venture = await prisma.venture.create({
-        data: {
-          name,
-          code,
-          type,
-          description,
-          status,
-          regAddressLine1,
-          regCity,
-          regState,
-          regPincode,
-          siteAddressLine1,
-          siteCity,
-          siteState,
-          sitePincode,
-          latitude: latitude ? parseFloat(latitude) : null,
-          longitude: longitude ? parseFloat(longitude) : null,
-          startDate: startDate ? new Date(startDate) : null,
-          expectedCompletionDate: expectedCompletionDate ? new Date(expectedCompletionDate) : null,
-          estimatedBudget: estimatedBudget ? parseFloat(estimatedBudget) : 0,
-          projectDirectorId: projectDirectorId || null,
-          projectManagerId: projectManagerId || null,
-          siteManagerId: siteManagerId || null,
-          settings: {
-            create: {
-              minStockThresholdDefault: 50,
-              requireMaterialApproval: true,
-            },
+      const venture = await prisma.$transaction(async (tx) => {
+        const newVenture = await tx.venture.create({
+          data: {
+            name, code, type, description, status,
+            regAddressLine1, regCity, regState, regPincode,
+            siteAddressLine1, siteCity, siteState, sitePincode,
+            latitude: latitude ? parseFloat(latitude) : null,
+            longitude: longitude ? parseFloat(longitude) : null,
+            startDate: startDate ? new Date(startDate) : null,
+            expectedCompletionDate: expectedCompletionDate ? new Date(expectedCompletionDate) : null,
+            estimatedBudget: estimatedBudget ? parseFloat(estimatedBudget) : 0,
+            projectDirectorId: projectDirectorId || null,
+            projectManagerId: projectManagerId || null,
+            siteManagerId: siteManagerId || null,
+            settings: { create: { minStockThresholdDefault: 50, requireMaterialApproval: true } },
+            chatRooms: { create: [ { name: 'General Discussion' }, { name: 'Site Engineers & Ops' }, { name: 'Materials & Procurement' } ] },
           },
-          chatRooms: {
-            create: [
-              { name: 'General Discussion' },
-              { name: 'Site Engineers & Ops' },
-              { name: 'Materials & Procurement' },
-            ],
-          },
-        },
-        include: {
-          chatRooms: { select: { id: true } },
-        },
+          include: { chatRooms: { select: { id: true } } },
+        });
+
+        // Auto-add venture leaders as chat members in all created rooms
+        const leaderEmployeeIds = [projectDirectorId, projectManagerId, siteManagerId].filter(Boolean);
+        const leaderUsers = leaderEmployeeIds.length > 0
+          ? await tx.employee.findMany({ where: { id: { in: leaderEmployeeIds } }, select: { userId: true } })
+          : [];
+        const memberUserIds = [...new Set([
+          ...leaderUsers.map((e) => e.userId).filter(Boolean),
+          ...(creatorUserId ? [creatorUserId] : []),
+        ])] as string[];
+
+        if (memberUserIds.length > 0) {
+          const chatMemberData = newVenture.chatRooms.flatMap((room) =>
+            memberUserIds.map((uid) => ({ roomId: room.id, userId: uid }))
+          );
+          await tx.chatMember.createMany({ data: chatMemberData, skipDuplicates: true });
+        }
+        
+        return newVenture;
       });
-
-      // Auto-add venture leaders as chat members in all created rooms
-      const leaderEmployeeIds = [projectDirectorId, projectManagerId, siteManagerId].filter(Boolean);
-      const leaderUsers = leaderEmployeeIds.length > 0
-        ? await prisma.employee.findMany({
-            where: { id: { in: leaderEmployeeIds } },
-            select: { userId: true },
-          })
-        : [];
-      const memberUserIds = [...new Set([
-        ...leaderUsers.map((e) => e.userId).filter(Boolean),
-        ...(creatorUserId ? [creatorUserId] : []),
-      ])] as string[];
-
-      if (memberUserIds.length > 0) {
-        const chatMemberData = venture.chatRooms.flatMap((room) =>
-          memberUserIds.map((userId) => ({ roomId: room.id, userId }))
-        );
-        await prisma.chatMember.createMany({ data: chatMemberData, skipDuplicates: true });
-      }
 
       return NextResponse.json({ success: true, data: venture }, { status: 201 });
     } catch (dbError: any) {

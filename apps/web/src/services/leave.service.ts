@@ -9,21 +9,18 @@ export async function processLeaveApproval(leaveId: string, action: 'APPROVE' | 
     });
 
     if (!leave) throw new Error('LeaveRequest not found');
-    
-    // 2. Verify status is PENDING
-    if (leave.status !== 'PENDING') {
-      throw new Error(`Cannot transition from ${leave.status} to ${action === 'APPROVE' ? 'APPROVED' : 'REJECTED'}`);
-    }
-
+    // 2. We skip read-only check and use optimistic concurrency in updateMany
     if (action === 'REJECT') {
-      return await tx.leaveRequest.update({
-        where: { id: leaveId },
+      const res = await tx.leaveRequest.updateMany({
+        where: { id: leaveId, status: 'PENDING' },
         data: {
           status: 'REJECTED',
-          approvedById: userId, // Tracking who rejected it in the same field or custom logic
+          approvedById: userId,
           approvedAt: new Date()
         }
       });
+      if (res.count === 0) throw new Error('Cannot transition status or leave not found');
+      return await tx.leaveRequest.findUnique({ where: { id: leaveId } });
     }
 
     // APPROVAL LOGIC
@@ -39,30 +36,36 @@ export async function processLeaveApproval(leaveId: string, action: 'APPROVE' | 
     if (leave.type === 'CASUAL') balanceField = 'leaveBalanceCasual';
 
     if (balanceField) {
-      const currentBalance = leave.employee[balanceField] || 0;
-      
-      // 6. Verify sufficient balance
-      if (currentBalance < durationDays) {
-        throw new Error('Insufficient leave balance');
-      }
-
-      // 7. Decrement balance
-      await tx.employee.update({
-        where: { id: leave.employeeId },
+      // 6-7. Verify sufficient balance and decrement atomically
+      const res = await tx.employee.updateMany({
+        where: { 
+          id: leave.employeeId,
+          [balanceField]: { gte: durationDays }
+        },
         data: {
-          [balanceField]: currentBalance - durationDays
+          [balanceField]: { decrement: durationDays }
         }
       });
+
+      if (res.count === 0) {
+        throw new Error('Insufficient leave balance');
+      }
     }
 
-    // 8-10. Update leave status
-    return await tx.leaveRequest.update({
-      where: { id: leaveId },
+    // 8-10. Update leave status atomically
+    const res = await tx.leaveRequest.updateMany({
+      where: { id: leaveId, status: 'PENDING' },
       data: {
         status: 'APPROVED',
         approvedById: userId,
         approvedAt: new Date()
       }
     });
+
+    if (res.count === 0) {
+      throw new Error('Leave request already processed or not found');
+    }
+
+    return await tx.leaveRequest.findUnique({ where: { id: leaveId } });
   });
 }

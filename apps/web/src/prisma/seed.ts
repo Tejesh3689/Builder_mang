@@ -96,7 +96,7 @@ async function main() {
       email: 'manager@builder.com',
       passwordHash: defaultPasswordHash,
       name: 'Suresh Verma',
-      role: UserRole.PROJECT_MANAGER,
+      role: UserRole.MANAGER,
     },
   });
 
@@ -107,7 +107,7 @@ async function main() {
       email: 'engineer@builder.com',
       passwordHash: defaultPasswordHash,
       name: 'Ajay Site Engineer',
-      role: UserRole.SITE_ENGINEER,
+      role: UserRole.SUPERVISOR,
     },
   });
 
@@ -118,7 +118,7 @@ async function main() {
       email: 'supervisor@builder.com',
       passwordHash: defaultPasswordHash,
       name: 'Krishna Rao Supervisor',
-      role: UserRole.SITE_ENGINEER,
+      role: UserRole.SUPERVISOR,
     },
   });
 

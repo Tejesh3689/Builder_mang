@@ -36,7 +36,7 @@ export default async function TeamReportsPage() {
   const serializedLeaves = leavesData.map(l => ({
     id: l.id,
     employeeName: `${l.employee.firstName} ${l.employee.lastName}`,
-    type: l.leaveType.replace('_', ' '),
+    type: l.type.replace('_', ' '),
     startDate: l.startDate.toISOString().split('T')[0],
     endDate: l.endDate.toISOString().split('T')[0],
     duration: Math.ceil((l.endDate.getTime() - l.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1,

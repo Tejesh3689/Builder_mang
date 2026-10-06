@@ -8,14 +8,14 @@ export default withAuth(
 
     // Protect admin routes from non-ADMINs
     if (token?.role !== 'ADMIN') {
-      const isProjectManager = token?.role === 'PROJECT_MANAGER';
-      const isSiteEngineer = token?.role === 'SITE_ENGINEER';
+      const isProjectManager = token?.role === 'MANAGER';
+      const isSiteEngineer = token?.role === 'SUPERVISOR';
       const isStoreManager = token?.role === 'STORE_MANAGER';
       
       const adminOnlyPrefixes = [
         '/admin',
-        ...(isProjectManager ? [] : ['/ventures']), // Allow PROJECT_MANAGER to access ventures
-        ...(isProjectManager || isStoreManager ? [] : ['/materials']), // Allow PROJECT_MANAGER and STORE_MANAGER to access materials
+        ...(isProjectManager ? [] : ['/ventures']), // Allow MANAGER to access ventures
+        ...(isProjectManager || isStoreManager ? [] : ['/materials']), // Allow MANAGER and STORE_MANAGER to access materials
         '/compliance',
         '/workforce',
         '/onboarding',
@@ -35,18 +35,14 @@ export default withAuth(
         return NextResponse.redirect(new URL('/dashboard', req.url));
       }
       
-      // Global API Blocking
+      // Global API Blocking - REMOVED
+      // Middleware should not block API endpoints; let the API endpoints enforce RBAC and Row-Level Scoping.
+      // (P0-4 Remediation)
       const adminApiPrefixes = [
-        ...(isProjectManager || isSiteEngineer || isStoreManager ? [] : ['/api/ventures']), // Allow PM, SE, SM to access ventures API for dropdowns
-        ...(isProjectManager || isStoreManager ? [] : ['/api/materials']), // Allow PM and SM to access materials API
-        '/api/workforce',
-        '/api/onboarding',
-        '/api/assignments',
-        '/api/auth/register'
+        '/api/auth/register' // keep auth/register admin-only here for basic guard, though API also guards
       ];
       if (adminApiPrefixes.some(prefix => path.startsWith(prefix))) {
-        // Prevent blocking GET requests if they are safe, but for now block all
-        return new NextResponse(JSON.stringify({ error: 'Forbidden: Admin access required' }), { status: 403, headers: { 'content-type': 'application/json' } });
+         return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
       }
     }
 

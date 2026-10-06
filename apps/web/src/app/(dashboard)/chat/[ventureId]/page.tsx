@@ -20,7 +20,7 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
 
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role || 'USER';
-  const canAddMember = userRole === 'ADMIN' || userRole === 'PROJECT_MANAGER';
+  const canAddMember = userRole === 'ADMIN' || userRole === 'MANAGER';
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);

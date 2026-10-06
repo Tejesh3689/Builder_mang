@@ -21,7 +21,7 @@ export async function GET(req: Request) {
       whereClause.ventureId = ventureId;
     }
     
-    if (userRole === 'PROJECT_MANAGER' || userRole === 'MANAGER') {
+    if (userRole === 'MANAGER' || userRole === 'MANAGER') {
       whereClause.OR = [
         { members: { some: { userId } } },
         { venture: { projectManager: { userId } } }

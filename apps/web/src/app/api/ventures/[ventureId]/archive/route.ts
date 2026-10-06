@@ -12,8 +12,8 @@ export async function POST(
     const userRole = (session?.user as any)?.role;
     const userId = (session?.user as any)?.id;
     
-    // Only ADMIN or PROJECT_MANAGER can archive ventures
-    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+    // Only ADMIN or MANAGER can archive ventures
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'MANAGER')) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Admin or Project Manager access required' }, 
         { status: 403 }

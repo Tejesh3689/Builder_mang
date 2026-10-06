@@ -9,8 +9,8 @@ interface AttendanceClientProps {
 }
 
 export default function AttendanceClient({ userRole = 'ADMIN', sessionName = '' }: AttendanceClientProps) {
-  const isSupervisor = userRole === 'SITE_ENGINEER';
-  const isManager = userRole === 'PROJECT_MANAGER';
+  const isSupervisor = userRole === 'SUPERVISOR';
+  const isManager = userRole === 'MANAGER';
   
   const [activeTab, setActiveTab] = useState('Overview');
   const [dateFilter, setDateFilter] = useState('Today');

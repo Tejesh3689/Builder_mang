@@ -2,7 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import prisma from '@/lib/db';
 import { requireAuth } from '@/lib/authorization';
-import { formatDistanceToNow } from 'date-fns';
 
 export default async function AuditLogsPage() {
   await requireAuth();
@@ -31,18 +30,18 @@ export default async function AuditLogsPage() {
                 <th className="px-6 py-4 font-medium">Timestamp</th>
                 <th className="px-6 py-4 font-medium">User</th>
                 <th className="px-6 py-4 font-medium">Action Performed</th>
-                <th className="px-6 py-4 font-medium">Entity</th>
+                <th className="px-6 py-4 font-medium">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 text-zinc-800">
               {logs.map(log => (
                 <tr key={log.id} className="hover:bg-zinc-50/50">
                   <td className="px-6 py-4 whitespace-nowrap text-zinc-500">
-                    {formatDistanceToNow(log.createdAt, { addSuffix: true })}
+                    {new Date(log.createdAt).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 font-medium text-zinc-900">{log.user?.name || 'System'}</td>
                   <td className="px-6 py-4">{log.action}</td>
-                  <td className="px-6 py-4 font-mono text-xs text-zinc-500">{log.entityType} {log.entityId ? `(${log.entityId})` : ''}</td>
+                  <td className="px-6 py-4 font-mono text-xs text-zinc-500">{log.details}</td>
                 </tr>
               ))}
               {logs.length === 0 && (

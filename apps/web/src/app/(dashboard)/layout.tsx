@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   type NavGroup = { group: string | null; items: NavItem[] };
 
   const getNavGroups = (role: string): NavGroup[] => {
-    if (role === 'SITE_ENGINEER') {
+    if (role === 'SUPERVISOR') {
       return [
         {
           group: null,
@@ -88,7 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ];
     }
 
-    if (role === 'PROJECT_MANAGER') {
+    if (role === 'MANAGER') {
       return [
         {
           group: null,

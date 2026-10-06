@@ -46,8 +46,21 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    // MANAGER scope check would verify if employee is assigned to manager's venture
-    
+    if (scopeInfo.scope === 'VENTURE_LEVEL') {
+      const managerAssignments = await prisma.assignment.findMany({
+        where: { employee: { userId: scopeInfo.identifier }, status: 'ACTIVE' },
+        select: { ventureId: true }
+      });
+      const managerVentureIds = managerAssignments.map(a => a.ventureId);
+      
+      const hasSharedVenture = employee.assignments.some(
+        a => a.status === 'ACTIVE' && managerVentureIds.includes(a.ventureId)
+      );
+
+      if (!hasSharedVenture && employee.userId !== scopeInfo.identifier) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Out of Venture Scope' }, { status: 403 });
+      }
+    }
     return NextResponse.json({ success: true, data: employee });
   } catch (error: any) {
     console.error('Failed to fetch employee:', error);

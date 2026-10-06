@@ -78,7 +78,7 @@ export async function PATCH(
   try {
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'MANAGER')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
     }
 
@@ -117,8 +117,8 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
     
-    // Only ADMIN or PROJECT_MANAGER can delete ventures
-    if (!session || (userRole !== 'ADMIN' && userRole !== 'PROJECT_MANAGER')) {
+    // Only ADMIN or MANAGER can delete ventures
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'MANAGER')) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Admin or Project Manager access required' }, 
         { status: 403 }
