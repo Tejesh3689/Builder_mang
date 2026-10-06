@@ -8,7 +8,17 @@ export async function requireAuth() {
   if (!session?.user) {
     throw new Error('Unauthorized');
   }
-  return session.user;
+
+  // RE-VALIDATE Session against Database
+  const freshUser = await prisma.user.findUnique({
+    where: { id: (session.user as any).id }
+  });
+
+  if (!freshUser || !freshUser.isActive) {
+    throw new Error('Unauthorized');
+  }
+
+  return freshUser; // Return fresh trusted state
 }
 
 export async function requirePermission(permission: string) {
@@ -70,7 +80,7 @@ export async function buildScopedWhere(user: any, resourceType: 'venture' | 'emp
 
   if (scopeInfo.scope === 'VENTURE_LEVEL') {
     // Get all ventures the manager is assigned to
-    const assignments = await prisma.assignment.findMany({
+    const assignments = await prisma.employeeVentureAssignment.findMany({
       where: { employee: { userId: user.id }, status: 'ACTIVE' },
       select: { ventureId: true }
     });
@@ -89,7 +99,7 @@ export async function buildScopedWhere(user: any, resourceType: 'venture' | 'emp
     if (resourceType === 'attendance') return { employee: { reportingManagerId: scopeInfo.identifier } };
     if (resourceType === 'leave') return { employee: { reportingManagerId: scopeInfo.identifier } };
     // materialRequests for supervisors might be restricted to ventures they are assigned to.
-    const assignments = await prisma.assignment.findMany({
+    const assignments = await prisma.employeeVentureAssignment.findMany({
       where: { employeeId: scopeInfo.identifier as string, status: 'ACTIVE' },
       select: { ventureId: true }
     });

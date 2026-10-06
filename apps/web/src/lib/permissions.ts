@@ -8,25 +8,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'employees:view', 'employees:assign',
     'chat:access'
   ],
-  MANAGER: [
-    'ventures:view', 'ventures:edit',
-    'materials:view', 'materials:request', 'materials:approve', 'materials:stock',
-    'employees:view', 'employees:assign',
-    'chat:access'
-  ],
-  SUPERVISOR: [
-    'ventures:view',
-    'materials:view', 'materials:request', 'materials:stock',
-    'employees:view',
-    'employees:view_team',
-    'attendance:manage_team',
-    'leave:approve_team',
-    'fieldwork:manage_team',
-    'reports:submit_dpr',
-    'assets:view_team',
-    'meetings:manage_team',
-    'chat:access'
-  ],
   SUPERVISOR: [
     'ventures:view',
     'materials:view', 'materials:request', 'materials:stock',

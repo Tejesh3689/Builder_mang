@@ -90,8 +90,8 @@ model User {
   consumptionsReported  MaterialConsumption[] @relation("ConsumptionReportedBy")
   materialAttachments   MaterialAttachment[]  @relation("AttachmentUploadedBy")
 
-  attendanceMarked      Attendance[]          @relation("AttendanceMarkedBy")
-  leavesApproved        LeaveRequest[]        @relation("LeaveApprovedBy")
+  attendanceMarked Attendance[]   @relation("AttendanceMarkedBy")
+  leavesApproved   LeaveRequest[] @relation("LeaveApprovedBy")
 
   @@map("users")
 }

@@ -6,6 +6,18 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
+    // AUTH-10: Differentiate Unauthorized API requests from Unauthorized Page navigation
+    if (!token) {
+      if (path.startsWith('/api/')) {
+        return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { 
+          status: 401, 
+          headers: { 'content-type': 'application/json' } 
+        });
+      } else {
+        return NextResponse.redirect(new URL('/api/auth/signin?callbackUrl=' + encodeURIComponent(path), req.url));
+      }
+    }
+
     // Protect admin routes from non-ADMINs
     if (token?.role !== 'ADMIN') {
       const isProjectManager = token?.role === 'MANAGER';
@@ -50,7 +62,7 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: () => true, // Let the middleware body handle all auth branching
     },
   }
 );

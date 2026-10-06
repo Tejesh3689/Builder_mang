@@ -38,8 +38,7 @@ export async function POST(
       data: {
         userId: userId,
         action: 'Archived Venture',
-        entityType: 'VENTURE',
-        entityId: ventureId,
+        details: `Venture ${ventureId} was archived.`,
         ventureId: ventureId
       }
     });

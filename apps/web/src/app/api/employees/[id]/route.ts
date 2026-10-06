@@ -47,7 +47,7 @@ export async function GET(
     }
 
     if (scopeInfo.scope === 'VENTURE_LEVEL') {
-      const managerAssignments = await prisma.assignment.findMany({
+      const managerAssignments = await prisma.employeeVentureAssignment.findMany({
         where: { employee: { userId: scopeInfo.identifier }, status: 'ACTIVE' },
         select: { ventureId: true }
       });

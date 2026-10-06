@@ -39,10 +39,10 @@ export async function GET(
       }
 
       // Ensure they are still actively assigned to the room's venture
-      const hasActiveAssignment = await prisma.assignment.findFirst({
+      const hasActiveAssignment = await prisma.employeeVentureAssignment.findFirst({
         where: {
           employeeId: user.employee?.id,
-          ventureId: isMember.room.ventureId,
+          ventureId: isMember.room.ventureId!,
           status: 'ACTIVE'
         }
       });
@@ -111,10 +111,10 @@ export async function POST(
       }
 
       // Ensure they are still actively assigned to the room's venture
-      const hasActiveAssignment = await prisma.assignment.findFirst({
+      const hasActiveAssignment = await prisma.employeeVentureAssignment.findFirst({
         where: {
           employeeId: user.employee?.id,
-          ventureId: isMember.room.ventureId,
+          ventureId: isMember.room.ventureId!,
           status: 'ACTIVE'
         }
       });

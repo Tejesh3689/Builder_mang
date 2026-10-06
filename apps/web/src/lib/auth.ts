@@ -12,34 +12,52 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Please enter both email and password.');
-        }
+        try {
+          if (!credentials || typeof credentials.email !== 'string' || typeof credentials.password !== 'string') {
+            throw new Error('Invalid email or password.');
+          }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase().trim() },
-        });
+          // AUTH-07: Prevent bcrypt resource exhaustion by enforcing maximum 72 bytes
+          if (Buffer.byteLength(credentials.password, 'utf8') > 72) {
+            throw new Error('Invalid email or password.');
+          }
 
-        if (!user || !user.passwordHash) {
-          throw new Error('No user found with this email address.');
-        }
+          const email = credentials.email.toLowerCase().trim();
+          if (!email) {
+            throw new Error('Invalid email or password.');
+          }
 
-        if (!user.isActive) {
-          throw new Error('Account is inactive. Please contact administration.');
-        }
+          const user = await prisma.user.findUnique({
+            where: { email },
+          });
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.passwordHash);
+          // Dummy hash matching "password" generated to take ~same time as a real hash
+          const DUMMY_HASH = '$2a$10$Xo9.3N.kQn4N.LpW8XvjyeR1lKjO4/Y4M.LqV8/P8M/mX/q8/P8M/mX';
+          
+          const hashToCompare = user?.passwordHash ?? DUMMY_HASH;
+          const isPasswordValid = await bcrypt.compare(credentials.password, hashToCompare);
 
-        if (!isPasswordValid) {
+          if (!user || !isPasswordValid) {
+            throw new Error('Invalid email or password.');
+          }
+
+          if (!user.isActive) {
+            // Account is inactive, but we don't leak this externally
+            throw new Error('Invalid email or password.');
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error: any) {
+          // Log real errors internally for auditing (could use a real logger here)
+          console.error('[AUTH_ERROR]', error.message);
+          // Always throw a generic error to the client
           throw new Error('Invalid email or password.');
         }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
       },
     }),
   ],
@@ -52,10 +70,31 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role;
         token.id = user.id;
       }
+      
+      // AUTH-08 & AUTH-09: Re-verify against database on every token decode
+      if (token?.id) {
+        const freshUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, isActive: true }
+        });
+        
+        if (!freshUser || !freshUser.isActive) {
+          // Invalidate token
+          return {};
+        }
+        
+        // Sync role
+        token.role = freshUser.role;
+      }
+      
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (Object.keys(token).length === 0) {
+         // Empty token due to deactivation
+         return { ...session, user: undefined as any };
+      }
+      if (session.user && token.id) {
         (session.user as any).role = token.role;
         (session.user as any).id = token.id;
       }

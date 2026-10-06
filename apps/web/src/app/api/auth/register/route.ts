@@ -5,12 +5,18 @@ import { UserRole } from '@prisma/client';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid input format.' }, { status: 400 });
+    }
+
     const { name, email, password, role } = body;
 
-    if (!name || !email || !password) {
+    if (!name || typeof name !== 'string' || !email || typeof email !== 'string' || !password || typeof password !== 'string') {
       return NextResponse.json(
-        { error: 'Name, email, and password are required.' },
+        { error: 'Invalid input data.' },
         { status: 400 }
       );
     }
@@ -19,20 +25,27 @@ export async function POST(req: Request) {
 
     if (password.length < 6) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long.' },
+        { error: 'Invalid input data.' },
         { status: 400 }
       );
     }
 
-    // Check if user already exists
+    if (Buffer.byteLength(password, 'utf8') > 72) {
+      return NextResponse.json(
+        { error: 'Password exceeds maximum allowed length of 72 bytes.' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user already exists (some implementations leak this, but to be strictly safe we can just say "User registered" and not create it, but standard 409 is often acceptable for register. However, I'll keep 409 but change the text if needed. Actually, let's just return 400 for any issue.)
     const existingUser = await prisma.user.findUnique({
       where: { email: formattedEmail },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists.' },
-        { status: 409 }
+        { error: 'Registration failed.' }, // Generic message to obscure state
+        { status: 400 }
       );
     }
 
@@ -40,17 +53,8 @@ export async function POST(req: Request) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Default role to SUPERVISOR if not specified or invalid
-    let assignedRole: UserRole = UserRole.SUPERVISOR;
-    if (role === 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Cannot self-register as ADMIN.' },
-        { status: 403 }
-      );
-    }
-    if (role && Object.values(UserRole).includes(role as UserRole)) {
-      assignedRole = role as UserRole;
-    }
+    // Hardcode a safe default role. IGNORE the client-provided role entirely.
+    const assignedRole: UserRole = UserRole.SUPERVISOR;
 
     // Create user and linked employee record in Neon database
     const nameParts = name.trim().split(' ');
@@ -73,8 +77,8 @@ export async function POST(req: Request) {
             employeeId,
             firstName,
             lastName,
-            designation: assignedRole === 'ADMIN' ? 'Administrator' : 'Site Personnel',
-            department: assignedRole === 'ADMIN' ? 'Management' : 'Operations',
+            designation: 'Site Personnel',
+            department: 'Operations',
           },
         },
       },
