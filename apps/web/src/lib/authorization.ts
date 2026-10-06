@@ -35,6 +35,10 @@ export async function requirePermission(permission: string) {
 import prisma from '@/lib/db';
 
 export async function buildDataScope(user: any) {
+  if (!user) {
+    throw new Error('Unauthorized');
+  }
+
   // Translate legacy roles dynamically during Phase 1
   const role = user.role === 'MANAGER' ? 'MANAGER' : 
                user.role === 'SUPERVISOR' ? 'SUPERVISOR' : user.role;
@@ -76,6 +80,9 @@ export async function buildDataScope(user: any) {
  * @param resourceType Which relation to check (e.g. 'venture', 'employee', 'materialRequest')
  */
 export async function buildScopedWhere(user: any, resourceType: 'venture' | 'employee' | 'materialRequest' | 'attendance' | 'leave') {
+  if (!user) {
+    throw new Error('Unauthorized');
+  }
   const scopeInfo = await buildDataScope(user);
 
   if (scopeInfo.scope === 'VENTURE_LEVEL') {

@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/db';
+import redis from '@/lib/redis';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -27,6 +28,19 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Invalid email or password.');
           }
 
+          // Rate Limiting Policy: 10 failed attempts per 15 minutes per email
+          const rateLimitKey = `rl:login:${email}`;
+          if (redis.isOpen) {
+            try {
+              const attempts = await redis.get(rateLimitKey);
+              if (attempts && parseInt(attempts, 10) >= 10) {
+                throw new Error('Too many login attempts. Please try again later.');
+              }
+            } catch (err) {
+              console.warn('Redis rate limit read error', err);
+            }
+          }
+
           const user = await prisma.user.findUnique({
             where: { email },
           });
@@ -38,12 +52,30 @@ export const authOptions: NextAuthOptions = {
           const isPasswordValid = await bcrypt.compare(credentials.password, hashToCompare);
 
           if (!user || !isPasswordValid) {
+            if (redis.isOpen) {
+              try {
+                await redis.incr(rateLimitKey);
+                // Set expiry only on first increment (15 minutes)
+                const currentAttempts = await redis.get(rateLimitKey);
+                if (currentAttempts === '1') {
+                  await redis.expire(rateLimitKey, 15 * 60);
+                }
+              } catch (err) {
+                console.warn('Redis rate limit write error', err);
+              }
+            }
             throw new Error('Invalid email or password.');
           }
 
           if (!user.isActive) {
-            // Account is inactive, but we don't leak this externally
             throw new Error('Invalid email or password.');
+          }
+
+          // Reset rate limit on successful login
+          if (redis.isOpen) {
+            try {
+              await redis.del(rateLimitKey);
+            } catch (err) {}
           }
 
           return {

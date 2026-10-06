@@ -8,7 +8,16 @@ import Link from 'next/link';
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const rawCallbackUrl = searchParams.get('callbackUrl');
+
+  let callbackUrl = '/dashboard';
+  if (rawCallbackUrl && typeof rawCallbackUrl === 'string') {
+    // Phase 5: Prevent Open Redirect and XSS
+    // Must start with exactly one '/' and not be followed by '/' or '\'
+    if (/^\/[^/\\]/.test(rawCallbackUrl)) {
+      callbackUrl = rawCallbackUrl;
+    }
+  }
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
