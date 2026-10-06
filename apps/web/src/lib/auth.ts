@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
           });
 
           // Dummy hash matching "password" generated to take ~same time as a real hash
-          const DUMMY_HASH = '$2a$10$Xo9.3N.kQn4N.LpW8XvjyeR1lKjO4/Y4M.LqV8/P8M/mX/q8/P8M/mX';
+          const DUMMY_HASH = '$2a$10$5tReOFvOf3Tr81yXrmVlteVYa1HvSTgZ89nvVzJF6OJAilimB49eW';
           
           const hashToCompare = user?.passwordHash ?? DUMMY_HASH;
           const isPasswordValid = await bcrypt.compare(credentials.password, hashToCompare);
@@ -63,6 +63,10 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
+    maxAge: 8 * 60 * 60, // 8 hours
+  },
+  jwt: {
+    maxAge: 8 * 60 * 60, // 8 hours
   },
   callbacks: {
     async jwt({ token, user }) {
