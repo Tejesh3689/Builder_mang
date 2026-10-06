@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/authorization';
+import { logAudit } from '@/lib/audit';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -6,6 +8,15 @@ export async function GET(
   { params }: { params: Promise<{ ventureId: string }> }
 ) {
   try {
+    const user = await requireAuth();
+
+    const { buildScopedWhere } = await import('@/lib/authorization');
+    const scopedWhere = await buildScopedWhere(user, 'venture');
+    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    const auth_ventureId = await params.then(p => p.ventureId);
+    const auth_existingVenture = await prisma.venture.findFirst({ where: { AND: [{ id: auth_ventureId }, scopedWhere] } });
+    if (!auth_existingVenture) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
+
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
 
@@ -29,6 +40,18 @@ export async function POST(
   { params }: { params: Promise<{ ventureId: string }> }
 ) {
   try {
+    const user = await requireAuth();
+
+    const userRole = (user as any).role;
+    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+
+    const { buildScopedWhere } = await import('@/lib/authorization');
+    const scopedWhere = await buildScopedWhere(user, 'venture');
+    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    const auth_ventureId = await params.then(p => p.ventureId);
+    const auth_existingVenture = await prisma.venture.findFirst({ where: { AND: [{ id: auth_ventureId }, scopedWhere] } });
+    if (!auth_existingVenture) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
+
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
     const { title, category = 'OTHER', fileUrl = '/docs/sample.pdf', version = '1.0' } = await request.json();

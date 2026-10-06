@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/authorization';
+import { logAudit } from '@/lib/audit';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -49,6 +51,13 @@ export async function PATCH(
   { params }: { params: Promise<{ employeeId: string }> }
 ) {
   try {
+    const user = await requireAuth();
+
+    const userRole = (user as any).role;
+    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
     const { employeeId } = await params;
     const body = await req.json();
     const { onboardingStage, onboardingStatus } = body;

@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/authorization';
+import { logAudit } from '@/lib/audit';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
