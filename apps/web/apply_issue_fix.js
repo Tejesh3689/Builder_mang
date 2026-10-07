@@ -1,4 +1,8 @@
-import { NextResponse } from 'next/server';
+const fs = require('fs');
+const path = require('path');
+const file = path.join(__dirname, 'src/app/api/materials/issue/route.ts');
+
+const newRoute = `import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, buildScopedWhere } from '@/lib/authorization';
 import { handleApiError, ApiError, parseJsonSafe } from '@/lib/api-errors';
@@ -85,7 +89,7 @@ export async function POST(req: Request) {
 
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    const issueNumber = `ISSUE-${timestamp}${random}`;
+    const issueNumber = \`ISSUE-\${timestamp}\${random}\`;
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -137,7 +141,7 @@ export async function POST(req: Request) {
 
           await tx.materialTransaction.create({
             data: {
-              transactionNumber: `TXN-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`,
+              transactionNumber: \`TXN-\${Date.now().toString().slice(-6)}\${Math.floor(Math.random() * 1000)}\`,
               materialId: item.materialId,
               ventureId,
               stockLocationId: fromLocationId,
@@ -242,3 +246,7 @@ export async function POST(req: Request) {
     return handleApiError(error);
   }
 }
+`;
+
+fs.writeFileSync(file, newRoute);
+console.log('Done');
