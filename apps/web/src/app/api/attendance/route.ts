@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
           status: data.status as any,
           checkIn: data.checkIn ? new Date(data.checkIn) : null,
           checkOut: data.checkOut ? new Date(data.checkOut) : null,
-          remarks: data.remarks
+          location: data.location
         }
       });
       return NextResponse.json(updated, { status: 200 });
@@ -104,7 +104,8 @@ export async function POST(req: NextRequest) {
         status: data.status as any,
         checkIn: data.checkIn ? new Date(data.checkIn) : null,
         checkOut: data.checkOut ? new Date(data.checkOut) : null,
-        remarks: data.remarks
+        location: data.location,
+        markedById: (user as any).id
       }
     });
 
