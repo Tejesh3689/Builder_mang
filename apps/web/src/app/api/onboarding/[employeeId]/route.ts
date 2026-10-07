@@ -70,6 +70,7 @@ export async function PATCH(
       },
     });
 
+    await logAudit((user as any).id, 'UPDATE_ONBOARDING_CANDIDATE', 'Action completed successfully', null);
     return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
     console.error('Failed to update employee onboarding details:', error);

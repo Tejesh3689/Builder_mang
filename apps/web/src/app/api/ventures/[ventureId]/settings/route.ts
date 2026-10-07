@@ -24,7 +24,8 @@ export async function GET(
       const setting = await prisma.ventureSetting.findUnique({
         where: { ventureId },
       });
-      return NextResponse.json({ success: true, data: setting });
+      await logAudit((user as any).id, 'UPDATE_VENTURE_SETTINGS', 'Action completed successfully', null);
+    return NextResponse.json({ success: true, data: setting });
     } catch (dbError: any) {
       console.error('Database error in settings GET:', dbError);
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
@@ -61,7 +62,8 @@ export async function PATCH(
         update: body,
         create: { ventureId, ...body },
       });
-      return NextResponse.json({ success: true, data: updated });
+      await logAudit((user as any).id, 'UPDATE_VENTURE_SETTINGS', 'Action completed successfully', null);
+    return NextResponse.json({ success: true, data: updated });
     } catch (dbError: any) {
       console.error('Database error in settings PATCH:', dbError);
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });

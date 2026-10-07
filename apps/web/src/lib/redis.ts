@@ -1,20 +1,40 @@
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
-export const redis = createClient({
-  url: redisUrl,
-});
+let client: RedisClientType | null = null;
 
-redis.on('error', (err) => {
-  // Avoid crashing in environments where Redis isn't running immediately
-  console.warn('Redis Client Connection Warning/Error:', err.message);
-});
-
-if (!redis.isOpen && process.env.NODE_ENV !== 'test') {
-  redis.connect().catch((err) => {
-    console.error('Failed to connect to Redis:', err);
+try {
+  client = createClient({
+    url: redisUrl,
   });
+
+  client.on('error', (err) => {
+    // Avoid crashing in environments where Redis isn't running immediately
+    console.warn('Redis Client Connection Warning/Error:', err.message);
+  });
+
+  if (process.env.NODE_ENV !== 'test') {
+    client.connect().catch((err) => {
+      console.error('Failed to connect to Redis:', err);
+    });
+  }
+} catch (error) {
+  console.error('Failed to initialize Redis client:', error);
+  client = null as any; // We'll return null to let downstream degrade gracefully
 }
+
+// Export a proxy or just the client. Since downstream uses redis.isOpen or redis.get,
+// let's export a mock interface if client is null to avoid crashing downstream.
+export const redis = client || {
+  isOpen: false,
+  get: async () => null,
+  set: async () => null,
+  incr: async () => 1,
+  expire: async () => null,
+  del: async () => null,
+  connect: async () => null,
+  on: () => null,
+} as any;
 
 export default redis;

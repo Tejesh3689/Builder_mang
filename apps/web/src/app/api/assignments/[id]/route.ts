@@ -37,6 +37,7 @@ export async function PATCH(
       },
     });
 
+    await logAudit((user as any).id, 'MODIFY_ASSIGNMENT', 'Action completed successfully', null);
     return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
     console.error('Failed to update assignment:', error);
@@ -74,6 +75,7 @@ export async function DELETE(
       where: { id },
     });
 
+    await logAudit((user as any).id, 'MODIFY_ASSIGNMENT', 'Action completed successfully', null);
     return NextResponse.json({ success: true, data: { message: 'Assignment deleted successfully.' } });
   } catch (error: any) {
     console.error('Failed to delete assignment:', error);

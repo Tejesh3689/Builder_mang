@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/authorization';
+import { logAudit } from '@/lib/audit';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -6,7 +8,15 @@ export async function GET(
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
+    const user = await requireAuth();
+
+    const { buildScopedWhere } = await import('@/lib/authorization');
+    const scopedWhere = await buildScopedWhere(user, 'venture');
+    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     const { projectId } = await params;
+    const authorizedVenture = await prisma.venture.findFirst({ where: { AND: [{ id: projectId }, scopedWhere] } });
+    if (!authorizedVenture) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
+
     const allocations = await prisma.employeeVentureAssignment.findMany({
       where: {
         ventureId: projectId,

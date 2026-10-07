@@ -25,7 +25,8 @@ export async function GET(
         where: { ventureId },
         orderBy: { createdAt: 'desc' },
       });
-      return NextResponse.json({ success: true, data: documents });
+      await logAudit((user as any).id, 'MANAGE_VENTURE_DOCUMENT', 'Action completed successfully', null);
+    return NextResponse.json({ success: true, data: documents });
     } catch (dbError: any) {
       console.error('Database error in documents GET:', dbError);
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
@@ -68,7 +69,8 @@ export async function POST(
           version,
         },
       });
-      return NextResponse.json({ success: true, data: created });
+      await logAudit((user as any).id, 'MANAGE_VENTURE_DOCUMENT', 'Action completed successfully', null);
+    return NextResponse.json({ success: true, data: created });
     } catch (dbError: any) {
       console.error('Database error in documents POST:', dbError);
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
