@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+const fs = require('fs');
+const path = require('path');
 
-export async function PATCH(
+const filePath = path.join(__dirname, 'src', 'app', 'api', 'materials', 'requests', '[id]', 'route.ts');
+let content = fs.readFileSync(filePath, 'utf8');
+
+const newPatch = `export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -105,9 +106,18 @@ export async function PATCH(
       throw e;
     }
 
-    return NextResponse.json({ success: true, message: `Request ${newStatus}` });
+    return NextResponse.json({ success: true, message: \`Request \${newStatus}\` });
   } catch (error: any) {
     console.error('Error in material request approval:', error);
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }
+`;
+
+const lines = content.split('\n');
+const postIndex = lines.findIndex(l => l.startsWith('export async function PATCH'));
+if (postIndex !== -1) {
+  content = lines.slice(0, postIndex).join('\n') + '\n' + newPatch;
+}
+fs.writeFileSync(filePath, content);
+console.log('Done!');
