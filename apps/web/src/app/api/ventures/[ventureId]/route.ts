@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
+import type { Prisma } from '@prisma/client';
 import { requireAuth, requirePermission, buildScopedWhere } from '@/lib/authorization';
+import { ventureUpdateSchema, checkDateOrder, checkCoordinatePair, checkLeaders, validationErrorResponse, dbErrorResponse } from '@/lib/ventureValidation';
 
 export async function GET(
   request: Request,
@@ -58,28 +60,15 @@ export async function GET(
       }
 
       return NextResponse.json({ success: true, data: venture });
-    } catch (dbError: any) {
-      console.error('Database error in venture GET:', dbError);
-      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
+    } catch (dbError) {
+      return dbErrorResponse(dbError, 'venture GET');
     }
   } catch (error: any) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: error.message }, { status: 401 });
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Unexpected error in venture route:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
-
-// Allowlist of fields that can be updated via PATCH
-const PATCHABLE_FIELDS = [
-  'name', 'description', 'status', 'type',
-  'regAddressLine1', 'regCity', 'regState', 'regPincode', 'regDistrict',
-  'siteAddressLine1', 'siteCity', 'siteState', 'sitePincode', 'siteDistrict',
-  'latitude', 'longitude',
-  'startDate', 'expectedCompletionDate', 'planningStartDate',
-  'estimatedBudget', 'progressPercentage',
-  'projectDirectorId', 'projectManagerId', 'siteManagerId',
-  'constructionManagerId', 'financeManagerId', 'purchaseManagerId',
-  'settings'
-];
 
 export async function PATCH(
   request: Request,
@@ -101,29 +90,58 @@ export async function PATCH(
     const auth_existingVenture = await prisma.venture.findFirst({ where: { AND: [{ OR: [{ id: ventureId }, { code: ventureId }] }, scopedWhere] } });
     if (!auth_existingVenture) return NextResponse.json({ success: false, error: 'Venture not found' }, { status: 404 });
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ success: false, error: 'Request body must be valid JSON' }, { status: 400 });
+    }
 
-    // Only allow explicitly permitted fields — prevent arbitrary column overwrites
-    const safeData: Record<string, any> = {};
-    for (const key of PATCHABLE_FIELDS) {
-      if (key in body) {
-        safeData[key] = body[key];
-      }
+    // Allowlisted + type-checked fields only — unknown keys are dropped
+    const parsed = ventureUpdateSchema.safeParse(body);
+    if (!parsed.success) return validationErrorResponse(parsed.error);
+    const { settings, ...fields } = parsed.data;
+
+    // Validate the timeline as it will look after the update, not just the changed fields
+    const dateOrderError = checkDateOrder({
+      planningStartDate: fields.planningStartDate !== undefined ? fields.planningStartDate : auth_existingVenture.planningStartDate,
+      startDate: fields.startDate !== undefined ? fields.startDate : auth_existingVenture.startDate,
+      expectedCompletionDate: fields.expectedCompletionDate !== undefined ? fields.expectedCompletionDate : auth_existingVenture.expectedCompletionDate,
+    });
+    if (dateOrderError) {
+      return NextResponse.json({ success: false, error: dateOrderError }, { status: 400 });
+    }
+    const crossFieldError =
+      checkCoordinatePair(
+        fields.latitude !== undefined ? fields.latitude : auth_existingVenture.latitude,
+        fields.longitude !== undefined ? fields.longitude : auth_existingVenture.longitude
+      ) || await checkLeaders(prisma, fields);
+    if (crossFieldError) {
+      return NextResponse.json({ success: false, error: crossFieldError }, { status: 400 });
     }
 
     try {
-      const updated = await prisma.venture.update({
-        where: { id: auth_existingVenture.id },
-        data: safeData,
+      const updated = await prisma.$transaction(async (tx) => {
+        if (settings) {
+          await tx.ventureSetting.upsert({
+            where: { ventureId: auth_existingVenture.id },
+            create: { ...settings, ventureId: auth_existingVenture.id },
+            update: settings,
+          });
+        }
+        return tx.venture.update({
+          where: { id: auth_existingVenture.id },
+          data: fields satisfies Prisma.VentureUncheckedUpdateInput,
+        });
       });
       return NextResponse.json({ success: true, data: updated });
-    } catch (dbError: any) {
-      console.error('Database error in venture PATCH:', dbError);
-      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
+    } catch (dbError) {
+      return dbErrorResponse(dbError, 'venture PATCH');
     }
   } catch (error: any) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: error.message }, { status: 401 });
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Unexpected error in venture route:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -163,6 +181,7 @@ export async function DELETE(
   } catch (error: any) {
     console.error('Failed to delete venture:', error);
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: error.message }, { status: 401 });
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Unexpected error in venture route:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

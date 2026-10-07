@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getPaginationParams } from '@/lib/pagination';
+import { ventureCreateSchema, checkDateOrder, checkCoordinatePair, checkLeaders, validationErrorResponse, dbErrorResponse } from '@/lib/ventureValidation';
 
 export async function GET(request: Request) {
   try {
@@ -67,15 +68,15 @@ export async function GET(request: Request) {
       });
 
       return NextResponse.json({ success: true, data: ventures });
-    } catch (dbError: any) {
-      console.error('Database error in ventures GET:', dbError);
-      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
+    } catch (dbError) {
+      return dbErrorResponse(dbError, 'ventures GET');
     }
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ success: false, error: error.message }, { status: 401 });
     }
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Unexpected error in ventures route:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -87,18 +88,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin access required to create ventures' }, { status: 403 });
     }
 
-    const body = await request.json();
-    const {
-      name, code, type = 'RESIDENTIAL', description, status = 'ACTIVE',
-      regAddressLine1, regCity, regState, regPincode,
-      siteAddressLine1, siteCity, siteState, sitePincode,
-      latitude, longitude, startDate, expectedCompletionDate, estimatedBudget,
-      projectDirectorId, projectManagerId, siteManagerId,
-    } = body;
-
-    if (!name || !code) {
-      return NextResponse.json({ success: false, error: 'Venture name and unique code are required' }, { status: 400 });
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ success: false, error: 'Request body must be valid JSON' }, { status: 400 });
     }
+
+    const parsed = ventureCreateSchema.safeParse(body);
+    if (!parsed.success) return validationErrorResponse(parsed.error);
+    const data = parsed.data;
+
+    const dateOrderError = checkDateOrder(data);
+    if (dateOrderError) {
+      return NextResponse.json({ success: false, error: dateOrderError }, { status: 400 });
+    }
+    const crossFieldError = checkCoordinatePair(data.latitude, data.longitude) || await checkLeaders(prisma, data);
+    if (crossFieldError) {
+      return NextResponse.json({ success: false, error: crossFieldError }, { status: 400 });
+    }
+    const { projectDirectorId, projectManagerId, siteManagerId } = data;
 
     try {
       const creatorUserId = (session?.user as any)?.id;
@@ -106,17 +115,8 @@ export async function POST(request: Request) {
       const venture = await prisma.$transaction(async (tx) => {
         const newVenture = await tx.venture.create({
           data: {
-            name, code, type, description, status,
-            regAddressLine1, regCity, regState, regPincode,
-            siteAddressLine1, siteCity, siteState, sitePincode,
-            latitude: latitude ? parseFloat(latitude) : null,
-            longitude: longitude ? parseFloat(longitude) : null,
-            startDate: startDate ? new Date(startDate) : null,
-            expectedCompletionDate: expectedCompletionDate ? new Date(expectedCompletionDate) : null,
-            estimatedBudget: estimatedBudget ? parseFloat(estimatedBudget) : 0,
-            projectDirectorId: projectDirectorId || null,
-            projectManagerId: projectManagerId || null,
-            siteManagerId: siteManagerId || null,
+            ...data,
+            estimatedBudget: data.estimatedBudget ?? 0,
             settings: { create: { minStockThresholdDefault: 50, requireMaterialApproval: true } },
             chatRooms: { create: [ { name: 'General Discussion' }, { name: 'Site Engineers & Ops' }, { name: 'Materials & Procurement' } ] },
           },
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
         });
 
         // Auto-add venture leaders as chat members in all created rooms
-        const leaderEmployeeIds = [projectDirectorId, projectManagerId, siteManagerId].filter(Boolean);
+        const leaderEmployeeIds = [projectDirectorId, projectManagerId, siteManagerId].filter((id): id is string => !!id);
         const leaderUsers = leaderEmployeeIds.length > 0
           ? await tx.employee.findMany({ where: { id: { in: leaderEmployeeIds } }, select: { userId: true } })
           : [];
@@ -144,14 +144,14 @@ export async function POST(request: Request) {
       });
 
       return NextResponse.json({ success: true, data: venture }, { status: 201 });
-    } catch (dbError: any) {
-      console.error('Database error in ventures POST:', dbError);
-      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
+    } catch (dbError) {
+      return dbErrorResponse(dbError, 'ventures POST');
     }
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ success: false, error: error.message }, { status: 401 });
     }
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Unexpected error in ventures route:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
