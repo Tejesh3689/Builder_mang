@@ -168,7 +168,8 @@ export async function POST(req: Request) {
             });
           }
         }
-      }\n\n      return newIssue;
+      }
+      return newIssue;
     });
 
     return NextResponse.json({ success: true, data: result });

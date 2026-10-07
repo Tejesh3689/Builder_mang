@@ -114,8 +114,28 @@ export async function POST(req: Request) {
     } catch (e: any) {
       if (e.code === 'P2002' && e.meta?.target?.includes('id')) {
          const existing = await prisma.materialRequest.findUnique({
-            where: { id: idempotencyKey }
+            where: { id: idempotencyKey },
+            include: { items: true }
          });
+         
+         // Compare payloads logically
+         let isSame = existing && existing.ventureId === ventureId && existing.createdById === (user as any).id;
+         if (isSame && existing!.items.length === finalItems.length) {
+            for (const item of finalItems) {
+               const existItem = existing!.items.find(i => i.materialId === item.materialId);
+               if (!existItem || existItem.requestedQuantity !== item.quantity) {
+                  isSame = false;
+                  break;
+               }
+            }
+         } else {
+            isSame = false;
+         }
+
+         if (!isSame) {
+            return NextResponse.json({ success: false, error: 'Conflict: Idempotency key already used with a different payload' }, { status: 409 });
+         }
+
          return NextResponse.json({ success: true, data: existing }, { status: 200 });
       }
       throw e;
