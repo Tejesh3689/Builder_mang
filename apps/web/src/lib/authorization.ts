@@ -3,33 +3,40 @@ import { authOptions } from './auth';
 import { UserRole } from '@prisma/client';
 import { hasPermission } from './permissions';
 import prisma from '@/lib/db';
+import { forbidden, unauthorized } from '@/lib/http/errors';
+import { isAccountUsable } from '@/lib/policies/account';
 
 export async function requireAuth() {
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    throw new Error('Unauthorized');
+  const userId = (session?.user as any)?.id;
+  if (!userId) {
+    throw unauthorized();
   }
 
-  // RE-VALIDATE Session against Database
+  // RE-VALIDATE Session against Database — the jwt callback already checked
+  // sessionVersion; this applies the account policy on fresh state.
   const freshUser = await prisma.user.findUnique({
-    where: { id: (session.user as any).id }
+    where: { id: userId },
+    include: { employee: { select: { id: true, status: true } } },
   });
 
-  if (!freshUser || !freshUser.isActive) {
-    throw new Error('Unauthorized');
+  if (!isAccountUsable(freshUser)) {
+    throw unauthorized();
   }
 
-  return freshUser; // Return fresh trusted state
+  return freshUser!; // Return fresh trusted state
+}
+
+/** Throws 403 unless the user's role grants `permission`. */
+export function assertPermission(user: { role: UserRole }, permission: string) {
+  if (!hasPermission(user.role, permission)) {
+    throw forbidden();
+  }
 }
 
 export async function requirePermission(permission: string) {
   const user = await requireAuth();
-  
-  // Enforce existing permission rules securely
-  if (!hasPermission((user as any).role as UserRole, permission)) {
-    throw new Error('Forbidden');
-  }
-  
+  assertPermission(user, permission);
   return user;
 }
 

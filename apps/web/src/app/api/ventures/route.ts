@@ -1,157 +1,70 @@
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
+import { VentureStatus, VentureType, type Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { getPaginationParams } from '@/lib/pagination';
-import { ventureCreateSchema, checkDateOrder, checkCoordinatePair, checkLeaders, validationErrorResponse, dbErrorResponse } from '@/lib/ventureValidation';
+import { assertPermission, buildScopedWhere, requireAuth } from '@/lib/authorization';
+import { apiHandler, created, ok } from '@/lib/http/handler';
+import { badRequest } from '@/lib/http/errors';
+import { parseBody } from '@/lib/http/request';
+import { ventureCreateSchema } from '@/lib/validation/venture';
+import { createVenture } from '@/services/venture.service';
 
-export async function GET(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    const user = session?.user;
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const type = searchParams.get('type');
-    const search = searchParams.get('search');
-    const location = searchParams.get('location');
+export const GET = apiHandler(async (request) => {
+  const user = await requireAuth();
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get('status');
+  const type = searchParams.get('type');
+  const search = searchParams.get('search')?.trim();
+  const location = searchParams.get('location')?.trim();
 
-    let whereClause: any = {};
+  const scopedWhere = await buildScopedWhere(user, 'venture');
+  if ((scopedWhere as any).id === 'DENY_ALL') return ok([]);
 
-    // Apply strict data scope
-    const { buildScopedWhere } = await import('@/lib/authorization');
-    const scopedWhere = await buildScopedWhere(user, 'venture');
-    if (scopedWhere.id === 'DENY_ALL') {
-      return NextResponse.json({ success: true, data: [] });
-    } else {
-      whereClause = { ...whereClause, ...scopedWhere };
-    }
-
-    if (status && status !== 'ALL') {
-      whereClause.status = status;
-    }
-    if (type && type !== 'ALL') {
-      whereClause.type = type;
-    }
-    if (location) {
-      whereClause.OR = [
+  const and: Prisma.VentureWhereInput[] = [scopedWhere as Prisma.VentureWhereInput];
+  if (status && status !== 'ALL') {
+    if (!(status in VentureStatus)) throw badRequest('status filter is invalid', 'status');
+    and.push({ status: status as VentureStatus });
+  }
+  if (type && type !== 'ALL') {
+    if (!(type in VentureType)) throw badRequest('type filter is invalid', 'type');
+    and.push({ type: type as VentureType });
+  }
+  if (location) {
+    and.push({
+      OR: [
         { regCity: { contains: location, mode: 'insensitive' } },
         { siteCity: { contains: location, mode: 'insensitive' } },
-      ];
-    }
-    if (search) {
-      const searchOR = [
+      ],
+    });
+  }
+  if (search) {
+    and.push({
+      OR: [
         { name: { contains: search, mode: 'insensitive' } },
         { code: { contains: search, mode: 'insensitive' } },
         { siteCity: { contains: search, mode: 'insensitive' } },
-      ];
-      if (whereClause.OR) {
-        whereClause.AND = [ { OR: whereClause.OR }, { OR: searchOR } ];
-        delete whereClause.OR;
-      } else {
-        whereClause.OR = searchOR;
-      }
-    }
-
-    try {
-      const { skip, take } = getPaginationParams(request);
-      const ventures = await prisma.venture.findMany({
-        where: whereClause,
-        skip,
-        take,
-        include: {
-          projectManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
-          siteManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
-          _count: { select: { assignments: true, stocks: true, documents: true, requests: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      return NextResponse.json({ success: true, data: ventures });
-    } catch (dbError) {
-      return dbErrorResponse(dbError, 'ventures GET');
-    }
-  } catch (error: any) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ success: false, error: error.message }, { status: 401 });
-    }
-    console.error('Unexpected error in ventures route:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+      ],
+    });
   }
-}
 
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'ventures:create')) {
-      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required to create ventures' }, { status: 403 });
-    }
+  const { skip, take } = getPaginationParams(request);
+  const ventures = await prisma.venture.findMany({
+    where: { AND: and },
+    skip,
+    take,
+    include: {
+      projectManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
+      siteManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
+      _count: { select: { assignments: true, stocks: true, documents: true, requests: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  return ok(ventures);
+}, { resource: 'venture', context: 'ventures GET' });
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ success: false, error: 'Request body must be valid JSON' }, { status: 400 });
-    }
-
-    const parsed = ventureCreateSchema.safeParse(body);
-    if (!parsed.success) return validationErrorResponse(parsed.error);
-    const data = parsed.data;
-
-    const dateOrderError = checkDateOrder(data);
-    if (dateOrderError) {
-      return NextResponse.json({ success: false, error: dateOrderError }, { status: 400 });
-    }
-    const crossFieldError = checkCoordinatePair(data.latitude, data.longitude) || await checkLeaders(prisma, data);
-    if (crossFieldError) {
-      return NextResponse.json({ success: false, error: crossFieldError }, { status: 400 });
-    }
-    const { projectDirectorId, projectManagerId, siteManagerId } = data;
-
-    try {
-      const creatorUserId = (session?.user as any)?.id;
-
-      const venture = await prisma.$transaction(async (tx) => {
-        const newVenture = await tx.venture.create({
-          data: {
-            ...data,
-            estimatedBudget: data.estimatedBudget ?? 0,
-            settings: { create: { minStockThresholdDefault: 50, requireMaterialApproval: true } },
-            chatRooms: { create: [ { name: 'General Discussion' }, { name: 'Site Engineers & Ops' }, { name: 'Materials & Procurement' } ] },
-          },
-          include: { chatRooms: { select: { id: true } } },
-        });
-
-        // Auto-add venture leaders as chat members in all created rooms
-        const leaderEmployeeIds = [projectDirectorId, projectManagerId, siteManagerId].filter((id): id is string => !!id);
-        const leaderUsers = leaderEmployeeIds.length > 0
-          ? await tx.employee.findMany({ where: { id: { in: leaderEmployeeIds } }, select: { userId: true } })
-          : [];
-        const memberUserIds = [...new Set([
-          ...leaderUsers.map((e) => e.userId).filter(Boolean),
-          ...(creatorUserId ? [creatorUserId] : []),
-        ])] as string[];
-
-        if (memberUserIds.length > 0) {
-          const chatMemberData = newVenture.chatRooms.flatMap((room) =>
-            memberUserIds.map((uid) => ({ roomId: room.id, userId: uid }))
-          );
-          await tx.chatMember.createMany({ data: chatMemberData, skipDuplicates: true });
-        }
-        
-        return newVenture;
-      });
-
-      return NextResponse.json({ success: true, data: venture }, { status: 201 });
-    } catch (dbError) {
-      return dbErrorResponse(dbError, 'ventures POST');
-    }
-  } catch (error: any) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ success: false, error: error.message }, { status: 401 });
-    }
-    console.error('Unexpected error in ventures route:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
-  }
-}
+export const POST = apiHandler(async (request) => {
+  const user = await requireAuth();
+  assertPermission(user, 'ventures:create');
+  const input = await parseBody(request, ventureCreateSchema);
+  const venture = await createVenture(user, input);
+  return created(venture);
+}, { resource: 'venture', context: 'ventures POST' });

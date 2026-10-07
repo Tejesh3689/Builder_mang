@@ -1,79 +1,33 @@
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { apiHandler, created, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireAssignableEmployee, requireVentureInScope } from '@/lib/scope';
+import { memberCreateSchema } from '@/lib/validation/assignment';
+import { assignEmployee } from '@/services/assignment.service';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ ventureId: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+type Ctx = { params: Promise<{ ventureId: string }> };
 
-    const resolvedParams = await params;
-    const { ventureId } = resolvedParams;
+export const GET = apiHandler<Ctx>(async (_request, { params }) => {
+  const user = await requireAuth();
+  const venture = await requireVentureInScope(user, (await params).ventureId);
+  const assignments = await prisma.employeeVentureAssignment.findMany({
+    where: { ventureId: venture.id },
+    include: { employee: true },
+  });
+  return ok(assignments);
+}, { resource: 'member', context: 'venture members GET' });
 
-    try {
-      const assignments = await prisma.employeeVentureAssignment.findMany({
-        where: { ventureId },
-        include: { employee: true },
-      });
-      return NextResponse.json({ success: true, data: assignments });
-    } catch (dbError: any) {
-      console.error('Database error in members GET:', dbError);
-      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
-    }
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
-
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ ventureId: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'ventures:edit'))) {
-      return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
-    }
-
-    const resolvedParams = await params;
-    const { ventureId } = resolvedParams;
-    const { employeeId, roleAtSite, accessLevel = 'STANDARD' } = await request.json();
-
-    if (!employeeId) {
-      return NextResponse.json({ success: false, error: 'Employee ID is required' }, { status: 400 });
-    }
-
-    try {
-      // Deactivate any currently active assignments for this employee (matching the employee/[id]/assignments endpoint)
-      await prisma.employeeVentureAssignment.updateMany({
-        where: { employeeId, status: 'ACTIVE' },
-        data: { status: 'COMPLETED', endDate: new Date() },
-      });
-
-      const created = await prisma.employeeVentureAssignment.create({
-        data: {
-          ventureId,
-          employeeId,
-          roleAtSite,
-          accessLevel,
-          status: 'ACTIVE',
-        },
-        include: { employee: true },
-      });
-      return NextResponse.json({ success: true, data: created });
-    } catch (dbError: any) {
-      console.error('Database error in members POST:', dbError);
-      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
-    }
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
+export const POST = apiHandler<Ctx>(async (request, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'ventures:edit');
+  const venture = await requireVentureInScope(user, (await params).ventureId);
+  const input = await parseBody(request, memberCreateSchema);
+  const employee = await requireAssignableEmployee(user, input.employeeId);
+  const assignment = await assignEmployee(user, employee, venture, input);
+  const withEmployee = await prisma.employeeVentureAssignment.findUniqueOrThrow({
+    where: { id: assignment.id },
+    include: { employee: true },
+  });
+  return created(withEmployee);
+}, { resource: 'member', context: 'venture members POST' });

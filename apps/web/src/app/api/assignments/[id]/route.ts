@@ -1,88 +1,37 @@
-import { requireAuth } from '@/lib/authorization';
-import { logAudit } from '@/lib/audit';
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { notFound } from '@/lib/http/errors';
+import { apiHandler, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireVentureInScope } from '@/lib/scope';
+import { assignmentUpdateSchema } from '@/lib/validation/assignment';
+import { removeAssignment, updateAssignment } from '@/services/assignment.service';
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await requireAuth();
+type Ctx = { params: Promise<{ id: string }> };
 
-    const userRole = (user as any).role;
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'employees:assign')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-    const { buildScopedWhere } = await import('@/lib/authorization');
-    const scopedWhere = await buildScopedWhere(user, 'venture');
-    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    
-    const existing = await prisma.employeeVentureAssignment.findUnique({ where: { id: await params.then(p => p.id) } });
-    if (!existing) return NextResponse.json({ success: false, error: 'Not Found' }, { status: 404 });
-    
-    const hasVentureAccess = await prisma.venture.findFirst({ where: { AND: [{ id: existing.ventureId }, scopedWhere] } });
-    if (!hasVentureAccess) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
-
-    const { id } = await params;
-    const body = await req.json();
-    const { accessLevel, status, endDate } = body;
-
-    const updated = await prisma.employeeVentureAssignment.update({
-      where: { id },
-      data: {
-        accessLevel,
-        status,
-        endDate: endDate ? new Date(endDate) : undefined,
-      },
-    });
-
-    await logAudit((user as any).id, 'MODIFY_ASSIGNMENT', 'Action completed successfully', null);
-    return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
-    console.error('Failed to update assignment:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
+/** Loads the assignment and checks the actor has its venture in scope (404 otherwise). */
+async function loadInScope(user: Awaited<ReturnType<typeof requireAuth>>, id: string) {
+  const assignment = await prisma.employeeVentureAssignment.findUnique({ where: { id } });
+  if (!assignment) throw notFound('Assignment not found');
+  await requireVentureInScope(user, assignment.ventureId).catch(() => {
+    throw notFound('Assignment not found');
+  });
+  return assignment;
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await requireAuth();
+export const PATCH = apiHandler<Ctx>(async (req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'employees:assign');
+  const assignment = await loadInScope(user, (await params).id);
+  const input = await parseBody(req, assignmentUpdateSchema);
+  const updated = await updateAssignment(user, assignment, input);
+  return ok(updated);
+}, { resource: 'assignment', context: 'assignment PATCH' });
 
-    const userRole = (user as any).role;
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'employees:assign')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-    const { buildScopedWhere } = await import('@/lib/authorization');
-    const scopedWhere = await buildScopedWhere(user, 'venture');
-    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    
-    const existing = await prisma.employeeVentureAssignment.findUnique({ where: { id: await params.then(p => p.id) } });
-    if (!existing) return NextResponse.json({ success: false, error: 'Not Found' }, { status: 404 });
-    
-    const hasVentureAccess = await prisma.venture.findFirst({ where: { AND: [{ id: existing.ventureId }, scopedWhere] } });
-    if (!hasVentureAccess) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
-
-    const { id } = await params;
-
-    await prisma.employeeVentureAssignment.delete({
-      where: { id },
-    });
-
-    await logAudit((user as any).id, 'MODIFY_ASSIGNMENT', 'Action completed successfully', null);
-    return NextResponse.json({ success: true, data: { message: 'Assignment deleted successfully.' } });
-  } catch (error: any) {
-    console.error('Failed to delete assignment:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+export const DELETE = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'employees:assign');
+  const assignment = await loadInScope(user, (await params).id);
+  await removeAssignment(user, assignment);
+  return ok({ message: 'Assignment deleted successfully.' });
+}, { resource: 'assignment', context: 'assignment DELETE' });

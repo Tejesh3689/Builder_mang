@@ -1,76 +1,41 @@
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
+import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { recordAudit } from '@/lib/audit';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { apiHandler, created, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireEmployeeInScope } from '@/lib/scope';
+import { requiredText } from '@/lib/validation/common';
+import { skillFields } from '@/lib/validation/skill';
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+type Ctx = { params: Promise<{ id: string }> };
 
-    const { id } = await params;
-    const skills = await prisma.employeeSkill.findMany({
-      where: { employeeId: id },
-      orderBy: { createdAt: 'desc' },
-    });
+const skillCreateSchema = z.object({
+  skill: requiredText('skill', 100),
+  category: skillFields.category.default('Civil'),
+  proficiency: skillFields.proficiency.default('Intermediate'),
+  experienceYears: skillFields.experienceYears.default(0),
+});
 
-    return NextResponse.json({ success: true, data: skills });
-  } catch (error: any) {
-    console.error('Failed to fetch employee skills:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+export const GET = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  const employee = await requireEmployeeInScope(user, (await params).id);
+  const skills = await prisma.employeeSkill.findMany({
+    where: { employeeId: employee.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  return ok(skills);
+}, { resource: 'skill', context: 'employee skills GET' });
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'skills:edit'))) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: Admin or Project Manager access required' },
-        { status: 403 }
-      );
-    }
-
-    const { id } = await params;
-    const body = await req.json();
-    const { skill, category, proficiency, experienceYears } = body;
-
-    if (!skill) {
-      return NextResponse.json(
-        { success: false, error: 'Skill name is required.' },
-        { status: 400 }
-      );
-    }
-
-    const newSkill = await prisma.employeeSkill.create({
-      data: {
-        employeeId: id,
-        skill,
-        category: category || 'Civil',
-        proficiency: proficiency || 'Intermediate',
-        experienceYears: experienceYears || 0,
-      },
-    });
-
-    return NextResponse.json({ success: true, data: newSkill });
-  } catch (error: any) {
-    console.error('Failed to add employee skill:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+export const POST = apiHandler<Ctx>(async (req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'skills:edit');
+  const employee = await requireEmployeeInScope(user, (await params).id);
+  const input = await parseBody(req, skillCreateSchema);
+  const skill = await prisma.$transaction(async (tx) => {
+    const row = await tx.employeeSkill.create({ data: { employeeId: employee.id, ...input } });
+    await recordAudit(tx, { userId: user.id, action: 'ADD_SKILL', details: { employeeId: employee.id, skillId: row.id, skill: row.skill } });
+    return row;
+  });
+  return created(skill);
+}, { resource: 'skill', context: 'employee skills POST' });

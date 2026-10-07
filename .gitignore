@@ -48,3 +48,6 @@ infra/terraform/.terraform/
 infra/terraform/*.tfstate
 infra/terraform/*.tfstate.backup
 infra/terraform/.terraform.lock.hcl
+
+# Private uploaded files (local storage driver; UPLOAD_DIR)
+apps/web/storage/

@@ -1,83 +1,44 @@
-import { requireAuth } from '@/lib/authorization';
-import { logAudit } from '@/lib/audit';
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { assertPermission, buildScopedWhere, requireAuth } from '@/lib/authorization';
+import { notFound } from '@/lib/http/errors';
+import { apiHandler, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireEmployeeInScope } from '@/lib/scope';
+import { onboardingUpdateSchema } from '@/lib/validation/employee';
+import { updateEmployee } from '@/services/employee.service';
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ employeeId: string }> }
-) {
-  try {
-    const { employeeId } = await params;
-    const employee = await prisma.employee.findFirst({
-      where: {
-        OR: [
-          { id: employeeId },
-          { employeeId: employeeId },
-          { employeeId: employeeId.toUpperCase() },
-        ],
-      },
-      select: {
-        id: true,
-        employeeId: true,
-        firstName: true,
-        lastName: true,
-        onboardingStage: true,
-        onboardingStatus: true,
-        designation: true,
-        department: true,
-      },
-    });
+type Ctx = { params: Promise<{ employeeId: string }> };
 
-    if (!employee) {
-      return NextResponse.json(
-        { success: false, error: 'Employee not found.' },
-        { status: 404 }
-      );
-    }
+/** Accepts the employee UUID or the EMP-#### code. */
+export const GET = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  const { employeeId } = await params;
+  const scopedWhere = await buildScopedWhere(user, 'employee');
+  const employee =
+    (scopedWhere as any).id === 'DENY_ALL'
+      ? null
+      : await prisma.employee.findFirst({
+          where: {
+            AND: [
+              { OR: [{ id: employeeId }, { employeeId: employeeId.toUpperCase() }] },
+              scopedWhere as Prisma.EmployeeWhereInput,
+            ],
+          },
+          select: {
+            id: true, employeeId: true, firstName: true, lastName: true,
+            onboardingStage: true, onboardingStatus: true, designation: true, department: true,
+          },
+        });
+  if (!employee) throw notFound('Employee not found.');
+  return ok(employee);
+}, { resource: 'employee', context: 'onboarding employee GET' });
 
-    return NextResponse.json({ success: true, data: employee });
-  } catch (error: any) {
-    console.error('Failed to fetch employee onboarding details:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ employeeId: string }> }
-) {
-  try {
-    const user = await requireAuth();
-
-    const userRole = (user as any).role;
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'employees:edit')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
-    const { employeeId } = await params;
-    const body = await req.json();
-    const { onboardingStage, onboardingStatus } = body;
-
-    const updated = await prisma.employee.update({
-      where: { id: employeeId },
-      data: {
-        onboardingStage,
-        onboardingStatus,
-      },
-    });
-
-    await logAudit((user as any).id, 'UPDATE_ONBOARDING_CANDIDATE', 'Action completed successfully', null);
-    return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
-    console.error('Failed to update employee onboarding details:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+export const PATCH = apiHandler<Ctx>(async (req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'employees:edit');
+  const employee = await requireEmployeeInScope(user, (await params).employeeId);
+  const input = await parseBody(req, onboardingUpdateSchema);
+  const updated = await updateEmployee(user, employee, input);
+  return ok(updated);
+}, { resource: 'employee', context: 'onboarding PATCH' });

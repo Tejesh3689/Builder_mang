@@ -1,33 +1,17 @@
-import { requireAuth } from '@/lib/authorization';
-import { logAudit } from '@/lib/audit';
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { assertPermission, buildScopedWhere, requireAuth } from '@/lib/authorization';
+import { apiHandler, ok } from '@/lib/http/handler';
 
-export async function GET() {
-  try {
-    const user = await requireAuth();
-    const userRole = (user as any).role;
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'employees:view')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
+export const GET = apiHandler(async () => {
+  const user = await requireAuth();
+  assertPermission(user, 'employees:view');
+  const scopedWhere = await buildScopedWhere(user, 'employee');
+  if ((scopedWhere as any).id === 'DENY_ALL') return ok([]);
 
-    const onboardingCandidates = await prisma.employee.findMany({
-      where: {
-        NOT: {
-          onboardingStage: 'Active',
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    await logAudit((user as any).id, 'CREATE_ONBOARDING_CANDIDATE', 'Action completed successfully', null);
-    return NextResponse.json({ success: true, data: onboardingCandidates });
-  } catch (error: any) {
-    console.error('Failed to fetch onboarding pipeline candidates:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+  const candidates = await prisma.employee.findMany({
+    where: { AND: [scopedWhere as Prisma.EmployeeWhereInput, { NOT: { onboardingStage: 'Active' } }] },
+    orderBy: { createdAt: 'desc' },
+  });
+  return ok(candidates);
+}, { resource: 'employee', context: 'onboarding GET' });

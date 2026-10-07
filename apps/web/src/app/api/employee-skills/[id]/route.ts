@@ -1,99 +1,51 @@
-import { requireAuth } from '@/lib/authorization';
-import { logAudit } from '@/lib/audit';
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
+import { recordAudit } from '@/lib/audit';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { notFound } from '@/lib/http/errors';
+import { apiHandler, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireEmployeeInScope } from '@/lib/scope';
+import { skillUpdateSchema } from '@/lib/validation/skill';
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await requireAuth();
+type Ctx = { params: Promise<{ id: string }> };
 
-    const userRole = (user as any).role;
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'skills:edit')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
-    const { buildScopedWhere } = await import('@/lib/authorization');
-    const scopedWhere = await buildScopedWhere(user, 'employee');
-    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-
-    // Since multiple params are handled in different functions, resolve params.id
-    const resourceId = await params.then(p => p.id);
-    const targetResource = await prisma.employeeSkill.findUnique({ where: { id: resourceId } });
-    if (!targetResource) return NextResponse.json({ success: false, error: 'Not Found' }, { status: 404 });
-
-    const authorizedEmployee = await prisma.employee.findFirst({
-      where: { AND: [{ id: targetResource.employeeId }, scopedWhere] }
-    });
-    if (!authorizedEmployee) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
-
-    const { id } = await params;
-    const body = await req.json();
-    const { category, proficiency, experienceYears, verificationStatus, verifiedBy } = body;
-
-    const updated = await prisma.employeeSkill.update({
-      where: { id },
-      data: {
-        category,
-        proficiency,
-        experienceYears,
-        verificationStatus,
-        verifiedBy,
-        verificationDate: verificationStatus === 'Verified' ? new Date() : undefined,
-      },
-    });
-
-    return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
-    console.error('Failed to update employee skill:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
+async function loadInScope(user: Awaited<ReturnType<typeof requireAuth>>, id: string) {
+  const skill = await prisma.employeeSkill.findUnique({ where: { id } });
+  if (!skill) throw notFound('Skill not found');
+  await requireEmployeeInScope(user, skill.employeeId).catch(() => {
+    throw notFound('Skill not found');
+  });
+  return skill;
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await requireAuth();
+export const PATCH = apiHandler<Ctx>(async (req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'skills:edit');
+  const skill = await loadInScope(user, (await params).id);
+  const input = await parseBody(req, skillUpdateSchema);
 
-    const userRole = (user as any).role;
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'skills:edit')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
+  const verification =
+    input.verificationStatus === 'Verified'
+      ? { verifiedBy: user.name, verificationDate: new Date() }
+      : input.verificationStatus
+        ? { verifiedBy: null, verificationDate: null }
+        : {};
 
-    const { buildScopedWhere } = await import('@/lib/authorization');
-    const scopedWhere = await buildScopedWhere(user, 'employee');
-    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  const updated = await prisma.$transaction(async (tx) => {
+    const row = await tx.employeeSkill.update({ where: { id: skill.id }, data: { ...input, ...verification } });
+    await recordAudit(tx, { userId: user.id, action: 'UPDATE_SKILL', details: { employeeId: skill.employeeId, skillId: skill.id, changes: input } });
+    return row;
+  });
+  return ok(updated);
+}, { resource: 'skill', context: 'employee skill PATCH' });
 
-    // Since multiple params are handled in different functions, resolve params.id
-    const resourceId = await params.then(p => p.id);
-    const targetResource = await prisma.employeeSkill.findUnique({ where: { id: resourceId } });
-    if (!targetResource) return NextResponse.json({ success: false, error: 'Not Found' }, { status: 404 });
-
-    const authorizedEmployee = await prisma.employee.findFirst({
-      where: { AND: [{ id: targetResource.employeeId }, scopedWhere] }
-    });
-    if (!authorizedEmployee) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
-
-    const { id } = await params;
-
-    await prisma.employeeSkill.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ success: true, data: { message: 'Employee skill deleted successfully.' } });
-  } catch (error: any) {
-    console.error('Failed to delete employee skill:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+export const DELETE = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'skills:edit');
+  const skill = await loadInScope(user, (await params).id);
+  await prisma.$transaction(async (tx) => {
+    await tx.employeeSkill.delete({ where: { id: skill.id } });
+    await recordAudit(tx, { userId: user.id, action: 'DELETE_SKILL', details: { employeeId: skill.employeeId, skillId: skill.id, skill: skill.skill } });
+  });
+  return ok({ message: 'Employee skill deleted successfully.' });
+}, { resource: 'skill', context: 'employee skill DELETE' });

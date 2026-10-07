@@ -1,79 +1,51 @@
-import { requireAuth } from '@/lib/authorization';
-import { logAudit } from '@/lib/audit';
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
+import { z } from 'zod';
+import { AnnouncementPriority } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { recordAudit } from '@/lib/audit';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { apiHandler, created, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireVentureInScope } from '@/lib/scope';
+import { requiredText } from '@/lib/validation/common';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ ventureId: string }> }
-) {
-  try {
-    const user = await requireAuth();
+type Ctx = { params: Promise<{ ventureId: string }> };
 
-    const { buildScopedWhere } = await import('@/lib/authorization');
-    const scopedWhere = await buildScopedWhere(user, 'venture');
-    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    const auth_ventureId = await params.then(p => p.ventureId);
-    const auth_existingVenture = await prisma.venture.findFirst({ where: { AND: [{ id: auth_ventureId }, scopedWhere] } });
-    if (!auth_existingVenture) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
+const announcementSchema = z.object({
+  title: requiredText('title', 200),
+  message: requiredText('message', 5000),
+  priority: z
+    .nativeEnum(AnnouncementPriority, { errorMap: () => ({ message: 'priority is invalid' }) })
+    .default(AnnouncementPriority.NORMAL),
+  audience: z.enum(['ALL', 'MANAGEMENT', 'SITE_STAFF'], { errorMap: () => ({ message: 'audience is invalid' }) }).default('ALL'),
+});
 
-    const resolvedParams = await params;
-    const { ventureId } = resolvedParams;
+export const GET = apiHandler<Ctx>(async (_request, { params }) => {
+  const user = await requireAuth();
+  const venture = await requireVentureInScope(user, (await params).ventureId);
+  const announcements = await prisma.ventureAnnouncement.findMany({
+    where: { ventureId: venture.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  return ok(announcements);
+}, { resource: 'announcement', context: 'announcements GET' });
 
-    try {
-      const announcements = await prisma.ventureAnnouncement.findMany({
-        where: { ventureId },
-        orderBy: { createdAt: 'desc' },
-      });
-    return NextResponse.json({ success: true, data: announcements });
-    } catch (dbError: any) {
-      console.error('Database error in announcements GET:', dbError);
-      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
-    }
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
+export const POST = apiHandler<Ctx>(async (request, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'ventures:edit');
+  const venture = await requireVentureInScope(user, (await params).ventureId);
+  const input = await parseBody(request, announcementSchema);
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ ventureId: string }> }
-) {
-  try {
-    const user = await requireAuth();
-
-    const userRole = (user as any).role;
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-
-    const { buildScopedWhere } = await import('@/lib/authorization');
-    const scopedWhere = await buildScopedWhere(user, 'venture');
-    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    const auth_ventureId = await params.then(p => p.ventureId);
-    const auth_existingVenture = await prisma.venture.findFirst({ where: { AND: [{ id: auth_ventureId }, scopedWhere] } });
-    if (!auth_existingVenture) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
-
-    const resolvedParams = await params;
-    const { ventureId } = resolvedParams;
-    const { title, message, priority = 'NORMAL', audience = 'ALL' } = await request.json();
-
-    try {
-      const created = await prisma.ventureAnnouncement.create({
-        data: {
-          ventureId,
-          title,
-          message,
-          priority,
-          audience,
-        },
-      });
-      await logAudit((user as any).id, 'MANAGE_VENTURE_ANNOUNCEMENT', 'Action completed successfully', null);
-    return NextResponse.json({ success: true, data: created });
-    } catch (dbError: any) {
-      console.error('Database error in announcements POST:', dbError);
-      return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
-    }
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
+  const announcement = await prisma.$transaction(async (tx) => {
+    const row = await tx.ventureAnnouncement.create({
+      data: { ventureId: venture.id, createdById: user.id, ...input },
+    });
+    await recordAudit(tx, {
+      userId: user.id,
+      action: 'CREATE_VENTURE_ANNOUNCEMENT',
+      ventureId: venture.id,
+      details: { announcementId: row.id, title: row.title },
+    });
+    return row;
+  });
+  return created(announcement);
+}, { resource: 'announcement', context: 'announcements POST' });

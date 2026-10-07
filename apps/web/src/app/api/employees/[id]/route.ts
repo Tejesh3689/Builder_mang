@@ -1,160 +1,43 @@
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
-import { prisma } from '@/lib/db';
-import { EmployeeStatus } from '@prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { apiHandler, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireEmployeeInScope } from '@/lib/scope';
+import { withCurrentStatus } from '@/lib/validation/certification';
+import { employeeUpdateSchema } from '@/lib/validation/employee';
+import { terminateEmployee, updateEmployee } from '@/services/employee.service';
 
-import { requireAuth, buildDataScope } from '@/lib/authorization';
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await requireAuth();
-    const scopeInfo = await buildDataScope(user);
-    const { id } = await params;
-    const employee = await prisma.employee.findUnique({
-      where: { id },
-      include: {
-        reportingManager: {
-          select: { firstName: true, lastName: true }
-        },
-        assignments: {
-          include: {
-            venture: true,
-          },
-        },
-        skills: true,
-        certifications: true,
-        documents: true,
-      },
-    });
+export const GET = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  const { id } = await params;
+  const employee = await requireEmployeeInScope(user, id, {
+    reportingManager: { select: { firstName: true, lastName: true } },
+    assignments: { include: { venture: true } },
+    skills: true,
+    certifications: true,
+    documents: true,
+  });
+  return ok({ ...employee, certifications: employee.certifications.map((c) => withCurrentStatus(c)) });
+}, { resource: 'employee', context: 'employee GET' });
 
-    if (!employee) {
-      return NextResponse.json(
-        { success: false, error: 'Employee not found.' },
-        { status: 404 }
-      );
-    }
+// Same resource scope as GET: a MANAGER can only modify employees on their ventures.
+export const PATCH = apiHandler<Ctx>(async (req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'employees:edit');
+  const { id } = await params;
+  const employee = await requireEmployeeInScope(user, id);
+  const input = await parseBody(req, employeeUpdateSchema);
+  const updated = await updateEmployee(user, employee, input);
+  return ok(updated);
+}, { resource: 'employee', context: 'employee PATCH' });
 
-    if (scopeInfo.scope === 'SELF' && employee.userId !== scopeInfo.identifier) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
-    if (scopeInfo.scope === 'TEAM_LEVEL' && employee.reportingManagerId !== scopeInfo.identifier) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
-    if (scopeInfo.scope === 'VENTURE_LEVEL') {
-      const managerAssignments = await prisma.employeeVentureAssignment.findMany({
-        where: { employee: { userId: scopeInfo.identifier }, status: 'ACTIVE' },
-        select: { ventureId: true }
-      });
-      const managerVentureIds = managerAssignments.map(a => a.ventureId);
-      
-      const hasSharedVenture = employee.assignments.some(
-        a => a.status === 'ACTIVE' && managerVentureIds.includes(a.ventureId)
-      );
-
-      if (!hasSharedVenture && employee.userId !== scopeInfo.identifier) {
-        return NextResponse.json({ success: false, error: 'Forbidden: Out of Venture Scope' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ success: true, data: employee });
-  } catch (error: any) {
-    console.error('Failed to fetch employee:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await requireAuth();
-    const userRole = (user as any).role || 'USER';
-    
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'employees:edit')) {
-      return NextResponse.json({ success: false, error: 'Forbidden: Elevated access required' }, { status: 403 });
-    }
-
-    const { id } = await params;
-    const body = await req.json();
-    const {
-      firstName,
-      lastName,
-      phone,
-      email,
-      designation,
-      department,
-      status,
-      joiningDate,
-      reportingManagerId,
-      employmentType,
-      onboardingStage,
-      onboardingStatus,
-    } = body;
-
-    const updated = await prisma.employee.update({
-      where: { id },
-      data: {
-        firstName,
-        lastName,
-        phone,
-        email,
-        designation,
-        department,
-        status: status ? (status as EmployeeStatus) : undefined,
-        joiningDate,
-        reportingManagerId,
-        employmentType,
-        onboardingStage,
-        onboardingStatus,
-      },
-    });
-
-    return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
-    console.error('Failed to update employee:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await requireAuth();
-    if ((user as any).role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
-    }
-
-    const { id } = await params;
-
-    // Soft delete / deactivate
-    const deactivated = await prisma.employee.update({
-      where: { id },
-      data: {
-        status: EmployeeStatus.TERMINATED,
-      },
-    });
-
-    return NextResponse.json({ success: true, data: deactivated });
-  } catch (error: any) {
-    console.error('Failed to deactivate employee:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+/** Termination (soft delete) — see terminate policy in employee.service. */
+export const DELETE = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'employees:terminate'); // ADMIN only
+  const { id } = await params;
+  const employee = await requireEmployeeInScope(user, id);
+  const terminated = await terminateEmployee(user, employee);
+  return ok(terminated);
+}, { resource: 'employee', context: 'employee DELETE' });

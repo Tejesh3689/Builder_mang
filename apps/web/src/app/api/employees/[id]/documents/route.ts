@@ -1,75 +1,30 @@
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { conflict } from '@/lib/http/errors';
+import { apiHandler, created, ok } from '@/lib/http/handler';
+import { requireEmployeeInScope } from '@/lib/scope';
+import { readMultipart } from '@/lib/uploads/multipart';
+import { uploadEmployeeDocument } from '@/services/document.service';
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+type Ctx = { params: Promise<{ id: string }> };
 
-    const { id } = await params;
-    const documents = await prisma.employeeDocument.findMany({
-      where: { employeeId: id },
-      orderBy: { createdAt: 'desc' },
-    });
+export const GET = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  const employee = await requireEmployeeInScope(user, (await params).id);
+  const documents = await prisma.employeeDocument.findMany({
+    where: { employeeId: employee.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  return ok(documents);
+}, { resource: 'document', context: 'employee documents GET' });
 
-    return NextResponse.json({ success: true, data: documents });
-  } catch (error: any) {
-    console.error('Failed to fetch employee documents:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'documents:edit'))) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: Admin or Project Manager access required' },
-        { status: 403 }
-      );
-    }
-
-    const { id } = await params;
-    const body = await req.json();
-    const { name, fileUrl, fileType } = body;
-
-    if (!name || !fileUrl) {
-      return NextResponse.json(
-        { success: false, error: 'Document name and file URL are required.' },
-        { status: 400 }
-      );
-    }
-
-    const newDoc = await prisma.employeeDocument.create({
-      data: {
-        employeeId: id,
-        name,
-        fileUrl,
-        fileType: fileType || 'PDF',
-      },
-    });
-
-    return NextResponse.json({ success: true, data: newDoc });
-  } catch (error: any) {
-    console.error('Failed to add employee document:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+/** multipart/form-data: `file` (required), `name` (optional display title). */
+export const POST = apiHandler<Ctx>(async (req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'documents:edit');
+  const employee = await requireEmployeeInScope(user, (await params).id);
+  if (employee.status === 'TERMINATED') throw conflict('Cannot upload documents for a terminated employee.');
+  const form = await readMultipart(req);
+  const doc = await uploadEmployeeDocument(user, employee.id, form);
+  return created(doc);
+}, { resource: 'document', context: 'employee documents POST' });

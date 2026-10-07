@@ -9,15 +9,7 @@ export const ForgotPasswordSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
 });
 
-export const EmployeeSchema = z.object({
-  firstName: z.string().min(2, { message: "First name is too short" }),
-  lastName: z.string().min(2, { message: "Last name is too short" }),
-  email: z.string().email({ message: "Invalid email address" }),
-  employeeId: z.string().min(3, { message: "Employee ID is required" }),
-  designation: z.string().min(2, { message: "Designation is required" }),
-  department: z.string().min(2, { message: "Department is required" }),
-  ventureIds: z.array(z.string()).min(1, { message: "Assign at least one venture" }),
-});
+// Employee input validation lives in apps/web/src/lib/validation/employee.ts (single authoritative schema).
 
 export const MaterialRequestSchema = z.object({
   ventureId: z.string().min(1, { message: "Venture selection is required" }),
