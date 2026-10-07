@@ -1,13 +1,14 @@
 import { requireAuth } from '@/lib/authorization';
 import { logAudit } from '@/lib/audit';
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 
 export async function GET() {
   try {
     const user = await requireAuth();
     const userRole = (user as any).role;
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'employees:view')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 

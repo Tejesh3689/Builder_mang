@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { EmployeeStatus } from '@prisma/client';
 import { getServerSession } from 'next-auth';
@@ -79,7 +80,7 @@ export async function PATCH(
     const user = await requireAuth();
     const userRole = (user as any).role || 'USER';
     
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'employees:edit')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Elevated access required' }, { status: 403 });
     }
 

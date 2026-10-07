@@ -1,6 +1,7 @@
 import { requireAuth } from '@/lib/authorization';
 import { logAudit } from '@/lib/audit';
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 
 export async function GET(

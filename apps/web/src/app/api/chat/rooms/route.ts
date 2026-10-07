@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
         { members: { some: { userId } } },
         { venture: { projectManager: { userId } } }
       ];
-    } else if (userRole !== 'ADMIN') {
+    } else if (userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
       // Other non-admin roles only see rooms they are a member of.
       whereClause.members = { some: { userId } };
     }
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
     }
 
     // If scoped to a venture, verify the creating user is assigned to it (unless ADMIN)
-    if (ventureId && userRole !== 'ADMIN') {
+    if (ventureId && userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
       const user = await prisma.user.findUnique({
         where: { id: userId },
         include: {

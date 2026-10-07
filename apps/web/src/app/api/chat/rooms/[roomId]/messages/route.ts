@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -29,7 +30,7 @@ export async function GET(
     }
 
     // Enforce membership check for GET — non-ADMINs must be a member of the room
-    if (userRole !== 'ADMIN') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
       const isMember = await prisma.chatMember.findUnique({
         where: { roomId_userId: { roomId, userId } },
         include: { room: true }
@@ -92,7 +93,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (userRole !== 'ADMIN') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
       const user = await prisma.user.findUnique({
         where: { id: senderId },
         include: { employee: true }

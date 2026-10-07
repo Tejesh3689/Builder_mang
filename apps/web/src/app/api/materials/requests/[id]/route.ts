@@ -35,7 +35,8 @@ export async function PATCH(
     }
 
     // Role verification (Admin or Project Manager)
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'STORE_MANAGER') {
+    const { hasPermission } = await import('@/lib/permissions');
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'materials:approve')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Insufficient permissions' }, { status: 403 });
     }
 

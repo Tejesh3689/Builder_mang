@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -20,7 +21,7 @@ export async function GET(
 
     // ADMIN can see any venture's materials.
     // Other roles must be assigned to the venture.
-    if (userRole !== 'ADMIN') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'materials:stock')) {
       const user = await prisma.user.findUnique({
         where: { id: userId },
         include: { employee: { include: { assignments: { where: { ventureId, status: 'ACTIVE' } } } } }

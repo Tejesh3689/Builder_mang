@@ -83,6 +83,7 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             email: user.email,
             role: user.role,
+            sessionVersion: (user as any).sessionVersion,
           };
         } catch (error: any) {
           // Log real errors internally for auditing (could use a real logger here)
@@ -105,16 +106,17 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as any).role;
         token.id = user.id;
+        token.sessionVersion = (user as any).sessionVersion;
       }
       
       // AUTH-08 & AUTH-09: Re-verify against database on every token decode
       if (token?.id) {
         const freshUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, isActive: true }
+          select: { role: true, isActive: true, sessionVersion: true }
         });
         
-        if (!freshUser || !freshUser.isActive) {
+        if (!freshUser || !freshUser.isActive || freshUser.sessionVersion !== token.sessionVersion) {
           // Invalidate token
           return {};
         }
@@ -136,6 +138,18 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+  },
+  events: {
+    async signOut({ token }) {
+      if (token?.id) {
+        try {
+          await prisma.user.update({
+            where: { id: token.id as string },
+            data: { sessionVersion: { increment: 1 } }
+          });
+        } catch(e) {}
+      }
+    }
   },
   pages: {
     signIn: '/login',

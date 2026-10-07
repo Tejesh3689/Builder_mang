@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -18,7 +19,7 @@ export async function GET(
     const { roomId } = await params;
 
     // Must be a member or ADMIN to list members
-    if (userRole !== 'ADMIN') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
       const isMember = await prisma.chatMember.findUnique({
         where: { roomId_userId: { roomId, userId } }
       });
@@ -55,7 +56,7 @@ export async function POST(
     }
 
     // Only ADMIN or MANAGER can add members
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager required' }, { status: 403 });
     }
 
@@ -95,7 +96,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager required' }, { status: 403 });
     }
 

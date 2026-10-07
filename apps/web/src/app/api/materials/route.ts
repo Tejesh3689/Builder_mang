@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && userRole !== 'MANAGER')) {
+    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'materials:view'))) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
     }
 

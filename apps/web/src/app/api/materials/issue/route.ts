@@ -14,7 +14,8 @@ export async function POST(req: Request) {
     }
 
     // Role verification
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'STORE_MANAGER') {
+    const { hasPermission } = await import('@/lib/permissions');
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'materials:issue')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Insufficient permissions' }, { status: 403 });
     }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -67,6 +68,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ success: false, error: error.message }, { status: 401 });
+    }
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
@@ -75,7 +79,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
-    if (userRole !== 'ADMIN') {
+    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'ventures:create')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin access required to create ventures' }, { status: 403 });
     }
 
@@ -141,6 +145,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ success: false, error: error.message }, { status: 401 });
+    }
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

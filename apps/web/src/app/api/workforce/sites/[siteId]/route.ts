@@ -17,7 +17,6 @@ export async function GET(
     const authorizedVenture = await prisma.venture.findFirst({ where: { AND: [{ id: siteId }, scopedWhere] } });
     if (!authorizedVenture) return NextResponse.json({ success: false, error: 'Forbidden: Out of Scope' }, { status: 403 });
 
-    const { siteId } = await params;
     // For site allocations, we filter by the project site ID/venture ID representing the site
     const allocations = await prisma.employeeVentureAssignment.findMany({
       where: {
