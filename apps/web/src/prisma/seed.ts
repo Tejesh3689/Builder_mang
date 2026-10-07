@@ -129,7 +129,7 @@ async function main() {
       email: 'store@builder.com',
       passwordHash: defaultPasswordHash,
       name: 'Vikram Storekeeper',
-      role: UserRole.STORE_MANAGER,
+      role: UserRole.SUPERVISOR,
     },
   });
 

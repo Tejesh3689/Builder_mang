@@ -19,6 +19,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Venture Access Check
+    if ((session?.user as any)?.role !== 'ADMIN') {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { employee: { include: { assignments: { where: { ventureId, status: 'ACTIVE' } } } } }
+      });
+      const isAssigned = (user?.employee?.assignments?.length ?? 0) > 0;
+      if (!isAssigned) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Out of Venture Scope' }, { status: 403 });
+      }
+    }
+
     // Generate Request Number
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');

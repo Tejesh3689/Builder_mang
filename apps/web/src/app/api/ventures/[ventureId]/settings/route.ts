@@ -25,7 +25,6 @@ export async function GET(
       const setting = await prisma.ventureSetting.findUnique({
         where: { ventureId },
       });
-      await logAudit((user as any).id, 'UPDATE_VENTURE_SETTINGS', 'Action completed successfully', null);
     return NextResponse.json({ success: true, data: setting });
     } catch (dbError: any) {
       console.error('Database error in settings GET:', dbError);

@@ -4,7 +4,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ADMIN: ['*'],
   MANAGER: [
     'ventures:view', 'ventures:edit', 'ventures:create', 'ventures:archive',
-    'materials:view', 'materials:request', 'materials:approve', 'materials:stock',
+    'materials:view', 'materials:create', 'materials:request', 'materials:approve', 'materials:stock',
     'employees:view', 'employees:assign', 'employees:edit', 'documents:view', 'documents:edit', 'skills:edit', 'certifications:edit',
     'chat:access', 'chat:manage'
   ],
@@ -21,12 +21,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'meetings:manage_team',
     'chat:access'
   ],
-  STORE_MANAGER: [
-    'ventures:view',
-    'materials:view', 'materials:receive', 'materials:issue', 'materials:stock',
-    'employees:view',
-    'chat:access'
-  ],
+
 };
 
 export function hasPermission(role: UserRole, permission: string): boolean {

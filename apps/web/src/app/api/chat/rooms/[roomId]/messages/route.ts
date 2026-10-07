@@ -3,6 +3,7 @@ import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getPaginationParams } from '@/lib/pagination';
 
 export async function GET(
   req: Request,
@@ -53,7 +54,10 @@ export async function GET(
       }
     }
 
+    const { skip, take } = getPaginationParams(req);
     const messages = await prisma.chatMessage.findMany({
+      skip,
+      take,
       where: { roomId },
       include: {
         sender: {

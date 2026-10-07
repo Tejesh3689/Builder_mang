@@ -22,12 +22,11 @@ export default withAuth(
     if (token?.role !== 'ADMIN') {
       const isProjectManager = token?.role === 'MANAGER';
       const isSiteEngineer = token?.role === 'SUPERVISOR';
-      const isStoreManager = token?.role === 'STORE_MANAGER';
       
       const adminOnlyPrefixes = [
         '/admin',
         ...(isProjectManager ? [] : ['/ventures']), // Allow MANAGER to access ventures
-        ...(isProjectManager || isStoreManager ? [] : ['/materials']), // Allow MANAGER and STORE_MANAGER to access materials
+        ...(isProjectManager ? [] : ['/materials']), // Allow MANAGER to access materials
         '/compliance',
         '/workforce',
         '/onboarding',

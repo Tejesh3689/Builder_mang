@@ -1,21 +1,29 @@
 import { NextResponse } from 'next/server';
 import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth, requirePermission, buildScopedWhere } from '@/lib/authorization';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ ventureId: string }> }
 ) {
   try {
+    const user = await requireAuth();
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
+
+    const scopedWhere = await buildScopedWhere(user, 'venture');
+    if (scopedWhere.id === 'DENY_ALL') {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
 
     try {
       const venture = await prisma.venture.findFirst({
         where: {
-          OR: [{ id: ventureId }, { code: ventureId }],
+          AND: [
+            { OR: [{ id: ventureId }, { code: ventureId }] },
+            scopedWhere
+          ]
         },
         include: {
           projectDirector: { select: { id: true, firstName: true, lastName: true, designation: true } },
@@ -46,7 +54,7 @@ export async function GET(
       });
 
       if (!venture) {
-        throw new Error('Venture not found');
+        return NextResponse.json({ success: false, error: 'Venture not found' }, { status: 404 });
       }
 
       return NextResponse.json({ success: true, data: venture });
@@ -55,6 +63,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
+    if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: error.message }, { status: 401 });
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
@@ -77,14 +86,21 @@ export async function PATCH(
   { params }: { params: Promise<{ ventureId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'ventures:edit'))) {
+    const user = await requireAuth();
+    if ((user as any).role !== 'ADMIN' && !hasPermission((user as any).role, 'ventures:edit')) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
     }
 
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
+
+    const scopedWhere = await buildScopedWhere(user, 'venture');
+    if (scopedWhere.id === 'DENY_ALL') {
+      return NextResponse.json({ success: false, error: 'Venture not found' }, { status: 404 });
+    }
+    const auth_existingVenture = await prisma.venture.findFirst({ where: { AND: [{ OR: [{ id: ventureId }, { code: ventureId }] }, scopedWhere] } });
+    if (!auth_existingVenture) return NextResponse.json({ success: false, error: 'Venture not found' }, { status: 404 });
+
     const body = await request.json();
 
     // Only allow explicitly permitted fields — prevent arbitrary column overwrites
@@ -97,7 +113,7 @@ export async function PATCH(
 
     try {
       const updated = await prisma.venture.update({
-        where: { id: ventureId },
+        where: { id: auth_existingVenture.id },
         data: safeData,
       });
       return NextResponse.json({ success: true, data: updated });
@@ -106,6 +122,7 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
     }
   } catch (error: any) {
+    if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: error.message }, { status: 401 });
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
@@ -115,11 +132,8 @@ export async function DELETE(
   { params }: { params: Promise<{ ventureId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    
-    // Only ADMIN or MANAGER can delete ventures
-    if (!session || (userRole !== 'ADMIN' && userRole !== 'MANAGER')) {
+    const user = await requireAuth();
+    if ((user as any).role !== 'ADMIN' && !hasPermission((user as any).role, 'ventures:archive')) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Admin or Project Manager access required' }, 
         { status: 403 }
@@ -129,9 +143,17 @@ export async function DELETE(
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
 
+    const scopedWhere = await buildScopedWhere(user, 'venture');
+    if (scopedWhere.id === 'DENY_ALL') {
+      return NextResponse.json({ success: false, error: 'Venture not found' }, { status: 404 });
+    }
+    const auth_existingVenture = await prisma.venture.findFirst({ where: { AND: [{ OR: [{ id: ventureId }, { code: ventureId }] }, scopedWhere] } });
+    if (!auth_existingVenture) return NextResponse.json({ success: false, error: 'Venture not found' }, { status: 404 });
+
+
     // Delete the venture
     await prisma.venture.delete({
-      where: { id: ventureId },
+      where: { id: auth_existingVenture.id },
     });
     
     // We don't need to create an audit log if the venture is deleted since its relations might cascade delete
@@ -140,6 +162,7 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: 'Venture deleted successfully' });
   } catch (error: any) {
     console.error('Failed to delete venture:', error);
+    if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: error.message }, { status: 401 });
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

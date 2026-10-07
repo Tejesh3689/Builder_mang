@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 import { UserRole } from '@prisma/client';
 import { hasPermission } from './permissions';
+import prisma from '@/lib/db';
 
 export async function requireAuth() {
   const session = await getServerSession(authOptions);
@@ -31,8 +32,6 @@ export async function requirePermission(permission: string) {
   
   return user;
 }
-
-import prisma from '@/lib/db';
 
 export async function buildDataScope(user: any) {
   if (!user) {
@@ -65,13 +64,7 @@ export async function buildDataScope(user: any) {
     return { scope: 'TEAM_LEVEL', identifier: employee.id }; 
   }
   
-  // SELF scope needs employee ID if we want to filter by employee
-  const employee = await prisma.employee.findUnique({
-    where: { userId: user.id },
-    select: { id: true }
-  });
-  
-  return { scope: 'SELF', identifier: employee?.id || user.id };
+  return { scope: 'SELF', identifier: user.id };
 }
 
 /**
@@ -101,25 +94,31 @@ export async function buildScopedWhere(user: any, resourceType: 'venture' | 'emp
   }
 
   if (scopeInfo.scope === 'TEAM_LEVEL') {
-    if (resourceType === 'venture') return { id: 'DENY_ALL' }; // Supervisors shouldn't list all ventures broadly without restriction
-    if (resourceType === 'employee') return { reportingManagerId: scopeInfo.identifier };
-    if (resourceType === 'attendance') return { employee: { reportingManagerId: scopeInfo.identifier } };
-    if (resourceType === 'leave') return { employee: { reportingManagerId: scopeInfo.identifier } };
-    // materialRequests for supervisors might be restricted to ventures they are assigned to.
     const assignments = await prisma.employeeVentureAssignment.findMany({
       where: { employeeId: scopeInfo.identifier as string, status: 'ACTIVE' },
       select: { ventureId: true }
     });
     const ventureIds = assignments.map(a => a.ventureId);
+
+    if (resourceType === 'venture') return { id: { in: ventureIds } };
+    if (resourceType === 'employee') return { OR: [{ reportingManagerId: scopeInfo.identifier }, { id: scopeInfo.identifier }] };
+    if (resourceType === 'attendance') return { employee: { OR: [{ reportingManagerId: scopeInfo.identifier }, { id: scopeInfo.identifier }] } };
+    if (resourceType === 'leave') return { employee: { OR: [{ reportingManagerId: scopeInfo.identifier }, { id: scopeInfo.identifier }] } };
     if (resourceType === 'materialRequest') return { ventureId: { in: ventureIds } };
   }
 
   if (scopeInfo.scope === 'SELF') {
+    const assignments = await prisma.employeeVentureAssignment.findMany({
+      where: { employee: { userId: user.id }, status: 'ACTIVE' },
+      select: { ventureId: true }
+    });
+    const ventureIds = assignments.map(a => a.ventureId);
+
     if (resourceType === 'employee') return { userId: user.id };
-    if (resourceType === 'attendance') return { employeeId: scopeInfo.identifier };
-    if (resourceType === 'leave') return { employeeId: scopeInfo.identifier };
+    if (resourceType === 'attendance') return { employee: { userId: user.id } };
+    if (resourceType === 'leave') return { employee: { userId: user.id } };
     if (resourceType === 'materialRequest') return { createdById: user.id };
-    if (resourceType === 'venture') return { id: 'DENY_ALL' };
+    if (resourceType === 'venture') return { id: { in: ventureIds } };
   }
 
   // ADMIN or fallback
@@ -128,4 +127,3 @@ export async function buildScopedWhere(user: any, resourceType: 'venture' | 'emp
   // Default deny if unmapped
   return { id: 'DENY_ALL' };
 }
-

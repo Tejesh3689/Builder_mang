@@ -3,8 +3,9 @@ import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getPaginationParams } from '@/lib/pagination';
 
-const ALLOWED_ROLES = ['ADMIN', 'MANAGER', 'STORE_MANAGER', 'SUPERVISOR'];
+const ALLOWED_ROLES = ['ADMIN', 'MANAGER', 'SUPERVISOR'];
 
 export async function GET(req: Request) {
   try {
@@ -25,7 +26,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: true, categories, uoms });
     }
 
+    const { skip, take } = getPaginationParams(req);
     const materials = await prisma.material.findMany({
+      skip,
+      take,
       include: {
         category: true,
         unitOfMeasure: true
@@ -44,7 +48,7 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'materials:view'))) {
+    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'materials:create'))) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin or Project Manager access required' }, { status: 403 });
     }
 

@@ -10,6 +10,7 @@ export async function GET(
 ) {
   try {
     const user = await requireAuth();
+    const userRole = (user as any).role;
 
     const { buildScopedWhere } = await import('@/lib/authorization');
     const scopedWhere = await buildScopedWhere(user, 'venture');
@@ -21,13 +22,17 @@ export async function GET(
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
 
+    // Filter by visibility (Root Cause 8)
+    const visibilityFilter = ['ADMIN', 'MANAGER'].includes(userRole) 
+      ? {} // Management roles see all
+      : { visibility: 'ALL' }; // Others see only ALL
+
     try {
       const documents = await prisma.ventureDocument.findMany({
-        where: { ventureId },
+        where: { ventureId, ...visibilityFilter },
         orderBy: { createdAt: 'desc' },
       });
-      await logAudit((user as any).id, 'MANAGE_VENTURE_DOCUMENT', 'Action completed successfully', null);
-    return NextResponse.json({ success: true, data: documents });
+      return NextResponse.json({ success: true, data: documents });
     } catch (dbError: any) {
       console.error('Database error in documents GET:', dbError);
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });
@@ -56,7 +61,8 @@ export async function POST(
 
     const resolvedParams = await params;
     const { ventureId } = resolvedParams;
-    const { title, category = 'OTHER', fileUrl = '/docs/sample.pdf', version = '1.0' } = await request.json();
+    // Accept visibility (Root Cause 8)
+    const { title, category = 'OTHER', fileUrl = '/docs/sample.pdf', version = '1.0', visibility = 'ALL' } = await request.json();
 
     try {
       const created = await prisma.ventureDocument.create({
@@ -68,10 +74,11 @@ export async function POST(
           fileType: 'application/pdf',
           fileSize: 1024000,
           version,
+          visibility: ['ALL', 'MANAGEMENT'].includes(visibility) ? visibility : 'ALL'
         },
       });
       await logAudit((user as any).id, 'MANAGE_VENTURE_DOCUMENT', 'Action completed successfully', null);
-    return NextResponse.json({ success: true, data: created });
+      return NextResponse.json({ success: true, data: created });
     } catch (dbError: any) {
       console.error('Database error in documents POST:', dbError);
       return NextResponse.json({ success: false, error: dbError.message || 'Database error' }, { status: 500 });

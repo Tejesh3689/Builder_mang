@@ -26,7 +26,6 @@ export async function GET(
         where: { ventureId },
         orderBy: { createdAt: 'desc' },
       });
-      await logAudit((user as any).id, 'MANAGE_VENTURE_ANNOUNCEMENT', 'Action completed successfully', null);
     return NextResponse.json({ success: true, data: announcements });
     } catch (dbError: any) {
       console.error('Database error in announcements GET:', dbError);

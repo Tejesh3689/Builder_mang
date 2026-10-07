@@ -3,6 +3,7 @@ import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getPaginationParams } from '@/lib/pagination';
 
 export async function GET(req: Request) {
   try {
@@ -32,7 +33,10 @@ export async function GET(req: Request) {
       whereClause.members = { some: { userId } };
     }
 
+    const { skip, take } = getPaginationParams(req);
     const rooms = await prisma.chatRoom.findMany({
+      skip,
+      take,
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
         venture: {

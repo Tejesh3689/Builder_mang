@@ -5,8 +5,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 import { requireAuth, buildDataScope } from '@/lib/authorization';
+import { getPaginationParams } from '@/lib/pagination';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const user = await requireAuth();
     const { buildScopedWhere } = await import('@/lib/authorization');
@@ -16,9 +17,12 @@ export async function GET() {
       return NextResponse.json({ success: true, data: [] });
     }
     const whereClause = { ...scopedWhere };
+    const { skip, take } = getPaginationParams(req);
 
     const employees = await prisma.employee.findMany({
       where: whereClause,
+      skip,
+      take,
       orderBy: { createdAt: 'desc' },
       include: {
         user: {

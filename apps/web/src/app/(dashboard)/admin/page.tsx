@@ -30,10 +30,6 @@ export default function AdminSettingsPage() {
                 <td className="py-3.5 px-6 font-semibold text-amber-700 whitespace-nowrap">SUPERVISOR</td>
                 <td className="py-3.5 px-6">Request materials, view assigned ventures, site chat</td>
               </tr>
-              <tr>
-                <td className="py-3.5 px-6 font-semibold text-amber-700 whitespace-nowrap">STORE_MANAGER</td>
-                <td className="py-3.5 px-6">Receive stock, issue stock, ledger adjustments</td>
-              </tr>
             </tbody>
           </table>
         </div>
