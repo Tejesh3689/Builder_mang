@@ -18,7 +18,7 @@ export default function AddEmployeeForm() {
   const [joiningDate, setJoiningDate] = useState('');
   const [employmentType, setEmploymentType] = useState<'Full-Time Contractor' | 'Permanent' | 'Daily Wage'>('Permanent');
 
-  const [selectedFiles, setSelectedFiles] = useState<{ name: string; type: string; base64?: string }[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -55,21 +55,7 @@ export default function AddEmployeeForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
-    
-    filesArray.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedFiles((prev) => [
-          ...prev,
-          {
-            name: file.name,
-            type: file.type || 'application/pdf',
-            base64: reader.result as string,
-          },
-        ]);
-      };
-      reader.readAsDataURL(file);
-    });
+    setSelectedFiles((prev) => [...prev, ...filesArray]);
   };
 
   // Submit handler
@@ -111,9 +97,26 @@ export default function AddEmployeeForm() {
         ventureId: 'none', // Project assignments handled in Slice 2
       };
 
-      const json = await api.post<{success: boolean, error?: string}>('/api/employees', payload);
-      if (!json.success) {
+      const json = await api.post<{success: boolean, data?: { id: string }, error?: string}>('/api/employees', payload);
+      if (!json.success || !json.data) {
         throw new Error(json.error || 'Failed to create employee in database.');
+      }
+
+      // Upload the selected documents to the new employee's vault (validated + stored server-side).
+      const failed: string[] = [];
+      for (const file of selectedFiles) {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch(`/api/employees/${json.data.id}/documents`, { method: 'POST', body: form });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          failed.push(`${file.name}: ${body.error || 'upload failed'}`);
+        }
+      }
+      if (failed.length) {
+        setError(`Employee created, but some documents were not uploaded — ${failed.join('; ')}`);
+        setIsLoading(false);
+        return;
       }
 
       setSuccess(true);
@@ -331,7 +334,7 @@ export default function AddEmployeeForm() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
               </svg>
               <div className="text-xs font-semibold text-zinc-700">Click to upload identity or safety documents</div>
-              <div className="text-[10px] text-zinc-400 mt-1">Aadhaar Card, PAN, Offer Letter, or certificates (PDF/JPG, Max 5MB)</div>
+              <div className="text-[10px] text-zinc-400 mt-1">Aadhaar Card, PAN, Offer Letter, or certificates (PDF, JPG, PNG, WEBP, DOCX, XLSX — max 10 MB each)</div>
             </label>
 
             {/* Selected Files list */}

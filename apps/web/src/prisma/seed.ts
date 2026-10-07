@@ -312,7 +312,7 @@ async function main() {
       employeeId: emp2.id,
       ventureId: greenHeights.id,
       roleAtSite: 'Project Manager',
-      accessLevel: 'FULL_PROJECT_ACCESS',
+      accessLevel: 'FULL_ACCESS',
     },
   });
 
@@ -323,7 +323,7 @@ async function main() {
       employeeId: emp3.id,
       ventureId: greenHeights.id,
       roleAtSite: 'Site Engineer',
-      accessLevel: 'OPERATIONS_ACCESS',
+      accessLevel: 'OPERATIONS',
     },
   });
 
@@ -334,7 +334,7 @@ async function main() {
       employeeId: emp4.id,
       ventureId: greenHeights.id,
       roleAtSite: 'Store Manager',
-      accessLevel: 'MATERIAL_ACCESS',
+      accessLevel: 'MATERIALS_ONLY',
     },
   });
 

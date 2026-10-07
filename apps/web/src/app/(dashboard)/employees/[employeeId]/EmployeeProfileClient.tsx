@@ -154,7 +154,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
   const [docCategory, setDocCategory] = useState<'Identity' | 'Employment' | 'Construction' | 'Other'>('Identity');
   const [docFileType, setDocFileType] = useState('PDF');
   const [docExpiry, setDocExpiry] = useState('');
-  const [selectedDocFile, setSelectedDocFile] = useState<{ name: string; type: string } | null>(null);
+  const [selectedDocFile, setSelectedDocFile] = useState<File | null>(null);
 
   if (!employee) {
     return (
@@ -392,16 +392,19 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
     e.preventDefault();
     if (!docName || !employee) return;
     setActionError('');
+    if (!selectedDocFile) {
+      setActionError('Please choose a file to upload.');
+      return;
+    }
 
     try {
+      // Real multipart upload — the server validates size/type/content and stores the file.
+      const form = new FormData();
+      form.append('file', selectedDocFile);
+      form.append('name', docName);
       const res = await fetch(`/api/employees/${employee.id}/documents`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: docName,
-          fileType: docFileType,
-          fileUrl: '/docs/placeholder.pdf'
-        }),
+        body: form,
       });
       const json = await res.json();
       if (json.success) {
@@ -641,7 +644,11 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
                     <div className="font-bold text-zinc-800">{d.name}</div>
                     <div className="text-[11px] text-zinc-400">Category: {d.category} · Uploaded: {d.uploadDate}</div>
                   </div>
-                  <span className="text-emerald-600 font-semibold cursor-pointer">Download</span>
+                  {(d as any).storageKey ? (
+                    <a href={(d as any).fileUrl} className="text-emerald-600 font-semibold">Download</a>
+                  ) : (
+                    <span className="text-zinc-400" title="This record was created before file uploads were available">File not available</span>
+                  )}
                 </div>
               ))}
               {employee.documents.length === 0 && (
@@ -894,7 +901,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       const file = e.target.files[0];
-                      setSelectedDocFile({ name: file.name, type: file.type });
+                      setSelectedDocFile(file);
                       setDocName(file.name);
                       const ext = file.name.split('.').pop()?.toUpperCase() || 'PDF';
                       setDocFileType(ext);

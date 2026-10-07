@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/db';
 import redis from '@/lib/redis';
+import { accountStateSelect, isAccountUsable } from '@/lib/policies/account';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -30,7 +31,7 @@ export const authOptions: NextAuthOptions = {
 
           // Rate Limiting Policy: 10 failed attempts per 15 minutes per email
           const rateLimitKey = `rl:login:${email}`;
-          if (redis.isOpen) {
+          if (redis.isReady) {
             try {
               const attempts = await redis.get(rateLimitKey);
               if (attempts && parseInt(attempts, 10) >= 10) {
@@ -43,6 +44,7 @@ export const authOptions: NextAuthOptions = {
 
           const user = await prisma.user.findUnique({
             where: { email },
+            include: { employee: { select: { status: true } } },
           });
 
           // Dummy hash matching "password" generated to take ~same time as a real hash
@@ -52,7 +54,7 @@ export const authOptions: NextAuthOptions = {
           const isPasswordValid = await bcrypt.compare(credentials.password, hashToCompare);
 
           if (!user || !isPasswordValid) {
-            if (redis.isOpen) {
+            if (redis.isReady) {
               try {
                 await redis.incr(rateLimitKey);
                 // Set expiry only on first increment (15 minutes)
@@ -67,12 +69,12 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Invalid email or password.');
           }
 
-          if (!user.isActive) {
+          if (!isAccountUsable(user)) {
             throw new Error('Invalid email or password.');
           }
 
           // Reset rate limit on successful login
-          if (redis.isOpen) {
+          if (redis.isReady) {
             try {
               await redis.del(rateLimitKey);
             } catch (err) {}
@@ -83,7 +85,7 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             email: user.email,
             role: user.role,
-            sessionVersion: (user as any).sessionVersion,
+            sessionVersion: user.sessionVersion,
           };
         } catch (error: any) {
           // Log real errors internally for auditing (could use a real logger here)
@@ -113,10 +115,10 @@ export const authOptions: NextAuthOptions = {
       if (token?.id) {
         const freshUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, isActive: true, sessionVersion: true }
+          select: { role: true, sessionVersion: true, ...accountStateSelect }
         });
         
-        if (!freshUser || !freshUser.isActive || freshUser.sessionVersion !== token.sessionVersion) {
+        if (!freshUser || !isAccountUsable(freshUser) || freshUser.sessionVersion !== token.sessionVersion) {
           // Invalidate token
           return {};
         }

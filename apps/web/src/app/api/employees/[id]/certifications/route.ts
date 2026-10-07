@@ -1,90 +1,30 @@
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { conflict } from '@/lib/http/errors';
+import { apiHandler, created, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireEmployeeInScope } from '@/lib/scope';
+import { certificationCreateSchema, withCurrentStatus } from '@/lib/validation/certification';
+import { addCertification } from '@/services/certification.service';
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+type Ctx = { params: Promise<{ id: string }> };
 
-    const { id } = await params;
-    const certifications = await prisma.employeeCertification.findMany({
-      where: { employeeId: id },
-      orderBy: { createdAt: 'desc' },
-    });
+export const GET = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  const employee = await requireEmployeeInScope(user, (await params).id);
+  const certifications = await prisma.employeeCertification.findMany({
+    where: { employeeId: employee.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  return ok(certifications.map((c) => withCurrentStatus(c)));
+}, { resource: 'certification', context: 'certifications GET' });
 
-    return NextResponse.json({ success: true, data: certifications });
-  } catch (error: any) {
-    console.error('Failed to fetch certifications:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'certifications:edit'))) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: Admin or Project Manager access required' },
-        { status: 403 }
-      );
-    }
-
-    const { id } = await params;
-    const body = await req.json();
-    const { certification, certificateNo, issueDate, expiryDate, authority } = body;
-
-    if (!certification || !certificateNo || !expiryDate) {
-      return NextResponse.json(
-        { success: false, error: 'Certification name, certificate number, and expiry date are required.' },
-        { status: 400 }
-      );
-    }
-
-    const expiry = new Date(expiryDate);
-    const today = new Date();
-    const warningDays = 30 * 24 * 60 * 60 * 1000;
-    const diff = expiry.getTime() - today.getTime();
-
-    let certStatus = 'Valid';
-    if (diff < 0) {
-      certStatus = 'Expired';
-    } else if (diff < warningDays) {
-      certStatus = 'Expiring Soon';
-    }
-
-    const newCert = await prisma.employeeCertification.create({
-      data: {
-        employeeId: id,
-        certification,
-        certificateNo,
-        issueDate: issueDate ? new Date(issueDate) : new Date(),
-        expiryDate: expiry,
-        status: certStatus,
-        authority: authority || 'National Safety Agency',
-      },
-    });
-
-    return NextResponse.json({ success: true, data: newCert });
-  } catch (error: any) {
-    console.error('Failed to add certification:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+export const POST = apiHandler<Ctx>(async (req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'certifications:edit');
+  const employee = await requireEmployeeInScope(user, (await params).id);
+  if (employee.status === 'TERMINATED') throw conflict('Cannot add certifications to a terminated employee.');
+  const input = await parseBody(req, certificationCreateSchema);
+  const cert = await addCertification(user, employee.id, input);
+  return created(cert);
+}, { resource: 'certification', context: 'certifications POST' });

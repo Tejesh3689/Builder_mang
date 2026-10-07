@@ -1,103 +1,66 @@
-import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/db';
+import { z } from 'zod';
 import { UserRole } from '@prisma/client';
-import { requireAuth } from '@/lib/authorization';
+import { prisma } from '@/lib/db';
+import { recordAudit } from '@/lib/audit';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { conflict } from '@/lib/http/errors';
+import { apiHandler, created } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { optionalText, requiredText } from '@/lib/validation/common';
+import { assertUniqueContact, nextEmployeeCode } from '@/services/employee.service';
 
-export async function POST(req: Request) {
-  try {
-    const user = await requireAuth();
-    if ((user as any).role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
+const createUserSchema = z.object({
+  firstName: requiredText('firstName', 100),
+  lastName: optionalText('lastName', 100),
+  email: z
+    .string({ required_error: 'email is required', invalid_type_error: 'email must be a string' })
+    .trim()
+    .toLowerCase()
+    .max(254, 'email must be at most 254 characters')
+    .email('email must be a valid email address'),
+  role: z.nativeEnum(UserRole, { errorMap: () => ({ message: `role must be one of: ${Object.values(UserRole).join(', ')}` }) }),
+  password: z
+    .string({ required_error: 'password is required', invalid_type_error: 'password must be a string' })
+    .min(6, 'Password must be at least 6 characters long.')
+    // bcrypt only uses the first 72 bytes and login rejects longer passwords.
+    .refine((p) => Buffer.byteLength(p, 'utf8') <= 72, 'Password must be at most 72 bytes long.'),
+});
+
+export const POST = apiHandler(async (req) => {
+  const user = await requireAuth();
+  assertPermission(user, 'admin:users'); // ADMIN only
+  const input = await parseBody(req, createUserSchema);
+  const passwordHash = await bcrypt.hash(input.password, 10);
+
+  const newUser = await prisma.$transaction(async (tx) => {
+    if (await tx.user.findUnique({ where: { email: input.email }, select: { id: true } })) {
+      throw conflict('User with this email already exists.');
     }
+    await assertUniqueContact(tx, { email: input.email });
 
-    const body = await req.json();
-    const { firstName, lastName, email, role, password } = body;
-
-    if (!firstName || !email || !password || !role) {
-      return NextResponse.json(
-        { success: false, error: 'First name, email, role, and password are required.' },
-        { status: 400 }
-      );
-    }
-
-    const formattedEmail = email.toLowerCase().trim();
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { success: false, error: 'Password must be at least 6 characters long.' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: formattedEmail },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { success: false, error: 'User with this email already exists.' },
-        { status: 409 }
-      );
-    }
-
-    // Hash password securely with bcrypt
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    if (!Object.values(UserRole).includes(role as UserRole)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid role provided.' },
-        { status: 400 }
-      );
-    }
-
-    const assignedRole = role as UserRole;
-
-    // Generate unique employee ID (EMP-XXX)
-    const empCount = await prisma.employee.count();
-    const employeeId = `EMP-${String(empCount + 1000).padStart(4, '0')}`;
-
-    const newUser = await prisma.user.create({
+    const row = await tx.user.create({
       data: {
-        name: `${firstName} ${lastName}`.trim(),
-        email: formattedEmail,
+        name: `${input.firstName} ${input.lastName ?? ''}`.trim(),
+        email: input.email,
         passwordHash,
-        role: assignedRole,
+        role: input.role,
         isActive: true,
         employee: {
           create: {
-            employeeId,
-            firstName,
-            lastName,
-            designation: assignedRole,
-            department: assignedRole === 'ADMIN' ? 'Management' : 'Operations',
+            employeeId: await nextEmployeeCode(tx),
+            firstName: input.firstName,
+            lastName: input.lastName ?? '',
+            email: input.email,
+            designation: input.role,
+            department: input.role === 'ADMIN' ? 'Management' : 'Operations',
           },
         },
       },
-      include: {
-        employee: true,
-      },
     });
+    await recordAudit(tx, { userId: user.id, action: 'CREATE_USER', details: { userId: row.id, role: row.role } });
+    return row;
+  });
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-        },
-      },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    console.error('Error during admin user creation API:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error while creating user.' },
-      { status: 500 }
-    );
-  }
-}
+  return created({ id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role });
+}, { resource: 'user', context: 'admin users POST' });

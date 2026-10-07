@@ -61,21 +61,21 @@ enum AnnouncementPriority {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  passwordHash  String
-  name          String
-  role          UserRole       @default(SUPERVISOR)
-  isActive      Boolean        @default(true)
-  sessionVersion Int           @default(1)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  employee      Employee?
-  auditLogs     AuditLog[]
-  chatMembers   ChatMember[]
-  messages      ChatMessage[]
-  messageReads  MessageRead[]
-  notifications Notification[]
+  id             String         @id @default(uuid())
+  email          String         @unique
+  passwordHash   String
+  name           String
+  role           UserRole       @default(SUPERVISOR)
+  isActive       Boolean        @default(true)
+  sessionVersion Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  employee       Employee?
+  auditLogs      AuditLog[]
+  chatMembers    ChatMember[]
+  messages       ChatMessage[]
+  messageReads   MessageRead[]
+  notifications  Notification[]
 
   materialCreated       Material[]            @relation("MaterialCreatedBy")
   transactionsPerformed MaterialTransaction[] @relation("TransactionPerformedBy")
@@ -226,13 +226,18 @@ model Employee {
 }
 
 model EmployeeDocument {
-  id         String   @id @default(uuid())
-  employeeId String
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  name       String
-  fileUrl    String
-  fileType   String
-  createdAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  name         String
+  fileUrl      String
+  fileType     String
+  // Set only for files uploaded through the storage service; never client-controlled.
+  storageKey   String?  @unique
+  mimeType     String?
+  fileSize     Int      @default(0)
+  uploadedById String?
+  createdAt    DateTime @default(now())
 
   @@map("employee_documents")
 }
@@ -259,12 +264,15 @@ model EmployeeCertification {
   employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   certification String
   certificateNo String
-  issueDate     DateTime @default(now())
-  expiryDate    DateTime
+  // Date-only business semantics: a certificate is valid through the whole expiry day.
+  issueDate     DateTime @default(now()) @db.Date
+  expiryDate    DateTime @db.Date
   status        String   @default("Valid") // Valid, Expiring Soon, Expired
   authority     String   @default("National Safety Agency")
   createdAt     DateTime @default(now())
 
+  // Duplicate policy: the same certificate (name + number) cannot be recorded twice for one employee.
+  @@unique([employeeId, certification, certificateNo])
   @@map("employee_certifications")
 }
 
@@ -275,7 +283,7 @@ model EmployeeVentureAssignment {
   ventureId   String
   venture     Venture   @relation(fields: [ventureId], references: [id], onDelete: Cascade)
   roleAtSite  String?
-  accessLevel String    @default("STANDARD") // e.g. FULL_ACCESS, OPERATIONS, MATERIALS_ONLY, READ_ONLY
+  accessLevel String    @default("STANDARD") // STANDARD, FULL_ACCESS, OPERATIONS, MATERIALS_ONLY, READ_ONLY
   startDate   DateTime  @default(now())
   endDate     DateTime?
   status      String    @default("ACTIVE")
@@ -294,6 +302,8 @@ model VentureDocument {
   fileUrl      String
   fileType     String
   fileSize     Int              @default(0)
+  // Set only for files uploaded through the storage service; never client-controlled.
+  storageKey   String?          @unique
   uploadedById String?
   version      String           @default("1.0")
   visibility   String           @default("ALL") // e.g. ALL, MANAGEMENT, SITE_TEAM

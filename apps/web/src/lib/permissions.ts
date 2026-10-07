@@ -1,5 +1,8 @@
 import { UserRole } from '@builder/types';
 
+// Canonical roles: ADMIN, MANAGER, SUPERVISOR (Prisma enum UserRole, @builder/types UserRole).
+// ADMIN-only permissions (granted via '*', listed nowhere else on purpose):
+//   employees:create, employees:terminate, admin:users
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ADMIN: ['*'],
   MANAGER: [

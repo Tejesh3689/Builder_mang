@@ -1,106 +1,36 @@
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
 import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { assertPermission, requireAuth } from '@/lib/authorization';
+import { apiHandler, created, ok } from '@/lib/http/handler';
+import { parseBody } from '@/lib/http/request';
+import { requireAssignableEmployee, requireEmployeeInScope, requireVentureInScope } from '@/lib/scope';
+import { assignmentCreateSchema } from '@/lib/validation/assignment';
+import { assignEmployee } from '@/services/assignment.service';
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+type Ctx = { params: Promise<{ id: string }> };
 
-    const { id } = await params;
-    const assignments = await prisma.employeeVentureAssignment.findMany({
-      where: { employeeId: id },
-      include: {
-        venture: {
-          select: { id: true, name: true, code: true },
-        },
-      },
-      orderBy: { startDate: 'desc' },
-    });
+export const GET = apiHandler<Ctx>(async (_req, { params }) => {
+  const user = await requireAuth();
+  const employee = await requireEmployeeInScope(user, (await params).id);
+  const assignments = await prisma.employeeVentureAssignment.findMany({
+    where: { employeeId: employee.id },
+    include: { venture: { select: { id: true, name: true, code: true } } },
+    orderBy: { startDate: 'desc' },
+  });
+  return ok(assignments);
+}, { resource: 'assignment', context: 'employee assignments GET' });
 
-    return NextResponse.json({ success: true, data: assignments });
-  } catch (error: any) {
-    console.error('Failed to fetch assignments:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    if (!session || (userRole !== 'ADMIN' && !hasPermission(userRole, 'employees:assign'))) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: Admin or Project Manager access required' },
-        { status: 403 }
-      );
-    }
-
-    const { id } = await params;
-    const body = await req.json();
-    const { ventureId, roleAtSite, accessLevel, startDate } = body;
-
-    if (!ventureId) {
-      return NextResponse.json(
-        { success: false, error: 'Venture ID is required.' },
-        { status: 400 }
-      );
-    }
-
-    // 1. Deactivate any currently active assignments for this employee
-    await prisma.employeeVentureAssignment.updateMany({
-      where: {
-        employeeId: id,
-        status: 'ACTIVE',
-      },
-      data: {
-        status: 'COMPLETED',
-        endDate: new Date(),
-      },
-    });
-
-    // 2. Create new assignment
-    const assignment = await prisma.employeeVentureAssignment.create({
-      data: {
-        employeeId: id,
-        ventureId,
-        roleAtSite,
-        accessLevel: accessLevel || 'STANDARD',
-        startDate: startDate ? new Date(startDate) : new Date(),
-        status: 'ACTIVE',
-      },
-      include: {
-        venture: true,
-      },
-    });
-
-    // 3. If a new reporting manager was provided, update the employee record
-    if (body.reportingManager) {
-      await prisma.employee.update({
-        where: { id },
-        data: { reportingManagerId: body.reportingManager },
-      });
-    }
-
-    return NextResponse.json({ success: true, data: assignment });
-  } catch (error: any) {
-    console.error('Failed to create assignment:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
+export const POST = apiHandler<Ctx>(async (req, { params }) => {
+  const user = await requireAuth();
+  assertPermission(user, 'employees:assign');
+  const employee = await requireAssignableEmployee(user, (await params).id);
+  const input = await parseBody(req, assignmentCreateSchema);
+  // The actor must also have the target venture in scope.
+  const venture = await requireVentureInScope(user, input.ventureId);
+  const assignment = await assignEmployee(user, employee, venture, {
+    roleAtSite: input.roleAtSite,
+    accessLevel: input.accessLevel,
+    startDate: input.startDate,
+    reportingManagerId: input.reportingManagerId ?? input.reportingManager,
+  });
+  return created(assignment);
+}, { resource: 'assignment', context: 'employee assignments POST' });

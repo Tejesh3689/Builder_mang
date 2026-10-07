@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, useRef } from 'react';
 import Link from 'next/link';
 import { 
   Building2, ArrowLeft, MapPin, Calendar, Users, Package, FileText, MessageSquare, 
@@ -151,6 +151,33 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
     }
   };
 
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const [docUploading, setDocUploading] = useState(false);
+
+  const handleUploadDocument = async (file: File) => {
+    setDocUploading(true);
+    try {
+      // Multipart upload; the server validates size/type/content and stores the file privately.
+      const form = new FormData();
+      form.append('file', file);
+      form.append('title', file.name);
+      form.append('category', newDocCategory);
+      const res = await fetch(`/api/ventures/${venture.id}/documents`, { method: 'POST', body: form });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.error || 'Failed to upload document.');
+        return;
+      }
+      fetchVentureDetail();
+    } catch (err) {
+      console.error('Error uploading document:', err);
+      alert('Failed to upload document.');
+    } finally {
+      setDocUploading(false);
+      if (docInputRef.current) docInputRef.current.value = '';
+    }
+  };
+
   const handleDeleteVenture = async () => {
     if (!confirm('Are you sure you want to delete this venture? This action is permanent.')) return;
     
@@ -161,9 +188,10 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
       } else {
         alert('Failed to delete venture.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting venture:', err);
-      alert('Error deleting venture.');
+      // e.g. 409: ventures with business history must be archived instead of deleted
+      alert(err?.message || 'Error deleting venture.');
     }
   };
 
@@ -598,8 +626,23 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                 <h3 className="text-base font-bold text-black">Venture Documents Repository</h3>
                 <p className="text-xs text-zinc-500">Drawings, municipal approvals, legal permits, and photos scoped to this venture.</p>
               </div>
-              <button className="px-3.5 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0">
-                <Upload className="w-4 h-4" /> Upload Document
+              <input
+                ref={docInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadDocument(file);
+                }}
+              />
+              <button
+                type="button"
+                disabled={docUploading}
+                onClick={() => docInputRef.current?.click()}
+                className="px-3.5 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-60 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0"
+              >
+                <Upload className="w-4 h-4" /> {docUploading ? 'Uploading…' : 'Upload Document'}
               </button>
             </div>
 
@@ -614,6 +657,11 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   <div className="text-[10px] text-zinc-500 flex justify-between pt-2 border-t border-zinc-200">
                     <span>Ver {doc.version}</span>
                     <span>{(doc.fileSize / 1024 / 1024).toFixed(1)} MB</span>
+                    {doc.storageKey ? (
+                      <a href={doc.fileUrl} className="font-semibold text-emerald-600">Download</a>
+                    ) : (
+                      <span title="Sample record without an uploaded file">No file</span>
+                    )}
                   </div>
                 </div>
               ))}

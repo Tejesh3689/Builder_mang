@@ -7,6 +7,9 @@ let client: RedisClientType | null = null;
 try {
   client = createClient({
     url: redisUrl,
+    // Fail commands immediately while disconnected instead of queueing them forever
+    // (a queued GET used to hang every login when Redis was down).
+    disableOfflineQueue: true,
   });
 
   client.on('error', (err) => {
@@ -28,6 +31,7 @@ try {
 // let's export a mock interface if client is null to avoid crashing downstream.
 export const redis = client || {
   isOpen: false,
+  isReady: false,
   get: async () => null,
   set: async () => null,
   incr: async () => 1,

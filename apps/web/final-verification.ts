@@ -118,13 +118,14 @@ async function start() {
 
   // ROLE MIGRATION CONSISTENCY
   await runTest('ROLE MIGRATION CONSISTENCY', async () => {
-    await prisma.$executeRawUnsafe(`UPDATE "users" SET "role" = 'MANAGER' WHERE "role" = 'PROJECT_MANAGER'`);
-    await prisma.$executeRawUnsafe(`UPDATE "users" SET "role" = 'SUPERVISOR' WHERE "role" = 'SITE_ENGINEER'`);
-    const invalidUsers = await prisma.$queryRaw`SELECT count(*) as count FROM users WHERE role IN ('PROJECT_MANAGER', 'SITE_ENGINEER')`;
-    const count = Number((invalidUsers as any)[0].count);
+    // Legacy roles are removed by migration 20261007090000_canonical_roles_session_version;
+    // the database enum must contain exactly the canonical roles.
+    const rows = await prisma.$queryRaw<{ v: string }[]>`SELECT unnest(enum_range(NULL::"UserRole"))::text AS v`;
+    const values = rows.map((r) => r.v).sort();
+    const canonical = ['ADMIN', 'MANAGER', 'SUPERVISOR'];
     return {
-      status: count === 0 ? 'PASS' : 'FAIL',
-      evidence: { legacyRolesFound: count }
+      status: JSON.stringify(values) === JSON.stringify(canonical) ? 'PASS' : 'FAIL',
+      evidence: { dbEnumValues: values, canonical }
     };
   });
   
