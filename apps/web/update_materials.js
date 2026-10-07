@@ -1,50 +1,10 @@
-import { NextResponse } from 'next/server';
-import { hasPermission } from '@/lib/permissions';
-import { prisma } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { getPaginationParams } from '@/lib/pagination';
+const fs = require('fs');
+const path = require('path');
 
-const ALLOWED_ROLES = ['ADMIN', 'MANAGER', 'SUPERVISOR'];
+const filePath = path.join(__dirname, 'src', 'app', 'api', 'materials', 'route.ts');
+let content = fs.readFileSync(filePath, 'utf8');
 
-export async function GET(req: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
-    if (!session || !ALLOWED_ROLES.includes(userRole)) {
-      return NextResponse.json({ success: false, error: 'Forbidden: Insufficient permissions' }, { status: 403 });
-    }
-
-    const { searchParams } = new URL(req.url);
-    const meta = searchParams.get('meta');
-
-    if (meta === 'true') {
-      const [categories, uoms] = await Promise.all([
-        prisma.materialCategory.findMany({ orderBy: { name: 'asc' } }),
-        prisma.unitOfMeasure.findMany({ orderBy: { name: 'asc' } })
-      ]);
-      return NextResponse.json({ success: true, categories, uoms });
-    }
-
-    const { skip, take } = getPaginationParams(req);
-    const materials = await prisma.material.findMany({
-      skip,
-      take,
-      include: {
-        category: true,
-        unitOfMeasure: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    return NextResponse.json({ success: true, data: materials });
-  } catch (error: any) {
-    console.error('Failed to fetch materials:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
-
-export async function POST(req: Request) {
+const newPost = `export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
@@ -60,12 +20,12 @@ export async function POST(req: Request) {
     }
     const { name, code, categoryName, uomName, reorderLevel } = body;
 
-    const cleanName = (name || '').trim().replace(/\s+/g, ' ');
+    const cleanName = (name || '').trim().replace(/\\s+/g, ' ');
     if (!cleanName) {
       return NextResponse.json({ success: false, error: 'Material name is required.' }, { status: 400 });
     }
 
-    const cleanCode = (code || '').trim().replace(/\s+/g, ' ');
+    const cleanCode = (code || '').trim().replace(/\\s+/g, ' ');
     if (!cleanCode) {
       return NextResponse.json({ success: false, error: 'Material code is required.' }, { status: 400 });
     }
@@ -75,12 +35,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Invalid reorderLevel: must be a positive finite number.' }, { status: 400 });
     }
 
-    const cleanCategory = (categoryName || '').trim().replace(/\s+/g, ' ').toUpperCase();
+    const cleanCategory = (categoryName || '').trim().replace(/\\s+/g, ' ').toUpperCase();
     if (!cleanCategory) {
       return NextResponse.json({ success: false, error: 'Category name is required.' }, { status: 400 });
     }
 
-    const cleanUom = (uomName || '').trim().replace(/\s+/g, ' ').toUpperCase();
+    const cleanUom = (uomName || '').trim().replace(/\\s+/g, ' ').toUpperCase();
     if (!cleanUom) {
       return NextResponse.json({ success: false, error: 'Unit of measure name is required.' }, { status: 400 });
     }
@@ -127,3 +87,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+`;
+
+const lines = content.split('\n');
+const postIndex = lines.findIndex(l => l.startsWith('export async function POST'));
+if (postIndex !== -1) {
+  content = lines.slice(0, postIndex).join('\n') + '\n' + newPost;
+}
+fs.writeFileSync(filePath, content);
+console.log('Done!');
