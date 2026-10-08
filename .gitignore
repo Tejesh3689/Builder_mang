@@ -51,3 +51,6 @@ infra/terraform/.terraform.lock.hcl
 
 # Private uploaded files (local storage driver; UPLOAD_DIR)
 apps/web/storage/
+
+# Reports
+BMS-*.md
