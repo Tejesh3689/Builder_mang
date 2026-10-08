@@ -22,7 +22,10 @@ export async function POST(req: Request) {
     }
 
     const { ventureId, items, remarks } = parsed;
-    const idempotencyKey = body.idempotencyKey; // optional UUID
+    const idempotencyKey = body.idempotencyKey;
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+      return NextResponse.json({ success: false, error: 'Missing required idempotencyKey' }, { status: 400 });
+    }
 
     // Check Venture Scope
     if ((user as any).role !== 'ADMIN') {

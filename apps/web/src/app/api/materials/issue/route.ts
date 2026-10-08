@@ -16,8 +16,8 @@ export async function POST(req: Request) {
 
     const { ventureId, fromLocationId, requestId, items, purpose, issuedToName, idempotencyKey } = body;
 
-    if (!ventureId || !fromLocationId || !items || !items.length) {
-      throw new ApiError(400, 'Missing required fields');
+    if (!ventureId || !fromLocationId || !items || !items.length || !idempotencyKey || typeof idempotencyKey !== 'string') {
+      throw new ApiError(400, 'Missing required fields including idempotencyKey');
     }
 
     // Role verification

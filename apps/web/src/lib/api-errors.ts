@@ -10,8 +10,8 @@ export class ApiError extends Error {
 export function handleApiError(error: any) {
   console.error('[API Error]', error);
 
-  if (error instanceof ApiError) {
-    return NextResponse.json({ success: false, error: error.message }, { status: error.status });
+  if (error instanceof ApiError || error?.name === 'ApiError') {
+    return NextResponse.json({ success: false, error: error.message }, { status: error.status || 400 });
   }
 
   if (error?.code === 'P2002') {

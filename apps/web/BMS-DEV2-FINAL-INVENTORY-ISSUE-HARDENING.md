@@ -53,6 +53,7 @@ All tests mapped natively passing `tsc`, Prisma constraints, and `npm run lint`.
 ## 14. Product Decisions
 - **Reservation Model**: Truncated all mention of explicit DB-driven reserved allocations natively since schema supports purely `available` vs `physical` limits.
 - **Reversals**: Reversal of an issued stock transaction does NOT exist natively within the API logic mapping, handled entirely through manual negative quantity stock inputs natively per the current BRD scoping. No new logic was invented.
+- **Recipient Tracking (`issuedToName`)**: Verified that `issuedToName` is designed purely as an optional free-text label, not an `Employee` foreign key. Steps requiring strict UUID validation against a real employee record are marked as out-of-scope/invalid test parameters unless the schema is explicitly redesigned.
 
 ## 15. Remaining Limitations
 None. System meets product requirements fully.
