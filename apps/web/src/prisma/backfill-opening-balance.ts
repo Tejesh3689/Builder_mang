@@ -6,11 +6,10 @@
  * Dry run (default):  npx tsx src/prisma/backfill-opening-balance.ts
  * Apply:              npx tsx src/prisma/backfill-opening-balance.ts --apply
  */
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const apply = process.argv.includes('--apply');
-const EPSILON = 1e-9;
 
 async function main() {
   const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' }, orderBy: { createdAt: 'asc' } });
@@ -25,9 +24,9 @@ async function main() {
       prisma.materialTransaction.aggregate({ where, _sum: { quantityIn: true, quantityOut: true } }),
       prisma.materialTransaction.findFirst({ where, orderBy: { createdAt: 'asc' } }),
     ]);
-    const ledgerNet = (sums._sum.quantityIn ?? 0) - (sums._sum.quantityOut ?? 0);
-    const gap = stock.physicalQuantity - ledgerNet;
-    if (Math.abs(gap) < EPSILON) continue;
+    const ledgerNet = new Prisma.Decimal(sums._sum.quantityIn ?? 0).minus(sums._sum.quantityOut ?? 0);
+    const gap = stock.physicalQuantity.minus(ledgerNet);
+    if (gap.isZero()) continue;
 
     gaps++;
     console.log(`${stock.material.name} @ ${stock.stockLocationId}: physical=${stock.physicalQuantity} ledger=${ledgerNet} gap=${gap}`);
@@ -40,8 +39,8 @@ async function main() {
         ventureId: stock.ventureId,
         stockLocationId: stock.stockLocationId,
         transactionType: 'OPENING_BALANCE',
-        quantityIn: gap > 0 ? gap : 0,
-        quantityOut: gap < 0 ? -gap : 0,
+        quantityIn: gap.isPositive() ? gap : 0,
+        quantityOut: gap.isNegative() ? gap.negated() : 0,
         balanceAfter: gap,
         referenceType: 'OPENING_BALANCE',
         remarks: 'Backfilled: stock existed without a ledger entry',
