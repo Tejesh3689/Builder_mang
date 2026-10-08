@@ -18,12 +18,33 @@ export default function EmployeesClient({
   const isSupervisorOrManager = isSupervisor || isManager;
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Server-side paging + search: the directory can hold thousands of rows, so never assume
+  // the first page is everything.
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(searchTerm.trim()); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   // Fetch from live REST API
   useEffect(() => {
+    let cancelled = false;
     async function fetchEmployees() {
+      setLoading(true);
+      setLoadError(null);
       try {
-        const json = await api.get<{ success: boolean, data: any[] }>('/api/employees');
+        const query = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+        if (debouncedSearch) query.set('search', debouncedSearch);
+        const json = await api.get<{ success: boolean, data: any[], total?: number }>(`/api/employees?${query}`);
+        if (cancelled) return;
+        setTotal(json.total ?? json.data?.length ?? 0);
         if (json.success && json.data) {
           // Map backend schema shape to frontend profile shape
           const mapped: EmployeeProfile[] = json.data.map((item: any) => {
@@ -67,17 +88,22 @@ export default function EmployeesClient({
           });
           setEmployees(mapped);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch employees:', err);
+        if (!cancelled && err?.status !== 401) setLoadError(err?.message || 'Failed to load employees.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchEmployees();
-  }, []);
+    return () => { cancelled = true; };
+  }, [page, debouncedSearch, reloadKey]);
+
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const firstRow = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const lastRow = Math.min(page * PAGE_SIZE, total);
 
   // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedDesignation, setSelectedDesignation] = useState('All');
   const [selectedProject, setSelectedProject] = useState('All');
@@ -113,12 +139,8 @@ export default function EmployeesClient({
       const isActiveInDirectory = e.onboardingStage === 'Active';
       if (!isActiveInDirectory) return false;
 
-      if (isSupervisor && e.reportingManager !== sessionName) return false;
-
-      const matchesSearch =
-        `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.designation.toLowerCase().includes(searchTerm.toLowerCase());
+      // Search and role scoping happen on the server (GET /api/employees); the dropdowns below
+      // refine the rows already loaded for this page.
 
       const matchesDept = selectedDept === 'All' || e.department === selectedDept;
       const matchesDesignation = selectedDesignation === 'All' || e.designation === selectedDesignation;
@@ -141,7 +163,6 @@ export default function EmployeesClient({
       }
 
       return (
-        matchesSearch &&
         matchesDept &&
         matchesDesignation &&
         matchesProject &&
@@ -155,7 +176,6 @@ export default function EmployeesClient({
     });
   }, [
     employees,
-    searchTerm,
     selectedDept,
     selectedDesignation,
     selectedProject,
@@ -252,7 +272,8 @@ export default function EmployeesClient({
             </svg>
             <input
               type="text"
-              placeholder="Search employee name, ID, or designation..."
+              placeholder="Search all employees by name, ID, designation, email or phone..."
+              aria-label="Search employees"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-transparent border-none outline-hidden text-xs w-full text-zinc-800 placeholder-zinc-400"
@@ -373,7 +394,11 @@ export default function EmployeesClient({
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
           <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">Active Personnel Directory</h3>
-          <span className="text-xs text-zinc-400 font-mono font-medium">{filteredEmployees.length} Matching Profiles</span>
+          <span className="text-xs text-zinc-400 font-mono font-medium" aria-live="polite">
+            {loading
+              ? 'Loading…'
+              : `Showing ${firstRow}–${lastRow} of ${total} profiles${filteredEmployees.length !== employees.length ? ` · ${filteredEmployees.length} match filters on this page` : ''}`}
+          </span>
         </div>
 
         <div className="overflow-x-auto">
@@ -404,11 +429,11 @@ export default function EmployeesClient({
                           <div className={`w-8 h-8 rounded-lg border flex items-center justify-center font-bold text-[10px] shrink-0 ${getAvatarColor(`${e.firstName} ${e.lastName}`)}`}>
                             {initials}
                           </div>
-                          <div>
-                            <Link href={`/employees/${e.id}`} className="font-bold text-zinc-800 hover:text-black hover:underline block">
+                          <div className="min-w-0 max-w-[240px]">
+                            <Link href={`/employees/${e.id}`} title={`${e.firstName} ${e.lastName}`} className="font-bold text-zinc-800 hover:text-black hover:underline block truncate">
                               {e.firstName} {e.lastName}
                             </Link>
-                            <div className="text-[10px] text-zinc-400">{e.email}</div>
+                            <div className="text-[10px] text-zinc-400 truncate" title={e.email}>{e.email}</div>
                           </div>
                         </div>
                       </td>
@@ -505,6 +530,31 @@ export default function EmployeesClient({
             </tbody>
           </table>
         </div>
+        {loadError && (
+          <div role="alert" className="px-6 py-3 border-t border-red-100 bg-red-50 text-xs text-red-700 flex items-center justify-between gap-3">
+            <span>{loadError}</span>
+            <button onClick={() => setReloadKey((k) => k + 1)} className="px-3 py-2 font-semibold underline">Retry</button>
+          </div>
+        )}
+        <nav aria-label="Employee pages" className="px-6 py-3 border-t border-zinc-100 flex items-center justify-between gap-3 text-xs">
+          <span className="text-zinc-500 font-mono">Page {page} of {pageCount}</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || loading}
+              className="px-4 py-2.5 rounded-lg border border-zinc-200 bg-white font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              disabled={page >= pageCount || loading}
+              className="px-4 py-2.5 rounded-lg border border-zinc-200 bg-white font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </nav>
       </div>
     </div>
   );

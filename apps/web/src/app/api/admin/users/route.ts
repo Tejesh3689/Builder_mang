@@ -35,7 +35,7 @@ export const POST = apiHandler(async (req) => {
 
   const newUser = await prisma.$transaction(async (tx) => {
     if (await tx.user.findUnique({ where: { email: input.email }, select: { id: true } })) {
-      throw conflict('User with this email already exists.');
+      throw conflict('User with this email already exists.', { field: 'email' });
     }
     await assertUniqueContact(tx, { email: input.email });
 

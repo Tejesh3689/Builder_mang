@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
+import { Dialog } from '@/components/ui/Dialog';
 import { hasPermission } from '@/lib/permissions';
 import { leaveDurationDays, toCalendarDate } from '@builder/validation';
 
@@ -283,56 +284,56 @@ export default function ApprovalsClient({ userRole = 'ADMIN' }: ApprovalsClientP
 
       {/* View Modal */}
       {viewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-lg border border-zinc-200 p-6 max-w-sm w-full space-y-4 max-h-[90dvh] overflow-y-auto">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Review Request Details</h3>
-            <div className="space-y-2 text-xs border border-zinc-200 rounded-lg p-3 bg-zinc-50">
-              <div className="flex justify-between border-b border-zinc-200 pb-2"><span className="text-zinc-500 font-bold">Requested by:</span> <span className="text-black font-semibold">{viewModal.employeeName}</span></div>
-              <div className="flex justify-between border-b border-zinc-200 pb-2"><span className="text-zinc-500 font-bold">Type:</span> <span className="text-black font-semibold">{viewModal.type}</span></div>
-              {viewModal.details.map(d => (
-                <div key={d.label} className="flex justify-between gap-4 border-b border-zinc-200 pb-2 last:border-0"><span className="text-zinc-500 font-bold shrink-0">{d.label}:</span> <span className="text-black font-semibold text-right break-words">{d.value}</span></div>
-              ))}
+        <Dialog open onClose={() => setViewModal(null)} labelledBy="approval-view-title" className="w-full max-w-sm">
+            <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-lg border border-zinc-200 p-6 max-w-sm w-full space-y-4 max-h-[90dvh] overflow-y-auto">
+              <h3 id="approval-view-title" className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Review Request Details</h3>
+              <div className="space-y-2 text-xs border border-zinc-200 rounded-lg p-3 bg-zinc-50">
+                <div className="flex justify-between border-b border-zinc-200 pb-2"><span className="text-zinc-500 font-bold">Requested by:</span> <span className="text-black font-semibold">{viewModal.employeeName}</span></div>
+                <div className="flex justify-between border-b border-zinc-200 pb-2"><span className="text-zinc-500 font-bold">Type:</span> <span className="text-black font-semibold">{viewModal.type}</span></div>
+                {viewModal.details.map(d => (
+                  <div key={d.label} className="flex justify-between gap-4 border-b border-zinc-200 pb-2 last:border-0"><span className="text-zinc-500 font-bold shrink-0">{d.label}:</span> <span className="text-black font-semibold text-right break-words">{d.value}</span></div>
+                ))}
+              </div>
+              <div className="flex justify-end pt-2 gap-2">
+                <button onClick={() => setViewModal(null)} className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-lg transition-colors shadow-xs">Close</button>
+              </div>
             </div>
-            <div className="flex justify-end pt-2 gap-2">
-              <button onClick={() => setViewModal(null)} className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-lg transition-colors shadow-xs">Close</button>
-            </div>
-          </div>
-        </div>
+        </Dialog>
       )}
 
       {/* Action Modal */}
       {actionModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-lg border border-zinc-200 p-6 max-w-xs w-full space-y-4 text-center max-h-[90dvh] overflow-y-auto">
-            <h3 className={`text-lg font-extrabold tracking-tight ${actionModal.action === 'Approve' ? 'text-emerald-700' : 'text-red-700'}`}>
-              {actionModal.action} Request?
-            </h3>
-            <p className="text-xs text-zinc-600">
-              Are you sure you want to {actionModal.action.toLowerCase()} the {actionModal.req.type.toLowerCase()} request from <span className="font-bold text-black">{actionModal.req.employeeName}</span>?
-            </p>
-            {actionModal.req.type === 'Materials' && (
-              <textarea
-                value={comment}
-                onChange={e => setComment(e.target.value)}
-                maxLength={1000}
-                rows={3}
-                placeholder={commentRequired ? 'Reason for rejection (required)' : 'Comment (optional)'}
-                className="w-full px-3 py-2 border border-zinc-300 rounded-md text-xs text-left focus:outline-none focus:ring-1 focus:ring-black"
-              />
-            )}
-            {actionError && <div className="text-xs text-red-600 font-medium text-left">{actionError}</div>}
-            <div className="flex justify-center gap-3 pt-2">
-              <button onClick={() => setActionModal(null)} disabled={acting} className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-lg transition-colors shadow-xs text-xs disabled:opacity-50">Cancel</button>
-              <button
-                onClick={handleAction}
-                disabled={acting}
-                className={`px-4 py-2 text-white font-bold rounded-lg transition-colors shadow-xs text-xs disabled:opacity-50 disabled:cursor-not-allowed ${actionModal.action === 'Approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
-              >
-                {acting ? 'Saving…' : `Confirm ${actionModal.action}`}
-              </button>
+        <Dialog open onClose={() => { if (!acting) setActionModal(null); }} labelledBy="approval-action-title" className="w-full max-w-xs">
+            <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-lg border border-zinc-200 p-6 max-w-xs w-full space-y-4 text-center max-h-[90dvh] overflow-y-auto">
+              <h3 id="approval-action-title" className={`text-lg font-extrabold tracking-tight ${actionModal.action === 'Approve' ? 'text-emerald-700' : 'text-red-700'}`}>
+                {actionModal.action} Request?
+              </h3>
+              <p className="text-xs text-zinc-600">
+                Are you sure you want to {actionModal.action.toLowerCase()} the {actionModal.req.type.toLowerCase()} request from <span className="font-bold text-black">{actionModal.req.employeeName}</span>?
+              </p>
+              {actionModal.req.type === 'Materials' && (
+                <textarea
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  maxLength={1000}
+                  rows={3}
+                  placeholder={commentRequired ? 'Reason for rejection (required)' : 'Comment (optional)'}
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-md text-xs text-left focus:outline-none focus:ring-1 focus:ring-black"
+                />
+              )}
+              {actionError && <div className="text-xs text-red-600 font-medium text-left">{actionError}</div>}
+              <div className="flex justify-center gap-3 pt-2">
+                <button onClick={() => setActionModal(null)} disabled={acting} className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-lg transition-colors shadow-xs text-xs disabled:opacity-50">Cancel</button>
+                <button
+                  onClick={handleAction}
+                  disabled={acting}
+                  className={`px-4 py-2 text-white font-bold rounded-lg transition-colors shadow-xs text-xs disabled:opacity-50 disabled:cursor-not-allowed ${actionModal.action === 'Approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
+                >
+                  {acting ? 'Saving…' : `Confirm ${actionModal.action}`}
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
+        </Dialog>
       )}
     </div>
   );

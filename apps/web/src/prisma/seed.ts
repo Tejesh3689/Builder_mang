@@ -3,7 +3,35 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+/**
+ * Inserts each row unless a row with the same identifying fields already exists, so the seed can be
+ * re-run safely. (createMany's skipDuplicates only helps when a DB unique constraint exists, and these
+ * tables have none on the seeded columns.)
+ */
+async function createIfMissing<T extends Record<string, unknown>>(
+  find: (where: Partial<T>) => Promise<unknown>,
+  create: (data: T) => Promise<unknown>,
+  rows: T[],
+  keys: (keyof T)[]
+) {
+  for (const row of rows) {
+    const where = Object.fromEntries(keys.map((k) => [k, row[k]])) as Partial<T>;
+    if (!(await find(where))) await create(row);
+  }
+}
+
 async function main() {
+  // The seed creates demo accounts with a shared password: refuse to touch a production database
+  // unless explicitly confirmed, and never use the dev default password there.
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction && process.env.SEED_CONFIRM !== 'yes') {
+    throw new Error('Refusing to seed with NODE_ENV=production. Set SEED_CONFIRM=yes if you really mean it.');
+  }
+  const seedPassword = process.env.SEED_PASSWORD ?? (isProduction ? undefined : 'password123');
+  if (!seedPassword || (isProduction && seedPassword.length < 12)) {
+    throw new Error('Set SEED_PASSWORD (at least 12 characters) to seed a production database.');
+  }
+
   console.log('Seeding database with Production Venture data...');
 
   // 1. Create Units of Measure
@@ -76,11 +104,11 @@ async function main() {
   });
 
   // 4. Create Users & Employees
-  const defaultPasswordHash = await bcrypt.hash('password123', 10);
+  const defaultPasswordHash = await bcrypt.hash(seedPassword, 10);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@builder.com' },
-    update: { passwordHash: defaultPasswordHash },
+    update: {},
     create: {
       email: 'admin@builder.com',
       passwordHash: defaultPasswordHash,
@@ -91,7 +119,7 @@ async function main() {
 
   const manager = await prisma.user.upsert({
     where: { email: 'manager@builder.com' },
-    update: { passwordHash: defaultPasswordHash },
+    update: {},
     create: {
       email: 'manager@builder.com',
       passwordHash: defaultPasswordHash,
@@ -102,7 +130,7 @@ async function main() {
 
   const engineer = await prisma.user.upsert({
     where: { email: 'engineer@builder.com' },
-    update: { passwordHash: defaultPasswordHash },
+    update: {},
     create: {
       email: 'engineer@builder.com',
       passwordHash: defaultPasswordHash,
@@ -113,7 +141,7 @@ async function main() {
 
   const supervisor = await prisma.user.upsert({
     where: { email: 'supervisor@builder.com' },
-    update: { passwordHash: defaultPasswordHash },
+    update: {},
     create: {
       email: 'supervisor@builder.com',
       passwordHash: defaultPasswordHash,
@@ -124,7 +152,7 @@ async function main() {
 
   const storeUser = await prisma.user.upsert({
     where: { email: 'store@builder.com' },
-    update: { passwordHash: defaultPasswordHash },
+    update: {},
     create: {
       email: 'store@builder.com',
       passwordHash: defaultPasswordHash,
@@ -398,9 +426,10 @@ async function main() {
   await seedOpeningStock(tiles.id, 320);
 
   // 9. Documents & Announcements
-  await prisma.ventureDocument.createMany({
-    skipDuplicates: true,
-    data: [
+  await createIfMissing(
+    (where) => prisma.ventureDocument.findFirst({ where: where as any }),
+    (data) => prisma.ventureDocument.create({ data: data as any }),
+    [
       {
         ventureId: greenHeights.id,
         title: 'Municipal Building Approval Plan.pdf',
@@ -429,11 +458,13 @@ async function main() {
         version: '1.0',
       },
     ],
-  });
+    ['ventureId', 'title'],
+  );
 
-  await prisma.ventureAnnouncement.createMany({
-    skipDuplicates: true,
-    data: [
+  await createIfMissing(
+    (where) => prisma.ventureAnnouncement.findFirst({ where: where as any }),
+    (data) => prisma.ventureAnnouncement.create({ data: data as any }),
+    [
       {
         ventureId: greenHeights.id,
         title: 'Safety Audit & Crane Inspection Scheduled',
@@ -449,7 +480,8 @@ async function main() {
         audience: 'SITE_STAFF',
       },
     ],
-  });
+    ['ventureId', 'title'],
+  );
 
   // 10. Scoped Chat Rooms (prevent duplicates on re-seed)
   let chatGeneral = await prisma.chatRoom.findFirst({
@@ -502,10 +534,11 @@ async function main() {
     create: { roomId: chatSiteTeam.id, userId: manager.id },
   });
 
-  // Seed welcome messages (skipDuplicates prevents doubling on re-seed)
-  await prisma.chatMessage.createMany({
-    skipDuplicates: true,
-    data: [
+  // Seed welcome messages (once per room)
+  await createIfMissing(
+    (where) => prisma.chatMessage.findFirst({ where: where as any }),
+    (data) => prisma.chatMessage.create({ data: data as any }),
+    [
       {
         roomId: chatGeneral.id,
         senderId: manager.id,
@@ -517,11 +550,14 @@ async function main() {
         content: 'Cement stock verified (420 bags). Ready for morning batching operation.',
       },
     ],
-  });
+    ['roomId', 'content'],
+  );
 
   // 11. Audit Activity Log
-  await prisma.auditLog.createMany({
-    data: [
+  await createIfMissing(
+    (where) => prisma.auditLog.findFirst({ where: where as any }),
+    (data) => prisma.auditLog.create({ data: data as any }),
+    [
       {
         userId: manager.id,
         ventureId: greenHeights.id,
@@ -541,7 +577,8 @@ async function main() {
         details: 'Assigned Vikram Singh as Store Manager to Green Heights',
       },
     ],
-  });
+    ['action', 'details'],
+  );
 
   console.log('Production Venture data seeded successfully!');
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FieldError, useFieldErrors } from '@/lib/form-errors';
 import { api } from '@/lib/api';
 
 export default function AddEmployeeForm() {
@@ -21,6 +22,8 @@ export default function AddEmployeeForm() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // API field names -> input ids (the form collects one full name and a role picker).
+  const fe = useFieldErrors({ firstName: 'fullName', lastName: 'fullName', designation: 'role', department: 'role', reportingManagerId: 'supervisor' });
   const [success, setSuccess] = useState(false);
 
   const [seniorEmployees, setSeniorEmployees] = useState<{id: string, name: string, designation: string}[]>([]);
@@ -63,6 +66,7 @@ export default function AddEmployeeForm() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    fe.clear();
 
     try {
       const nameParts = fullName.trim().split(' ');
@@ -125,7 +129,8 @@ export default function AddEmployeeForm() {
         router.refresh();
       }, 1000);
     } catch (err: any) {
-      setError(err.message || 'An error occurred while creating the employee.');
+      const hasFieldErrors = fe.setFromError(err);
+      setError(hasFieldErrors ? 'Please correct the highlighted fields.' : err.message || 'An error occurred while creating the employee.');
       setIsLoading(false);
     }
   };
@@ -173,6 +178,7 @@ export default function AddEmployeeForm() {
                 </label>
                 <input
                   id="fullName"
+                  {...fe.props('fullName')}
                   type="text"
                   required
                   placeholder="e.g. Sunita Rao"
@@ -180,6 +186,7 @@ export default function AddEmployeeForm() {
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
                 />
+                <FieldError id="fullName" errors={fe.errors} />
               </div>
 
               <div>
@@ -188,6 +195,7 @@ export default function AddEmployeeForm() {
                 </label>
                 <input
                   id="phone"
+                  {...fe.props('phone')}
                   type="text"
                   required
                   placeholder="+91"
@@ -195,6 +203,7 @@ export default function AddEmployeeForm() {
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
                 />
+                <FieldError id="phone" errors={fe.errors} />
               </div>
 
               <div>
@@ -203,12 +212,14 @@ export default function AddEmployeeForm() {
                 </label>
                 <input
                   id="email"
+                  {...fe.props('email')}
                   type="email"
                   placeholder="e.g. sunita.rao@naprocs.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white placeholder-zinc-400 text-zinc-800"
                 />
+                <FieldError id="email" errors={fe.errors} />
               </div>
 
               <div>
@@ -217,6 +228,7 @@ export default function AddEmployeeForm() {
                 </label>
                 <select
                   id="employmentType"
+                  {...fe.props('employmentType')}
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value as any)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
@@ -225,6 +237,7 @@ export default function AddEmployeeForm() {
                   <option value="Full-Time Contractor">Full-Time Contractor</option>
                   <option value="Daily Wage">Daily Wage</option>
                 </select>
+                <FieldError id="employmentType" errors={fe.errors} />
               </div>
             </div>
           </div>
@@ -241,6 +254,7 @@ export default function AddEmployeeForm() {
                 </label>
                 <select
                   id="role"
+                  {...fe.props('role')}
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
@@ -255,6 +269,7 @@ export default function AddEmployeeForm() {
                   <option value="Safety Officer">Safety Officer</option>
                   <option value="Quantity Surveyor">Quantity Surveyor</option>
                 </select>
+                <FieldError id="role" errors={fe.errors} />
               </div>
 
               <div>
@@ -263,6 +278,7 @@ export default function AddEmployeeForm() {
                 </label>
                 <select
                   id="venture"
+                  {...fe.props('venture')}
                   value={venture}
                   onChange={(e) => setVenture(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
@@ -274,6 +290,7 @@ export default function AddEmployeeForm() {
                   <option value="Riverfront Towers">Riverfront Towers</option>
                   <option value="Unassigned">Unassigned / Awaiting Deployment</option>
                 </select>
+                <FieldError id="venture" errors={fe.errors} />
               </div>
 
               <div>
@@ -282,6 +299,7 @@ export default function AddEmployeeForm() {
                 </label>
                 <select
                   id="supervisor"
+                  {...fe.props('supervisor')}
                   value={supervisor}
                   onChange={(e) => setSupervisor(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
@@ -296,6 +314,7 @@ export default function AddEmployeeForm() {
                     <option value={supervisor}>{supervisor} (Current)</option>
                   )}
                 </select>
+                <FieldError id="supervisor" errors={fe.errors} />
               </div>
 
               <div>
@@ -304,12 +323,14 @@ export default function AddEmployeeForm() {
                 </label>
                 <input
                   id="joiningDate"
+                  {...fe.props('joiningDate')}
                   type="date"
                   required
                   value={joiningDate}
                   onChange={(e) => setJoiningDate(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 />
+                <FieldError id="joiningDate" errors={fe.errors} />
               </div>
             </div>
           </div>
