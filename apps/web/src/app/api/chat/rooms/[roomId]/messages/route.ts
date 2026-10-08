@@ -40,18 +40,7 @@ export async function GET(
         return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
       }
 
-      // Ensure they are still actively assigned to the room's venture
-      const hasActiveAssignment = await prisma.employeeVentureAssignment.findFirst({
-        where: {
-          employeeId: user.employee?.id,
-          ventureId: isMember.room.ventureId!,
-          status: 'ACTIVE'
-        }
-      });
-
-      if (!hasActiveAssignment) {
-        return NextResponse.json({ success: false, error: 'User is no longer assigned to this venture' }, { status: 403 });
-      }
+      // Explicit membership in the room is sufficient, no need to check venture assignment
     }
 
     const { skip, take } = getPaginationParams(req);
@@ -115,18 +104,7 @@ export async function POST(
         return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
       }
 
-      // Ensure they are still actively assigned to the room's venture
-      const hasActiveAssignment = await prisma.employeeVentureAssignment.findFirst({
-        where: {
-          employeeId: user.employee?.id,
-          ventureId: isMember.room.ventureId!,
-          status: 'ACTIVE'
-        }
-      });
-
-      if (!hasActiveAssignment) {
-        return NextResponse.json({ success: false, error: 'User is no longer assigned to this venture' }, { status: 403 });
-      }
+      // Explicit membership in the room is sufficient, no need to check venture assignment
     }
 
     const message = await prisma.chatMessage.create({
