@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db';
 import TeamReportsClient from './TeamReportsClient';
+import { toCalendarDate, leaveDurationDays } from '@builder/validation';
 
 export const revalidate = 0;
 
@@ -37,9 +38,9 @@ export default async function TeamReportsPage() {
     id: l.id,
     employeeName: `${l.employee.firstName} ${l.employee.lastName}`,
     type: l.type.replace('_', ' '),
-    startDate: l.startDate.toISOString().split('T')[0],
-    endDate: l.endDate.toISOString().split('T')[0],
-    duration: Math.ceil((l.endDate.getTime() - l.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1,
+    startDate: toCalendarDate(l.startDate),
+    endDate: toCalendarDate(l.endDate),
+    duration: leaveDurationDays(l.startDate, l.endDate),
     status: l.status
   }));
 

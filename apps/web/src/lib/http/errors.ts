@@ -93,6 +93,9 @@ export function toErrorResponse(error: unknown, ctx: ErrorContext = {}): NextRes
         return body(400, 'A value is too long.', 'VALIDATION_ERROR');
       case 'P2034':
         return body(409, 'The record was changed by another request. Please retry.', 'CONFLICT');
+      case 'P2028':
+      case 'P2024':
+        return body(503, 'The server is busy. Please retry.', 'SERVICE_BUSY');
     }
   }
 

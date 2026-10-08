@@ -23,6 +23,13 @@ export function handleApiError(error: any) {
   if (error?.code === 'P2025') {
     return NextResponse.json({ success: false, error: 'Not Found' }, { status: 404 });
   }
+  // Contention errors that survived retries: the request was valid, the client should retry.
+  if (error?.code === 'P2034') {
+    return NextResponse.json({ success: false, error: 'CONFLICT_RETRY', retryable: true }, { status: 409 });
+  }
+  if (error?.code === 'P2028' || error?.code === 'P2024') {
+    return NextResponse.json({ success: false, error: 'SERVICE_BUSY_RETRY', retryable: true }, { status: 503, headers: { 'Retry-After': '1' } });
+  }
   if (error?.name === 'ZodError') {
     return NextResponse.json({ success: false, error: 'Validation Error', details: error.errors }, { status: 400 });
   }

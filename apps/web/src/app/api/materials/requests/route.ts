@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, buildScopedWhere } from '@/lib/authorization';
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
 
     // Generate Request Number
     const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const random = randomBytes(3).toString('hex').toUpperCase();
     const requestNumber = `REQ-${timestamp}${random}`;
 
     try {

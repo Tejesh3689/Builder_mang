@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { toCalendarDate, leaveDurationDays, MAX_LEAVE_DAYS } from './leave';
+export * from './leave';
 
 export const LoginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -48,5 +50,11 @@ export const LeaveRequestSchema = z.object({
   reason: z.string().optional(),
 }).refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
   message: "End date cannot be earlier than start date",
+  path: ["endDate"]
+}).refine((data) => toCalendarDate(data.startDate) >= toCalendarDate(new Date()), {
+  message: "Start date cannot be in the past",
+  path: ["startDate"]
+}).refine((data) => leaveDurationDays(data.startDate, data.endDate) <= MAX_LEAVE_DAYS, {
+  message: `Leave cannot exceed ${MAX_LEAVE_DAYS} days in a single request`,
   path: ["endDate"]
 });

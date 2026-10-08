@@ -1,7 +1,9 @@
+import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, buildScopedWhere } from '@/lib/authorization';
 import { handleApiError, ApiError, parseJsonSafe } from '@/lib/api-errors';
+import { runTransaction } from '@/lib/transaction';
 
 export async function POST(req: Request) {
   try {
@@ -73,11 +75,11 @@ export async function POST(req: Request) {
     }
 
     const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const random = randomBytes(3).toString('hex').toUpperCase();
     const receiptNumber = `GRN-${timestamp}${random}`;
 
     try {
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await runTransaction(async (tx) => {
         // Create Receipt Record
         const newReceipt = await tx.materialReceipt.create({
           data: {
@@ -132,6 +134,7 @@ export async function POST(req: Request) {
               }
             });
 
+<<<<<<< HEAD
             await tx.materialTransaction.create({
               data: {
                 transactionNumber: `TXN-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`,
@@ -148,10 +151,27 @@ export async function POST(req: Request) {
               }
             });
           }
+=======
+          await tx.materialTransaction.create({
+            data: {
+              transactionNumber: `TXN-${Date.now().toString().slice(-6)}${randomBytes(3).toString('hex').toUpperCase()}`,
+              materialId: item.materialId,
+              ventureId,
+              stockLocationId: fromLocationId,
+              transactionType: 'RECEIPT',
+              quantityIn: qty,
+              quantityOut: 0,
+              balanceAfter: currentStock ? currentStock.physicalQuantity : 0,
+              referenceType: 'RECEIPT',
+              referenceId: newReceipt.id,
+              performedById: (user as any).id
+            }
+          });
+>>>>>>> 8a59970cc7c464760e8dc508544fefaf9202eff9
         }
 
         return newReceipt;
-      }, { timeout: 15000 });
+      });
       return NextResponse.json({ success: true, data: result }, { status: 201 });
     } catch (e: any) {
       if (e.code === 'P2002' && e.meta?.target?.includes('id')) {
