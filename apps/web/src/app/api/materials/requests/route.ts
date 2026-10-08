@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, buildScopedWhere } from '@/lib/authorization';
 import { MaterialRequestSchema } from '@builder/validation';
+import { getPaginationParams } from '@/lib/pagination';
 
 export async function POST(req: Request) {
   try {
@@ -148,6 +149,34 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Error creating material request:', error);
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+/** Material requests in the caller's venture scope, newest first. Optional ?status= filter (e.g. PENDING_APPROVAL). */
+export async function GET(req: Request) {
+  try {
+    const user = await requireAuth();
+    const scopedWhere = await buildScopedWhere(user, 'materialRequest');
+    if ((scopedWhere as any).id === 'DENY_ALL') return NextResponse.json({ success: true, data: [] });
+
+    const status = new URL(req.url).searchParams.get('status');
+    const { skip, take } = getPaginationParams(req);
+    const data = await prisma.materialRequest.findMany({
+      where: { AND: [status ? { status } : {}, scopedWhere] },
+      include: {
+        venture: { select: { id: true, name: true, code: true } },
+        createdBy: { select: { id: true, name: true } },
+        items: { include: { material: { select: { id: true, name: true, code: true, unitOfMeasure: { select: { name: true } } } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    });
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    console.error('Error listing material requests:', error);
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }

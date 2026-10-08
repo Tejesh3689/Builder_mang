@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       skip,
       take,
       include: {
-        employee: { select: { firstName: true, lastName: true, reportingManagerId: true, leaveBalancePaid: true, leaveBalanceSick: true } },
+        employee: { select: { employeeId: true, firstName: true, lastName: true, reportingManagerId: true, leaveBalancePaid: true, leaveBalanceSick: true } },
       },
       orderBy: { createdAt: 'desc' }
     });

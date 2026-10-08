@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, useRef, use } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Send, ArrowLeft, Building2, User, MessageSquare, UserPlus } from 'lucide-react';
@@ -14,6 +14,8 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
   const [room, setRoom] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMsg, setNewMsg] = useState('');
+  const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [sendError, setSendError] = useState('');
@@ -119,37 +121,25 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMsg.trim()) return;
+    // Ignore Enter/double-clicks while the previous message is still being sent.
+    if (!newMsg.trim() || sendingRef.current) return;
+    sendingRef.current = true;
+    setSending(true);
     setSendError('');
 
     try {
-      const res = await api.post<{success: boolean, error?: string}>(`/api/chat/rooms/${ventureId}/messages`, { content: newMsg });
-
-
-
-
-
-
-
-
-
-
-      if (!res.success) {
-        if (res.error?.includes('403') || res.error?.toLowerCase().includes('not a member')) {
-          setSendError('You are not a member of this room and cannot send messages.');
-        } else {
-          setSendError(res.error || 'Failed to send message.');
-        }
-        return;
-      }
+      await api.post(`/api/chat/rooms/${ventureId}/messages`, { content: newMsg });
       setNewMsg('');
       fetchMessages();
-
-
-
-    } catch (err) {
-      console.error('Error sending message:', err);
-      setSendError('Network error. Please try again.');
+    } catch (err: any) {
+      if (err?.status === 403) {
+        setSendError('You are not a member of this room and cannot send messages.');
+      } else if (err?.status !== 401) {
+        setSendError(err?.status ? err.message || 'Failed to send message.' : 'Network error. Please try again.');
+      }
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
     }
   };
 
@@ -249,7 +239,7 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
           />
           <button
             type="submit"
-            disabled={!newMsg.trim()}
+            disabled={!newMsg.trim() || sending}
             className="px-4 py-2.5 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg font-semibold text-xs flex items-center gap-1 shadow-xs transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
