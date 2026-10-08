@@ -34,6 +34,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/
 
 USER nextjs
 
+# Ensure curl is available for healthcheck if needed, though we can use wget
+USER root
+RUN apk add --no-cache curl
+USER nextjs
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
 EXPOSE 3000
 
 CMD ["node", "apps/web/server.js"]

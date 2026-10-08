@@ -65,9 +65,9 @@ export async function POST(req: Request) {
          return NextResponse.json({ success: false, error: 'Invalid requiredDate' }, { status: 400 });
        }
        // Strict date-only validation - discard time
-       requiredDate.setHours(0,0,0,0);
+       requiredDate.setUTCHours(0,0,0,0);
        const today = new Date();
-       today.setHours(0,0,0,0);
+       today.setUTCHours(0,0,0,0);
        if (requiredDate < today) {
          return NextResponse.json({ success: false, error: 'requiredDate cannot be in the past' }, { status: 400 });
        }

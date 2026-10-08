@@ -40,7 +40,7 @@ export default async function InventoryOverviewPage() {
   let pendingRequestCount = 0;
 
   const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  todayStart.setUTCHours(0, 0, 0, 0);
 
   try {
     totalMaterials = await prisma.material.count();

@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   if (userRole === 'SUPERVISOR') {
     const sessionName = session?.user?.name || '';
     const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    todayStart.setUTCHours(0, 0, 0, 0);
 
     const team = await prisma.employee.findMany({
       where: { reportingManagerId: sessionName },

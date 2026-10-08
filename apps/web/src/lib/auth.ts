@@ -6,6 +6,7 @@ import redis from '@/lib/redis';
 import { accountStateSelect, isAccountUsable } from '@/lib/policies/account';
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET ?? (() => { throw new Error('NEXTAUTH_SECRET is required'); })(),
   providers: [
     CredentialsProvider({
       name: 'Credentials',
