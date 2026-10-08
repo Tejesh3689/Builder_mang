@@ -208,7 +208,7 @@ export async function POST(req: Request) {
           }
         }
         return newIssue;
-      });
+      }, { timeout: 15000 });
       return NextResponse.json({ success: true, data: result }, { status: 201 });
     } catch (e: any) {
       if (e.code === 'P2002' && e.meta?.target?.includes('id')) {

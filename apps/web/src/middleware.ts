@@ -18,45 +18,7 @@ export default withAuth(
       }
     }
 
-    // Protect admin routes from non-ADMINs
-    if (token?.role !== 'ADMIN') {
-      const isProjectManager = token?.role === 'MANAGER';
-      const isSiteEngineer = token?.role === 'SUPERVISOR';
-      
-      const adminOnlyPrefixes = [
-        '/admin',
-        ...(isProjectManager ? [] : ['/ventures']), // Allow MANAGER to access ventures
-        ...(isProjectManager ? [] : ['/materials']), // Allow MANAGER to access materials
-        '/compliance',
-        '/workforce',
-        '/onboarding',
-      ];
-      
-      if (adminOnlyPrefixes.some(prefix => path.startsWith(prefix))) {
-        return NextResponse.redirect(new URL('/dashboard', req.url));
-      }
-
-      // Special handling for /employees logic (allow /employees/team and /employees/[id])
-      if (path === '/employees' || path.startsWith('/employees/managers') || path.startsWith('/employees/supervisors') || path.startsWith('/employees/dashboard')) {
-        return NextResponse.redirect(new URL('/dashboard', req.url));
-      }
-
-      // Special handling for /reports logic (allow /reports/team)
-      if (path === '/reports' || path.startsWith('/reports/employees') || path.startsWith('/reports/projects') || path.startsWith('/reports/inventory')) {
-        return NextResponse.redirect(new URL('/dashboard', req.url));
-      }
-      
-      // Global API Blocking - REMOVED
-      // Middleware should not block API endpoints; let the API endpoints enforce RBAC and Row-Level Scoping.
-      // (P0-4 Remediation)
-      const adminApiPrefixes = [
-        '/api/auth/register' // keep auth/register admin-only here for basic guard, though API also guards
-      ];
-      if (adminApiPrefixes.some(prefix => path.startsWith(prefix))) {
-         return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'content-type': 'application/json' } });
-      }
-    }
-
+    // Protect admin routes from non-ADMINs - MOVED to layout.tsx (P0-1 Remediation)
     return NextResponse.next();
   },
   {
