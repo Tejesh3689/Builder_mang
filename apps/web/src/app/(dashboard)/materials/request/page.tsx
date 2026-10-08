@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, newIdempotencyKey } from '@/lib/api';
 
 export default function MaterialRequestPage() {
   const router = useRouter();
@@ -22,6 +22,9 @@ export default function MaterialRequestPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // One key per request being filled in: a retry or double-submit of the same form is deduplicated server-side.
+  const idempotencyKey = useRef('');
+  const inFlight = useRef(false);
 
   useEffect(() => {
     async function loadData() {
@@ -42,21 +45,23 @@ export default function MaterialRequestPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ventureId || !materialId || !quantity) return;
+    if (!ventureId || !materialId || !quantity || inFlight.current) return;
 
+    inFlight.current = true;
     setSubmitting(true);
     setError(null);
 
     try {
       const res = await api.post<{success: boolean, error?: string}>('/api/materials/requests', {
         ventureId,
+        idempotencyKey: (idempotencyKey.current ||= newIdempotencyKey()),
         priority,
         requiredDate: requiredDate || null,
         remarks,
         items: [
           {
             materialId,
-            requestedQuantity: parseFloat(quantity)
+            quantity: parseFloat(quantity)
           }
         ]
       });
@@ -70,6 +75,7 @@ export default function MaterialRequestPage() {
     } catch (err: any) {
       setError(err.message || 'Something went wrong.');
       setSubmitting(false);
+      inFlight.current = false;
     }
   };
 

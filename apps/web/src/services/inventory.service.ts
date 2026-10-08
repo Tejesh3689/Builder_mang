@@ -28,7 +28,9 @@ import type {
 type Tx = Prisma.TransactionClient;
 type Actor = Parameters<typeof buildScopedWhere>[0] & { id: string };
 
-const EPSILON = 1e-9;
+// Quantities are DECIMAL(12,3) columns: do all arithmetic and comparisons in Decimal, never float.
+type Qty = number | Prisma.Decimal;
+const dec = (v: Qty | null | undefined) => new Prisma.Decimal(v ?? 0);
 const IN_TRANSIT_STATUSES = ['DISPATCHED', 'IN_TRANSIT'];
 
 // UOMs counted in whole units; fractional quantities are rejected for these.
@@ -79,9 +81,9 @@ async function loadMaterials(db: Tx | typeof prisma, ids: string[], { mustBeActi
 }
 
 /** Rejects fractional quantities for materials counted in whole units (bags, boxes, pieces...). */
-export function assertUnitPrecision(material: MaterialWithUnit, quantity: number, field: string) {
+export function assertUnitPrecision(material: MaterialWithUnit, quantity: Qty, field: string) {
   const unit = material.unitOfMeasure.name.trim().toUpperCase();
-  if (WHOLE_UNITS.has(unit) && !Number.isInteger(quantity)) {
+  if (WHOLE_UNITS.has(unit) && !dec(quantity).isInteger()) {
     throw badRequest(`${field} for ${material.name} must be a whole number of ${material.unitOfMeasure.name}`, field);
   }
 }
@@ -93,7 +95,7 @@ export function assertUnitPrecision(material: MaterialWithUnit, quantity: number
 type StockKey = { materialId: string; stockLocationId: string };
 
 /** Decrements available + physical stock atomically; 409 if not enough is available. */
-async function removeStock(tx: Tx, key: StockKey, quantity: number, errorCode: string) {
+async function removeStock(tx: Tx, key: StockKey, quantity: Qty, errorCode: string) {
   const res = await tx.materialStock.updateMany({
     where: { ...key, availableQuantity: { gte: quantity } },
     data: { availableQuantity: { decrement: quantity }, physicalQuantity: { decrement: quantity } },
@@ -110,7 +112,7 @@ async function removeStock(tx: Tx, key: StockKey, quantity: number, errorCode: s
 }
 
 /** Increments stock, creating the row on first receipt (atomic upsert on the compound key). */
-async function addStock(tx: Tx, key: StockKey, ventureId: string, quantity: number) {
+async function addStock(tx: Tx, key: StockKey, ventureId: string, quantity: Qty) {
   return tx.materialStock.upsert({
     where: { materialId_stockLocationId: key },
     create: { ...key, ventureId, physicalQuantity: quantity, availableQuantity: quantity, reservedQuantity: 0 },
@@ -134,9 +136,9 @@ async function writeLedger(
   entry: StockKey & {
     ventureId: string;
     transactionType: string;
-    quantityIn?: number;
-    quantityOut?: number;
-    balanceAfter: number;
+    quantityIn?: Qty;
+    quantityOut?: Qty;
+    balanceAfter: Qty;
     referenceType: string;
     referenceId: string;
     performedById: string;
@@ -157,9 +159,9 @@ const isUniqueViolation = (e: unknown) => e instanceof Prisma.PrismaClientKnownR
 const idempotencyConflict = () =>
   new ApiError(409, 'idempotencyKey was already used for a different request', 'IDEMPOTENCY_CONFLICT');
 
-const sameItems = (a: { materialId: string; qty: number }[], b: { materialId: string; qty: number }[]) =>
+const sameItems = (a: { materialId: string; qty: Qty }[], b: { materialId: string; qty: Qty }[]) =>
   a.length === b.length &&
-  a.every((x) => b.some((y) => y.materialId === x.materialId && Math.abs(y.qty - x.qty) < EPSILON));
+  a.every((x) => b.some((y) => y.materialId === x.materialId && dec(y.qty).equals(dec(x.qty))));
 
 // ---------------------------------------------------------------------------
 // Transfers: DRAFT -> DISPATCHED -> RECEIVED | RECEIVED_WITH_SHORTFALL, or -> CANCELLED
@@ -313,13 +315,13 @@ export async function receiveTransfer(user: Actor, id: string, input: TransferRe
     throw badRequest('items must list every material on the transfer exactly once', 'items');
   }
 
-  const shortfalls: { materialId: string; dispatched: number; received: number; damaged: number; shortfall: number }[] = [];
+  const shortfalls: { materialId: string; dispatched: string; received: string; damaged: string; shortfall: string }[] = [];
   for (const item of input.items) {
     const line = lines.get(item.materialId)!;
     assertUnitPrecision(line.material, item.receivedQuantity, 'receivedQuantity');
     assertUnitPrecision(line.material, item.damagedQuantity, 'damagedQuantity');
-    const accounted = item.receivedQuantity + item.damagedQuantity;
-    if (accounted > line.dispatchedQuantity + EPSILON) {
+    const accounted = dec(item.receivedQuantity).plus(item.damagedQuantity);
+    if (accounted.gt(line.dispatchedQuantity)) {
       throw new ApiError(
         400,
         `Received + damaged (${accounted}) exceeds dispatched (${line.dispatchedQuantity}) for ${line.material.name}`,
@@ -328,9 +330,15 @@ export async function receiveTransfer(user: Actor, id: string, input: TransferRe
         { materialId: item.materialId, dispatched: line.dispatchedQuantity, received: item.receivedQuantity, damaged: item.damagedQuantity }
       );
     }
-    const shortfall = line.dispatchedQuantity - accounted;
-    if (shortfall > EPSILON) {
-      shortfalls.push({ materialId: item.materialId, dispatched: line.dispatchedQuantity, received: item.receivedQuantity, damaged: item.damagedQuantity, shortfall });
+    const shortfall = dec(line.dispatchedQuantity).minus(accounted);
+    if (shortfall.gt(0)) {
+      shortfalls.push({
+        materialId: item.materialId,
+        dispatched: line.dispatchedQuantity.toString(),
+        received: String(item.receivedQuantity),
+        damaged: String(item.damagedQuantity),
+        shortfall: shortfall.toString(),
+      });
     }
   }
 
@@ -433,11 +441,11 @@ export async function getInTransit(user: Actor) {
     include: { material: { select: { id: true, name: true, code: true } }, transfer: { select: { id: true, transferNumber: true, fromLocationId: true, toLocationId: true, dispatchDate: true } } },
   });
 
-  const totals = new Map<string, { materialId: string; material: { name: string; code: string }; toLocationId: string; quantity: number; transfers: string[] }>();
+  const totals = new Map<string, { materialId: string; material: { name: string; code: string }; toLocationId: string; quantity: Prisma.Decimal; transfers: string[] }>();
   for (const item of items) {
     const key = `${item.materialId}:${item.transfer.toLocationId}`;
-    const row = totals.get(key) ?? { materialId: item.materialId, material: item.material, toLocationId: item.transfer.toLocationId, quantity: 0, transfers: [] };
-    row.quantity += item.dispatchedQuantity;
+    const row = totals.get(key) ?? { materialId: item.materialId, material: item.material, toLocationId: item.transfer.toLocationId, quantity: dec(0), transfers: [] };
+    row.quantity = row.quantity.plus(item.dispatchedQuantity);
     row.transfers.push(item.transfer.transferNumber);
     totals.set(key, row);
   }
@@ -507,8 +515,8 @@ export async function createReturn(user: Actor, input: ReturnCreateInput) {
     throw badRequest('Material must be returned to a location in the same venture as the issue', 'toLocationId');
   }
 
-  const issued = new Map<string, number>();
-  for (const i of issue.items) issued.set(i.materialId, (issued.get(i.materialId) ?? 0) + i.issuedQuantity);
+  const issued = new Map<string, Prisma.Decimal>();
+  for (const i of issue.items) issued.set(i.materialId, dec(issued.get(i.materialId)).plus(i.issuedQuantity));
   const notIssued = input.items.find((i) => !issued.has(i.materialId));
   if (notIssued) throw badRequest('A returned material was not part of the source issue', 'items');
 
@@ -524,17 +532,17 @@ export async function createReturn(user: Actor, input: ReturnCreateInput) {
         where: { materialReturn: { sourceIssueId: issue.id } },
         _sum: { quantity: true },
       });
-      const alreadyReturned = new Map(prior.map((p) => [p.materialId, p._sum.quantity ?? 0]));
+      const alreadyReturned = new Map(prior.map((p) => [p.materialId, dec(p._sum.quantity)]));
       for (const item of input.items) {
-        const already = alreadyReturned.get(item.materialId) ?? 0;
+        const already = alreadyReturned.get(item.materialId) ?? dec(0);
         const cap = issued.get(item.materialId)!;
-        if (already + item.quantity > cap + EPSILON) {
+        if (already.plus(item.quantity).gt(cap)) {
           throw new ApiError(409, `Return exceeds quantity issued for ${materials.get(item.materialId)!.name}`, 'RETURN_EXCEEDS_ISSUED', 'items', {
             materialId: item.materialId,
             issued: cap,
             alreadyReturned: already,
             requested: item.quantity,
-            remaining: Math.max(0, cap - already),
+            remaining: Prisma.Decimal.max(0, cap.minus(already)),
           });
         }
       }
@@ -645,21 +653,22 @@ export async function createAdjustment(user: Actor, input: AdjustmentCreateInput
 
   try {
     const adjustment = await runTransaction(async (tx) => {
-      const lines: { materialId: string; systemQuantity: number; physicalQuantity: number; adjustmentQuantity: number }[] = [];
+      const lines: { materialId: string; systemQuantity: Prisma.Decimal; physicalQuantity: Prisma.Decimal; adjustmentQuantity: Prisma.Decimal }[] = [];
 
       for (const item of byMaterial(input.items)) {
         const key = { materialId: item.materialId, stockLocationId: location.id };
         const stock = await lockStock(tx, key, location.ventureId);
-        const delta = item.physicalQuantity - stock.physicalQuantity;
+        const counted = dec(item.physicalQuantity);
+        const delta = counted.minus(stock.physicalQuantity);
         const name = materials.get(item.materialId)!.name;
 
-        if (Math.abs(delta) < EPSILON) {
+        if (delta.isZero()) {
           throw new ApiError(409, `Physical count for ${name} equals the system quantity; nothing to adjust`, 'ADJUSTMENT_NO_CHANGE', 'items', {
             materialId: item.materialId,
             systemQuantity: stock.physicalQuantity,
           });
         }
-        if (item.physicalQuantity < stock.reservedQuantity - EPSILON || stock.availableQuantity + delta < -EPSILON) {
+        if (counted.lt(stock.reservedQuantity) || stock.availableQuantity.plus(delta).isNegative()) {
           throw new ApiError(409, `Physical count for ${name} is below the reserved quantity`, 'ADJUSTMENT_BELOW_RESERVED', 'items', {
             materialId: item.materialId,
             physicalQuantity: item.physicalQuantity,
@@ -674,16 +683,16 @@ export async function createAdjustment(user: Actor, input: AdjustmentCreateInput
         await writeLedger(tx, {
           ...key,
           ventureId: location.ventureId,
-          transactionType: delta > 0 ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT',
-          quantityIn: delta > 0 ? delta : 0,
-          quantityOut: delta < 0 ? -delta : 0,
+          transactionType: delta.isPositive() ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT',
+          quantityIn: delta.isPositive() ? delta : 0,
+          quantityOut: delta.isNegative() ? delta.negated() : 0,
           balanceAfter: updated.physicalQuantity,
           referenceType: 'ADJUSTMENT',
           referenceId: input.idempotencyKey,
           performedById: user.id,
           remarks: input.reason,
         });
-        lines.push({ materialId: item.materialId, systemQuantity: stock.physicalQuantity, physicalQuantity: item.physicalQuantity, adjustmentQuantity: delta });
+        lines.push({ materialId: item.materialId, systemQuantity: stock.physicalQuantity, physicalQuantity: counted, adjustmentQuantity: delta });
       }
 
       const created = await tx.stockAdjustment.create({

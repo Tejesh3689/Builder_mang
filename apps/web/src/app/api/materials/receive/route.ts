@@ -143,7 +143,7 @@ export async function POST(req: Request) {
                 transactionType: 'RECEIPT',
                 quantityIn: aQty,
                 quantityOut: 0,
-                balanceAfter: currentStock.availableQuantity,
+                balanceAfter: currentStock.physicalQuantity,
                 referenceType: 'RECEIPT',
                 referenceId: newReceipt.id,
                 performedById: (user as any).id

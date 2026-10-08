@@ -1,109 +1,116 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth } from '@/lib/authorization';
-import { handleApiError, ApiError, parseJsonSafe } from '@/lib/api-errors';
+import { requireAuth, buildScopedWhere } from '@/lib/authorization';
+import { LeaveRequestSchema, leaveDurationDays } from '@builder/validation';
+import { z } from 'zod';
+import { getPaginationParams } from '@/lib/pagination';
 
-// Helper to calculate days (simplified, ideally excludes weekends/holidays)
-const calculateDays = (start: Date, end: Date) => {
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-};
-
-// GET: Retrieve leave requests
-export async function GET(req: Request) {
+// GET: leave requests in the caller's scope
+export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth();
-    const { searchParams } = new URL(req.url);
-    const employeeId = searchParams.get('employeeId');
-    const status = searchParams.get('status');
+    const scopedWhere = await buildScopedWhere(user, 'leave');
+    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
 
-    if ((user as any).role === 'USER') {
-      if (!(user as any).employee?.id) throw new ApiError(403, 'User not linked to an employee');
-      if (employeeId && employeeId !== (user as any).employee?.id) throw new ApiError(403, 'Forbidden');
-    }
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get('status');
+    const employeeId = searchParams.get('employeeId');
 
     const where: any = {};
-    if ((user as any).role === 'USER') {
-      where.employeeId = user.employee!.id;
-    } else if (employeeId) {
-      where.employeeId = employeeId;
-    }
     if (status) where.status = status;
 
+    if (employeeId) {
+      // Explicitly reject foreign employeeId (Root Cause 6)
+      const emp = await prisma.employee.findFirst({
+        where: { AND: [{ id: employeeId }, scopedWhere.employee || {}] }
+      });
+      if (!emp) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Employee not in scope' }, { status: 403 });
+      }
+      where.employeeId = employeeId;
+    }
+
+    const { skip, take } = getPaginationParams(req);
     const records = await prisma.leaveRequest.findMany({
-      where,
-      include: { employee: true },
+      where: { AND: [where, scopedWhere] },
+      skip,
+      take,
+      include: {
+        employee: { select: { employeeId: true, firstName: true, lastName: true, reportingManagerId: true, leaveBalancePaid: true, leaveBalanceSick: true, leaveBalanceCasual: true } },
+      },
       orderBy: { createdAt: 'desc' }
     });
 
     return NextResponse.json({ success: true, data: records });
-  } catch (e) {
-    return handleApiError(e);
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ success: false, error: 'Server Error' }, { status: 500 });
   }
 }
 
-// POST: Apply for leave
-export async function POST(req: Request) {
+// POST: apply for leave for an employee in the caller's scope
+export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
-    const body = await parseJsonSafe(req);
-    
-    let targetEmployeeId = body.employeeId;
-    if ((user as any).role === 'USER') {
-      if (!(user as any).employee?.id) throw new ApiError(403, 'User not linked to an employee');
-      targetEmployeeId = user.employee!.id;
-    }
+    const body = await req.json();
 
-    if (!targetEmployeeId || !body.type || !body.startDate || !body.endDate) {
-      throw new ApiError(400, 'Missing required fields');
-    }
+    const data = LeaveRequestSchema.parse(body);
 
-    const startDate = new Date(body.startDate);
-    const endDate = new Date(body.endDate);
-    startDate.setUTCHours(0,0,0,0);
-    endDate.setUTCHours(0,0,0,0);
+    const scopedWhere = await buildScopedWhere(user, 'employee');
+    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
 
-    if (endDate < startDate) throw new ApiError(400, 'End date cannot be before start date');
-    const daysRequested = calculateDays(startDate, endDate);
-
-    const employee = await prisma.employee.findUnique({ where: { id: targetEmployeeId } });
-    if (!employee) throw new ApiError(404, 'Employee not found');
-    if (employee.status === 'TERMINATED') throw new ApiError(409, 'Employee is terminated');
-
-    // Check balance if needed (can also wait until approval, but good to check early)
-    let balance = 0;
-    if (body.type === 'PAID') balance = employee.leaveBalancePaid || 0;
-    else if (body.type === 'SICK') balance = employee.leaveBalanceSick || 0;
-    else if (body.type === 'CASUAL') balance = employee.leaveBalanceCasual || 0;
-    
-    if (balance < daysRequested) throw new ApiError(409, `Insufficient ${body.type} leave balance`);
-
-    // Check overlaps
-    const overlaps = await prisma.leaveRequest.findFirst({
-      where: {
-        employeeId: targetEmployeeId,
-        status: { notIn: ['REJECTED', 'CANCELLED'] },
-        OR: [
-          { startDate: { lte: endDate }, endDate: { gte: startDate } }
-        ]
-      }
+    const employee = await prisma.employee.findFirst({
+      where: { AND: [{ id: data.employeeId }, scopedWhere] }
     });
 
-    if (overlaps) throw new ApiError(409, 'Leave request overlaps with an existing active request');
+    if (!employee) {
+      // Explicitly reject foreign employeeId (Root Cause 3, 6)
+      return NextResponse.json({ success: false, error: 'Forbidden: Employee not in scope or not found' }, { status: 403 });
+    }
+    if (employee.status === 'TERMINATED') {
+      return NextResponse.json({ success: false, error: 'Employee is terminated' }, { status: 409 });
+    }
 
-    const request = await prisma.leaveRequest.create({
+    const startDate = new Date(data.startDate);
+    const endDate = new Date(data.endDate);
+
+    // Early balance check (authoritative check + deduction happens atomically on approval)
+    const days = leaveDurationDays(startDate, endDate);
+    const balance =
+      data.type === 'PAID' ? employee.leaveBalancePaid :
+      data.type === 'SICK' ? employee.leaveBalanceSick :
+      data.type === 'CASUAL' ? employee.leaveBalanceCasual : null;
+    if (balance !== null && (balance ?? 0) < days) {
+      return NextResponse.json({ success: false, error: `Insufficient ${data.type} leave balance` }, { status: 409 });
+    }
+
+    const overlap = await prisma.leaveRequest.findFirst({
+      where: {
+        employeeId: data.employeeId,
+        status: { notIn: ['REJECTED', 'CANCELLED'] },
+        startDate: { lte: endDate },
+        endDate: { gte: startDate },
+      }
+    });
+    if (overlap) {
+      return NextResponse.json({ success: false, error: 'Leave request overlaps with an existing active request' }, { status: 409 });
+    }
+
+    const record = await prisma.leaveRequest.create({
       data: {
-        employeeId: targetEmployeeId,
-        type: body.type,
+        employeeId: data.employeeId,
+        type: data.type as any,
         startDate,
         endDate,
-        reason: body.reason,
+        reason: data.reason,
         status: 'PENDING'
       }
     });
 
-    return NextResponse.json({ success: true, data: request }, { status: 201 });
-  } catch (e) {
-    return handleApiError(e);
+    return NextResponse.json({ success: true, data: record }, { status: 201 });
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    if (error instanceof z.ZodError) return NextResponse.json({ success: false, error: error.errors }, { status: 422 });
+    return NextResponse.json({ success: false, error: 'Server Error' }, { status: 500 });
   }
 }

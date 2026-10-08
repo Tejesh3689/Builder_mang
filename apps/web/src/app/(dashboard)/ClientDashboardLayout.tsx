@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import SessionExpiredDialog from '@/components/SessionExpiredDialog';
 
 export default function ClientDashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -452,6 +453,7 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
         {/* Dynamic Page Children */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#EAEAEA]">
           {children}
+          <SessionExpiredDialog />
         </main>
       </div>
     </div>

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { leaveDurationDays, toCalendarDate } from '@builder/validation';
 
 interface LeaveRequest {
   id: string;
@@ -35,22 +36,22 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
   useEffect(() => {
     async function loadLeaves() {
       try {
-        const res = await api.get<{success: boolean, data: any[]}>('/api/leaves');
-        if (res.success && Array.isArray(res.data)) {
-          const mapped = res.data.map(l => ({
-            id: l.id,
-            employeeName: l.employee ? `${l.employee.firstName} ${l.employee.lastName}` : 'Unknown',
-            employeeId: l.employee?.employeeId || 'Unknown',
-            managerName: l.approver ? `${l.approver.firstName} ${l.approver.lastName}` : (l.employee?.reportingManager ? `${l.employee.reportingManager.firstName} ${l.employee.reportingManager.lastName}` : 'Direct Report'),
-            type: l.leaveType === 'SICK' ? 'Sick Leave' : l.leaveType === 'CASUAL' ? 'Casual Leave' : 'Annual Leave',
-            startDate: l.startDate,
-            endDate: l.endDate,
-            duration: l.duration,
-            reason: l.reason,
-            status: l.status === 'PENDING' ? 'Pending' : l.status === 'APPROVED' ? 'Approved' : 'Rejected' as 'Pending' | 'Approved' | 'Rejected'
-          }));
-          setLeaves(mapped);
-        }
+        // GET /api/leaves returns { success, data: LeaveRequest[] }.
+        const res = await api.get<any>('/api/leaves');
+        const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        const typeLabel: Record<string, string> = { SICK: 'Sick Leave', CASUAL: 'Casual Leave', PAID: 'Paid Leave', UNPAID: 'Unpaid Leave' };
+        setLeaves(rows.map(l => ({
+          id: l.id,
+          employeeName: l.employee ? `${l.employee.firstName} ${l.employee.lastName}` : 'Unknown',
+          employeeId: l.employee?.employeeId || '-',
+          managerName: '-',
+          type: typeLabel[l.type] ?? l.type,
+          startDate: toCalendarDate(l.startDate),
+          endDate: toCalendarDate(l.endDate),
+          duration: leaveDurationDays(l.startDate, l.endDate),
+          reason: l.reason || '',
+          status: l.status === 'PENDING' ? 'Pending' : l.status === 'APPROVED' ? 'Approved' : 'Rejected'
+        })));
       } catch (err) {
         console.error('Failed to load leaves', err);
       } finally {
@@ -67,26 +68,25 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
   // API scoping handles data access, we just filter by tabs
   const filteredLeaves = leaves.filter(l => l.status === activeTab);
 
+  const [acting, setActing] = useState(false);
+  const actingRef = useRef(false);
+
   const handleAction = async () => {
-    if (!actionModal) return;
+    // Guard against double-clicks: the second click is ignored while the first request is in flight.
+    if (!actionModal || actingRef.current) return;
+    actingRef.current = true;
+    const { leave, action } = actionModal;
+    setActing(true);
     try {
-      const res = await api.post<{success: boolean, data?: any, error?: string}>(`/api/leaves/${actionModal.leave.id}/process`, {
-        action: actionModal.action === 'Approve' ? 'APPROVE' : 'REJECT'
-      });
-      if (res.success) {
-        setLeaves(prev => prev.map(l => {
-          if (l.id === actionModal.leave.id) {
-            return { ...l, status: actionModal.action === 'Approve' ? 'Approved' : 'Rejected' };
-          }
-          return l;
-        }));
-      } else {
-        alert(res.error || `Failed to ${actionModal.action.toLowerCase()} leave request.`);
-      }
-    } catch (err: any) {
-      alert(err.message || `An error occurred while trying to ${actionModal.action.toLowerCase()} the request.`);
-    } finally {
+      // api.patch throws on any non-2xx response, so reaching the next line means it succeeded.
+      await api.patch(`/api/leaves/${leave.id}`, { action: action === 'Approve' ? 'APPROVE' : 'REJECT' });
+      setLeaves(prev => prev.map(l => (l.id === leave.id ? { ...l, status: action === 'Approve' ? 'Approved' : 'Rejected' } : l)));
       setActionModal(null);
+    } catch (err: any) {
+      if (err?.status !== 401) alert(err.message || `Failed to ${action.toLowerCase()} the leave request.`);
+    } finally {
+      actingRef.current = false;
+      setActing(false);
     }
   };
 
@@ -251,8 +251,8 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
             </p>
             <div className="flex justify-center gap-3 pt-2">
               <button onClick={() => setActionModal(null)} className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-lg transition-colors shadow-xs text-xs">Cancel</button>
-              <button onClick={handleAction} className={`px-4 py-2 text-white font-bold rounded-lg transition-colors shadow-xs text-xs ${actionModal.action === 'Approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}>
-                Confirm {actionModal.action}
+              <button onClick={handleAction} disabled={acting} className={`px-4 py-2 text-white font-bold rounded-lg transition-colors shadow-xs text-xs disabled:opacity-50 disabled:cursor-not-allowed ${actionModal.action === 'Approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}>
+                {acting ? 'Saving…' : `Confirm ${actionModal.action}`}
               </button>
             </div>
           </div>

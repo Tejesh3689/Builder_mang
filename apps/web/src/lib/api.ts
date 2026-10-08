@@ -10,6 +10,30 @@ export class ApiError extends Error {
   }
 }
 
+/** UUID v4 for idempotency keys. crypto.randomUUID only exists on HTTPS/localhost, so fall back to getRandomValues. */
+export function newIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
+export const SESSION_EXPIRED_EVENT = 'session-expired';
+export const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please sign in again to continue.';
+
+/** Turns the various error body shapes (string, Zod issue array, {message}) into one readable message. */
+function errorMessageFrom(data: any, fallback: string): string {
+  const raw = data?.error ?? data?.message;
+  if (typeof raw === 'string' && raw) return raw;
+  if (Array.isArray(raw) && raw.length) {
+    return raw.map((i: any) => (typeof i === 'string' ? i : i?.message)).filter(Boolean).join('; ') || fallback;
+  }
+  if (typeof data === 'string' && data && data.length < 200) return data;
+  return fallback;
+}
+
 export async function fetchApi<T>(url: string, options: RequestInit = {}): Promise<T> {
   const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -35,9 +59,14 @@ export async function fetchApi<T>(url: string, options: RequestInit = {}): Promi
       data = await response.text();
     }
 
+    if (response.status === 401 && !url.startsWith('/api/auth/')) {
+      // Let the dashboard show its re-login prompt; the caller keeps its form state.
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+      throw new ApiError(401, SESSION_EXPIRED_MESSAGE, data);
+    }
+
     if (!response.ok) {
-      const errorMessage = data?.error || data?.message || response.statusText || 'An error occurred';
-      throw new ApiError(response.status, errorMessage, data);
+      throw new ApiError(response.status, errorMessageFrom(data, response.statusText || 'An error occurred'), data);
     }
 
     // Return the parsed JSON directly so callers can check .success and .data

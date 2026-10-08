@@ -1,8 +1,12 @@
 import { z } from 'zod';
 import { optionalText, requiredId, requiredText } from './common';
 
-// Upper bound on any single quantity; anything larger is a fat-finger, not real stock.
-export const MAX_QUANTITY = 1_000_000_000;
+// Quantities are stored as DECIMAL(12,3): at most 9 integer digits and 3 decimal places.
+// Anything larger is a fat-finger, not real stock.
+export const MAX_QUANTITY = 999_999_999;
+
+// The column would silently round a 4th decimal place, so reject it instead.
+const atMost3Decimals = (n: number) => Math.abs(Math.round(n * 1000) - n * 1000) < 1e-6;
 
 const toNumber = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? Number(v) : v);
 
@@ -15,6 +19,7 @@ export const positiveQuantity = (field: string) =>
       .finite(`${field} must be a finite number`)
       .gt(0, `${field} must be greater than 0`)
       .max(MAX_QUANTITY, `${field} is unrealistically large`)
+      .refine(atMost3Decimals, `${field} can have at most 3 decimal places`)
   );
 
 /** A quantity that may be exactly 0 (a physical count of an empty shelf, damaged units on receipt). */
@@ -26,6 +31,7 @@ export const nonNegativeQuantity = (field: string) =>
       .finite(`${field} must be a finite number`)
       .min(0, `${field} cannot be negative`)
       .max(MAX_QUANTITY, `${field} is unrealistically large`)
+      .refine(atMost3Decimals, `${field} can have at most 3 decimal places`)
   );
 
 const idempotencyKey = z

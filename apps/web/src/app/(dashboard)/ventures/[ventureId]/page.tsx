@@ -20,6 +20,8 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
   // Form & Action states inside tabs
   const [newChatMessage, setNewChatMessage] = useState('');
+  const [chatSending, setChatSending] = useState(false);
+  const chatSendingRef = useRef(false);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [activeRoom, setActiveRoom] = useState<any>(null);
 
@@ -93,15 +95,22 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newChatMessage.trim() || !activeRoom?.id) return;
+    // Ignore Enter/double-clicks while the previous message is still being sent.
+    if (!newChatMessage.trim() || !activeRoom?.id || chatSendingRef.current) return;
+    chatSendingRef.current = true;
+    setChatSending(true);
     try {
       const res = await api.post<{success: boolean}>(`/api/chat/rooms/${activeRoom.id}/messages`, { content: newChatMessage });
       if (res.success) {
         setNewChatMessage('');
         fetchChatMessages(activeRoom.id);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error sending chat message:', err);
+      if (err?.status !== 401) alert(err?.message || 'Failed to send message.');
+    } finally {
+      chatSendingRef.current = false;
+      setChatSending(false);
     }
   };
 
@@ -729,7 +738,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   onChange={(e) => setNewChatMessage(e.target.value)}
                   className="flex-1 px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-black focus:outline-none focus:border-amber-500"
                 />
-                <button type="submit" className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs">
+                <button type="submit" disabled={chatSending || !newChatMessage.trim()} className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs">
                   Send <Send className="w-3.5 h-3.5" />
                 </button>
               </form>
