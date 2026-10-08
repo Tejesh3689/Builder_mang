@@ -16,11 +16,19 @@ export async function POST(req: Request) {
       throw new ApiError(400, 'Malformed JSON');
     }
 
-    const { ventureId, stockLocationId, items, vendorName, invoiceNumber, idempotencyKey } = body;
-const fromLocationId = stockLocationId;
+    const { ventureId, stockLocationId, items, vendorName, invoiceNumber, receiptDate, idempotencyKey } = body;
+    const fromLocationId = stockLocationId;
 
     if (!ventureId || !stockLocationId || !items || !items.length || !idempotencyKey || typeof idempotencyKey !== 'string') {
       throw new ApiError(400, 'Missing required fields including idempotencyKey');
+    }
+
+    let parsedDate = new Date();
+    if (receiptDate) {
+      parsedDate = new Date(receiptDate);
+      if (isNaN(parsedDate.getTime()) || parsedDate > new Date()) {
+        throw new ApiError(400, 'Invalid or future receipt date');
+      }
     }
 
     // Role verification
@@ -56,10 +64,14 @@ const fromLocationId = stockLocationId;
     }
 
     for (const item of items) {
-      const qty = parseFloat(item.receivedQuantity);
-      if (isNaN(qty) || qty <= 0 || !isFinite(qty)) {
-        throw new ApiError(400, 'Invalid received quantity: must be positive numeric value');
-      }
+      const rQty = parseFloat(item.receivedQuantity);
+      const aQty = parseFloat(item.acceptedQuantity);
+      const rejQty = parseFloat(item.rejectedQuantity);
+      
+      if (isNaN(rQty) || rQty <= 0) throw new ApiError(400, 'Invalid received quantity');
+      if (isNaN(aQty) || aQty < 0) throw new ApiError(400, 'Invalid accepted quantity');
+      if (isNaN(rejQty) || rejQty < 0) throw new ApiError(400, 'Invalid rejected quantity');
+      if (Math.abs(rQty - (aQty + rejQty)) > 0.001) throw new ApiError(400, 'Received quantity must equal accepted + rejected');
     }
 
     const timestamp = Date.now().toString().slice(-6);
@@ -68,25 +80,27 @@ const fromLocationId = stockLocationId;
 
     try {
       const result = await runTransaction(async (tx) => {
-        // Create Issue Record
+        // Create Receipt Record
         const newReceipt = await tx.materialReceipt.create({
           data: {
             id: typeof idempotencyKey === 'string' && idempotencyKey.length === 36 ? idempotencyKey : undefined,
             receiptNumber,
             vendorName,
             invoiceNumber,
+            receiptDate: parsedDate,
             ventureId,
             stockLocationId,
             receivedById: (user as any).id,
             items: {
               create: items.map((item: any) => {
                  const rQty = parseFloat(item.receivedQuantity);
-                 const aQty = item.acceptedQuantity !== undefined ? parseFloat(item.acceptedQuantity) : rQty;
+                 const aQty = parseFloat(item.acceptedQuantity);
+                 const rejQty = parseFloat(item.rejectedQuantity);
                  return {
                     materialId: item.materialId,
                     receivedQuantity: rQty,
                     acceptedQuantity: aQty,
-                    rejectedQuantity: rQty - aQty,
+                    rejectedQuantity: rejQty,
                     rate: item.rate ? parseFloat(item.rate) : null
                  };
               })
@@ -96,44 +110,46 @@ const fromLocationId = stockLocationId;
 
         // Deduct Stock and update ledger
         for (const item of items) {
-          const qty = parseFloat(item.receivedQuantity);
+          const aQty = parseFloat(item.acceptedQuantity);
           
-          const currentStock = await tx.materialStock.upsert({
-            where: {
-              materialId_stockLocationId: {
+          if (aQty > 0) {
+            const currentStock = await tx.materialStock.upsert({
+              where: {
+                materialId_stockLocationId: {
+                  materialId: item.materialId,
+                  stockLocationId: fromLocationId
+                }
+              },
+              update: {
+                availableQuantity: { increment: aQty },
+                physicalQuantity: { increment: aQty }
+              },
+              create: {
                 materialId: item.materialId,
-                stockLocationId: fromLocationId
+                stockLocationId: fromLocationId,
+                ventureId,
+                availableQuantity: aQty,
+                physicalQuantity: aQty,
+                reservedQuantity: 0
               }
-            },
-            update: {
-              availableQuantity: { increment: qty },
-              physicalQuantity: { increment: qty }
-            },
-            create: {
-              materialId: item.materialId,
-              stockLocationId: fromLocationId,
-              ventureId,
-              availableQuantity: qty,
-              physicalQuantity: qty,
-              reservedQuantity: 0
-            }
-          });
+            });
 
-          await tx.materialTransaction.create({
-            data: {
-              transactionNumber: `TXN-${Date.now().toString().slice(-6)}${randomBytes(3).toString('hex').toUpperCase()}`,
-              materialId: item.materialId,
-              ventureId,
-              stockLocationId: fromLocationId,
-              transactionType: 'RECEIPT',
-              quantityIn: qty,
-              quantityOut: 0,
-              balanceAfter: currentStock ? currentStock.physicalQuantity : 0,
-              referenceType: 'RECEIPT',
-              referenceId: newReceipt.id,
-              performedById: (user as any).id
-            }
-          });
+            await tx.materialTransaction.create({
+              data: {
+                transactionNumber: `TXN-${Date.now().toString().slice(-6)}${randomBytes(3).toString('hex').toUpperCase()}`,
+                materialId: item.materialId,
+                ventureId,
+                stockLocationId: fromLocationId,
+                transactionType: 'RECEIPT',
+                quantityIn: aQty,
+                quantityOut: 0,
+                balanceAfter: currentStock.physicalQuantity,
+                referenceType: 'RECEIPT',
+                referenceId: newReceipt.id,
+                performedById: (user as any).id
+              }
+            });
+          }
         }
 
         return newReceipt;
@@ -150,7 +166,7 @@ const fromLocationId = stockLocationId;
          if (isSame && existing!.items.length === items.length) {
             for (const item of items) {
                const existItem = existing!.items.find(i => i.materialId === item.materialId);
-               if (!existItem || existItem.receivedQuantity !== parseFloat(item.receivedQuantity)) {
+               if (!existItem || !existItem.receivedQuantity.equals(item.receivedQuantity)) {
                   isSame = false;
                   break;
                }

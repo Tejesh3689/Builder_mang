@@ -31,7 +31,7 @@ export async function GET(
     }
 
     // Enforce membership check for GET — non-ADMINs must be a member of the room
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
+    if (userRole !== 'ADMIN') {
       const isMember = await prisma.chatMember.findUnique({
         where: { roomId_userId: { roomId, userId } },
         include: { room: true }
@@ -39,8 +39,6 @@ export async function GET(
       if (!isMember) {
         return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
       }
-
-      // Explicit membership in the room is sufficient, no need to check venture assignment
     }
 
     const { skip, take } = getPaginationParams(req);
@@ -53,7 +51,7 @@ export async function GET(
           select: { id: true, name: true, email: true, role: true }
         }
       },
-      orderBy: { createdAt: 'asc' }
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }]
     });
 
     return NextResponse.json({ success: true, data: messages });
@@ -74,8 +72,12 @@ export async function POST(
     const body = await req.json();
     const { content } = body;
 
-    if (!content) {
-      return NextResponse.json({ success: false, error: 'Message content is required' }, { status: 400 });
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return NextResponse.json({ success: false, error: 'Message content is required and cannot be empty' }, { status: 400 });
+    }
+    
+    if (content.length > 5000) {
+      return NextResponse.json({ success: false, error: 'Message exceeds maximum length of 5000 characters' }, { status: 400 });
     }
 
     const session = await getServerSession(authOptions);
@@ -86,7 +88,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (userRole !== 'ADMIN' && !hasPermission(userRole, 'chat:manage')) {
+    if (userRole !== 'ADMIN') {
       const user = await prisma.user.findUnique({
         where: { id: senderId },
         include: { employee: true }
@@ -103,15 +105,13 @@ export async function POST(
       if (!isMember) {
         return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
       }
-
-      // Explicit membership in the room is sufficient, no need to check venture assignment
     }
 
     const message = await prisma.chatMessage.create({
       data: {
         roomId,
         senderId,
-        content
+        content: content.trim()
       },
       include: {
         sender: {

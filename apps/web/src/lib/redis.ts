@@ -5,8 +5,14 @@ const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 let client: RedisClientType | null = null;
 
 try {
+  const isTls = redisUrl.startsWith('rediss://');
+  
   client = createClient({
     url: redisUrl,
+    socket: isTls ? {
+      tls: true,
+      rejectUnauthorized: false
+    } : undefined,
     // Fail commands immediately while disconnected instead of queueing them forever
     // (a queued GET used to hang every login when Redis was down).
     disableOfflineQueue: true,

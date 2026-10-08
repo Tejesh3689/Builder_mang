@@ -36,7 +36,7 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
   useEffect(() => {
     async function loadLeaves() {
       try {
-        // GET /api/leaves returns a bare array of LeaveRequest records.
+        // GET /api/leaves returns { success, data: LeaveRequest[] }.
         const res = await api.get<any>('/api/leaves');
         const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
         const typeLabel: Record<string, string> = { SICK: 'Sick Leave', CASUAL: 'Casual Leave', PAID: 'Paid Leave', UNPAID: 'Unpaid Leave' };

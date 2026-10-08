@@ -1,51 +1,62 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, buildDataScope } from '@/lib/authorization';
+import { requireAuth } from '@/lib/authorization';
+import { handleApiError, ApiError, parseJsonSafe } from '@/lib/api-errors';
+import { recordAudit } from '@/lib/audit';
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: Request, { params }: { params: any }) {
   try {
-    const resolvedParams = await params;
     const user = await requireAuth();
-    const scopeInfo = await buildDataScope(user);
-    const body = await req.json();
+    const attendanceId = params.id;
+    const body = await parseJsonSafe(req);
 
-    const record = await prisma.attendance.findUnique({
-      where: { id: resolvedParams.id },
-      include: { employee: true }
-    });
+    const existing = await prisma.attendance.findUnique({ where: { id: attendanceId } });
+    if (!existing) throw new ApiError(404, 'Attendance record not found');
 
-    if (!record) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if ((user as any).role === 'USER') {
+      if (existing.employeeId !== (user as any).employee?.id) throw new ApiError(403, 'Forbidden');
+      
+      // Users can only checkout
+      if (existing.checkOut) throw new ApiError(409, 'Already checked out');
+      
+      const checkOutTime = new Date();
+      const updated = await prisma.attendance.update({
+         where: { id: attendanceId },
+         data: { checkOut: checkOutTime, markedById: user.id }
+      });
+      return NextResponse.json({ success: true, data: updated });
     }
 
-    const employee = record.employee;
-
-    // Authorization Check
-    if (scopeInfo.scope === 'TEAM_LEVEL' && employee.reportingManagerId !== scopeInfo.identifier) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    if (scopeInfo.scope === 'SELF' && employee.userId !== scopeInfo.identifier) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // Admins/Managers can correct records
+    const { hasPermission } = await import('@/lib/permissions');
+    if ((user as any).role !== 'ADMIN' && !hasPermission((user as any).role, 'employees:edit')) {
+      throw new ApiError(403, 'Forbidden');
     }
 
-    // Only allow specific updates (status, checkOut, location)
     const updateData: any = {};
-    if (body.status) updateData.status = body.status;
-    if (body.checkOut) updateData.checkOut = new Date(body.checkOut);
-    if (body.location) updateData.location = body.location;
+    if (body.checkIn !== undefined) updateData.checkIn = body.checkIn ? new Date(body.checkIn) : null;
+    if (body.checkOut !== undefined) updateData.checkOut = body.checkOut ? new Date(body.checkOut) : null;
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.location !== undefined) updateData.location = body.location;
+    
+    updateData.markedById = user.id;
 
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'No valid update fields provided' }, { status: 400 });
-    }
-
-    const updated = await prisma.attendance.update({
-      where: { id: resolvedParams.id },
-      data: updateData
+    const result = await prisma.$transaction(async (tx) => {
+       const updated = await tx.attendance.update({
+          where: { id: attendanceId },
+          data: updateData
+       });
+       
+       await recordAudit(tx, {
+          userId: user.id,
+          action: 'ATTENDANCE_CORRECTION',
+          details: { attendanceId, changes: body }
+       });
+       return updated;
     });
 
-    return NextResponse.json(updated);
-  } catch (error: any) {
-    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    return NextResponse.json({ error: 'Server Error' }, { status: 500 });
+    return NextResponse.json({ success: true, data: result });
+  } catch (e) {
+    return handleApiError(e);
   }
 }
