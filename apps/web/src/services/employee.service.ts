@@ -52,6 +52,16 @@ export async function assertUniqueContact(tx: Tx, contact: { email?: string | nu
       select: { id: true },
     });
     if (clash) throw conflict('An employee with this email already exists.', { field: 'email' });
+
+    // A login account with this email that belongs to someone else (not this employee's own user).
+    const userClash = await tx.user.findFirst({
+      where: {
+        email: { equals: email, mode: 'insensitive' },
+        ...(excludeId ? { OR: [{ employee: null }, { employee: { id: { not: excludeId } } }] } : {}),
+      },
+      select: { id: true },
+    });
+    if (userClash) throw conflict('A user account with this email already exists.', { field: 'email' });
   }
   if (phone) {
     const digits = phone.slice(1);

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { SESSION_EXPIRED_EVENT } from '@/lib/api';
+import { useModalA11y } from '@/components/ui/useModalA11y';
 
 /**
  * Shown when any API call returns 401. Signing in from a new tab keeps whatever the user
@@ -12,6 +13,7 @@ import { SESSION_EXPIRED_EVENT } from '@/lib/api';
 export default function SessionExpiredDialog() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const ref = useModalA11y<HTMLDivElement>(open, () => setOpen(false));
 
   useEffect(() => {
     const show = () => setOpen(true);
@@ -40,7 +42,7 @@ export default function SessionExpiredDialog() {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[100] p-4" role="alertdialog" aria-modal="true" aria-labelledby="session-expired-title">
-      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-lg border border-zinc-200 p-6 max-w-sm w-full space-y-4">
+      <div ref={ref} className="bg-white rounded-t-2xl sm:rounded-xl shadow-lg border border-zinc-200 p-6 max-w-sm w-full space-y-4">
         <h3 id="session-expired-title" className="text-base font-extrabold text-black tracking-tight">Your session has expired</h3>
         <p className="text-xs text-zinc-600">
           Nothing was saved from your last action. Anything you typed on this page is still here.

@@ -1,15 +1,53 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Building2, MapPin, Calendar, Users, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { api } from '@/lib/api';
+import { FieldError, fieldErrorsFrom, useFieldErrors } from '@/lib/form-errors';
+import { useModalA11y } from '@/components/ui/useModalA11y';
+
+// Unsaved wizard input survives refresh / back navigation / accidental close (per browser tab).
+const DRAFT_KEY = 'create-venture-wizard-draft';
+
+// Which wizard step each server-side field lives on, so a validation error can jump back to it.
+const FIELD_STEP: Record<string, number> = {
+  name: 1, code: 1, type: 1, estimatedBudget: 1, description: 1, status: 1,
+  regAddressLine1: 2, regCity: 2, regState: 2, regPincode: 2, regDistrict: 2,
+  siteAddressLine1: 2, siteCity: 2, siteState: 2, sitePincode: 2, siteDistrict: 2, latitude: 2, longitude: 2,
+  planningStartDate: 3, startDate: 3, expectedCompletionDate: 3,
+  projectDirectorId: 4, projectManagerId: 4, siteManagerId: 4,
+};
 
 interface CreateVentureWizardProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newVenture: any) => void;
 }
+
+const EMPTY_FORM = {
+  name: '',
+  code: '',
+  type: 'RESIDENTIAL',
+  description: '',
+  status: 'ACTIVE',
+  regAddressLine1: '',
+  regCity: '',
+  regState: '',
+  regPincode: '',
+  siteAddressLine1: '',
+  siteCity: '',
+  siteState: '',
+  sitePincode: '',
+  latitude: '',
+  longitude: '',
+  planningStartDate: '',
+  startDate: '',
+  expectedCompletionDate: '',
+  estimatedBudget: '',
+  projectManagerId: '',
+  siteManagerId: '',
+};
 
 export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentureWizardProps) {
   const [step, setStep] = useState(1);
@@ -32,29 +70,60 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
   }, [isOpen]);
 
   // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    type: 'RESIDENTIAL',
-    description: '',
-    status: 'ACTIVE',
-    regAddressLine1: '',
-    regCity: '',
-    regState: '',
-    regPincode: '',
-    siteAddressLine1: '',
-    siteCity: '',
-    siteState: '',
-    sitePincode: '',
-    latitude: '',
-    longitude: '',
-    planningStartDate: '',
-    startDate: '',
-    expectedCompletionDate: '',
-    estimatedBudget: '',
-    projectManagerId: '',
-    siteManagerId: '',
-  });
+  const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM }));
+  const [restoredDraft, setRestoredDraft] = useState(false);
+  const fe = useFieldErrors(Object.fromEntries(Object.keys(FIELD_STEP).map((k) => [k, `vw-${k}`])));
+  const isDirty = useMemo(
+    () => (Object.keys(EMPTY_FORM) as (keyof typeof EMPTY_FORM)[]).some((k) => formData[k] !== EMPTY_FORM[k]),
+    [formData]
+  );
+
+  // Restore a draft when the wizard opens.
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      setFormData({ ...EMPTY_FORM, ...draft.formData });
+      setStep(draft.step >= 1 && draft.step <= 5 ? draft.step : 1);
+      setRestoredDraft(true);
+    } catch {
+      // storage unavailable or corrupt: start fresh
+    }
+  }, [isOpen]);
+
+  // Save the draft on every change while there is something worth keeping.
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      if (isDirty) sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ formData, step }));
+    } catch {
+      // storage unavailable: the beforeunload warning still protects the user
+    }
+  }, [isOpen, isDirty, formData, step]);
+
+  // Native "leave site?" prompt on refresh / tab close while there is unsaved input.
+  useEffect(() => {
+    if (!isOpen || !isDirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isOpen, isDirty]);
+
+  const dialogRef = useModalA11y<HTMLDivElement>(isOpen, onClose);
+
+  const discardDraft = () => {
+    try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
+    setFormData({ ...EMPTY_FORM });
+    setStep(1);
+    setRestoredDraft(false);
+    fe.clear();
+    setError('');
+  };
 
   if (!isOpen) return null;
 
@@ -75,21 +144,31 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
   const handleSubmit = async () => {
     setLoading(true);
     setError('');
+    fe.clear();
     try {
       const res = await api.post<{success: boolean, data?: any, error?: string}>('/api/ventures', formData);
-
-
-
-
-
       if (res.success && res.data) {
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
+        setFormData({ ...EMPTY_FORM });
+        setStep(1);
+        setRestoredDraft(false);
         onSuccess(res.data);
         onClose();
       } else {
         setError(res.error || 'Failed to create venture');
       }
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      if (err?.status === 401) return;
+      const fields = Object.keys(fieldErrorsFrom(err));
+      const target = fields.map((f) => FIELD_STEP[f]).filter(Boolean).sort((a, b) => a - b)[0];
+      if (target) {
+        // Jump to the step holding the first invalid field, then highlight it once it has rendered.
+        setStep(target);
+        setError(`Please correct the highlighted field${fields.length > 1 ? 's' : ''}: ${err.message}`);
+        setTimeout(() => fe.setFromError(err), 50);
+      } else {
+        setError(err.message || 'Something went wrong');
+      }
     } finally {
       setLoading(false);
     }
@@ -98,16 +177,22 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
   return (
     <ModalPortal>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-        <div className="relative w-full max-w-3xl rounded-xl bg-white border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-venture-title"
+          className="relative w-full max-w-3xl rounded-xl bg-white border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        >
           {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 bg-zinc-50/50">
           <div>
-            <h2 className="text-xl font-bold text-zinc-900 flex items-center gap-2">
+            <h2 id="create-venture-title" className="text-xl font-bold text-zinc-900 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-amber-700" /> Create New Operational Venture
             </h2>
             <p className="text-xs text-zinc-500 mt-0.5">Multi-step setup wizard for construction project container</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors">
+          <button onClick={onClose} aria-label="Close" className="p-2.5 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -142,6 +227,13 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
           </div>
         )}
 
+        {restoredDraft && (
+          <div className="mx-6 mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center justify-between gap-3">
+            <span>Restored your unsaved draft from earlier.</span>
+            <button type="button" onClick={discardDraft} className="px-3 py-2 font-semibold underline hover:text-amber-950">Discard draft</button>
+          </div>
+        )}
+
         {/* Modal Body */}
         <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {/* STEP 1: Basic Information */}
@@ -150,30 +242,38 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
               <h3 className="text-sm font-semibold text-zinc-800 uppercase tracking-wider">Step 1 — Basic Information</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Venture Name *</label>
+                  <label htmlFor="vw-name" className="block text-xs font-medium text-zinc-700 mb-1">Venture Name *</label>
                   <input
+                    id="vw-name"
+                    {...fe.props('vw-name')}
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g. Green Heights Luxury Apartments"
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-black focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
+                  <FieldError id="vw-name" errors={fe.errors} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Venture Code *</label>
+                  <label htmlFor="vw-code" className="block text-xs font-medium text-zinc-700 mb-1">Venture Code *</label>
                   <input
+                    id="vw-code"
+                    {...fe.props('vw-code')}
                     type="text"
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm font-mono text-amber-700 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
+                  <FieldError id="vw-code" errors={fe.errors} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Venture Type</label>
+                  <label htmlFor="vw-type" className="block text-xs font-medium text-zinc-700 mb-1">Venture Type</label>
                   <select
+                    id="vw-type"
+                    {...fe.props('vw-type')}
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -189,28 +289,35 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     <option value="MIXED_USE">Mixed Use</option>
                     <option value="OTHER">Other</option>
                   </select>
+                  <FieldError id="vw-type" errors={fe.errors} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Estimated Budget (INR)</label>
+                  <label htmlFor="vw-estimatedBudget" className="block text-xs font-medium text-zinc-700 mb-1">Estimated Budget (INR)</label>
                   <input
+                    id="vw-estimatedBudget"
+                    {...fe.props('vw-estimatedBudget')}
                     type="number"
                     value={formData.estimatedBudget}
                     onChange={(e) => setFormData({ ...formData, estimatedBudget: e.target.value })}
                     placeholder="e.g. 82000000"
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
+                  <FieldError id="vw-estimatedBudget" errors={fe.errors} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-1">Project Description</label>
+                <label htmlFor="vw-description" className="block text-xs font-medium text-zinc-700 mb-1">Project Description</label>
                 <textarea
+                  id="vw-description"
+                  {...fe.props('vw-description')}
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Operational scope, key features, structural overview..."
                   className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 />
+                <FieldError id="vw-description" errors={fe.errors} />
               </div>
             </div>
           )}
@@ -231,35 +338,51 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     <MapPin className="w-3.5 h-3.5 text-amber-700" /> Registered Address
                   </h4>
                   <input
+                    id="vw-regAddressLine1"
+                    {...fe.props('vw-regAddressLine1')}
+                    aria-label="Address Line 1"
                     type="text"
                     placeholder="Address Line 1"
                     value={formData.regAddressLine1}
                     onChange={(e) => setFormData({ ...formData, regAddressLine1: e.target.value })}
                     className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                   />
+                  <FieldError id="vw-regAddressLine1" errors={fe.errors} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
+                      id="vw-regCity"
+                      {...fe.props('vw-regCity')}
+                      aria-label="City"
                       type="text"
                       placeholder="City"
                       value={formData.regCity}
                       onChange={(e) => setFormData({ ...formData, regCity: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                     />
+                    <FieldError id="vw-regCity" errors={fe.errors} />
                     <input
+                      id="vw-regState"
+                      {...fe.props('vw-regState')}
+                      aria-label="State"
                       type="text"
                       placeholder="State"
                       value={formData.regState}
                       onChange={(e) => setFormData({ ...formData, regState: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                     />
+                    <FieldError id="vw-regState" errors={fe.errors} />
                   </div>
                   <input
+                    id="vw-regPincode"
+                    {...fe.props('vw-regPincode')}
+                    aria-label="PIN Code"
                     type="text"
                     placeholder="PIN Code"
                     value={formData.regPincode}
                     onChange={(e) => setFormData({ ...formData, regPincode: e.target.value })}
                     className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                   />
+                  <FieldError id="vw-regPincode" errors={fe.errors} />
                 </div>
 
                 {/* Construction Site Address */}
@@ -268,27 +391,39 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     <MapPin className="w-3.5 h-3.5 text-emerald-600" /> Construction Site Address
                   </h4>
                   <input
+                    id="vw-siteAddressLine1"
+                    {...fe.props('vw-siteAddressLine1')}
+                    aria-label="Site Address / Land Survey No."
                     type="text"
                     placeholder="Site Address / Land Survey No."
                     value={formData.siteAddressLine1}
                     onChange={(e) => setFormData({ ...formData, siteAddressLine1: e.target.value })}
                     className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                   />
+                  <FieldError id="vw-siteAddressLine1" errors={fe.errors} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
+                      id="vw-siteCity"
+                      {...fe.props('vw-siteCity')}
+                      aria-label="Site City"
                       type="text"
                       placeholder="Site City"
                       value={formData.siteCity}
                       onChange={(e) => setFormData({ ...formData, siteCity: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                     />
+                    <FieldError id="vw-siteCity" errors={fe.errors} />
                     <input
+                      id="vw-sitePincode"
+                      {...fe.props('vw-sitePincode')}
+                      aria-label="PIN Code"
                       type="text"
                       placeholder="PIN Code"
                       value={formData.sitePincode}
                       onChange={(e) => setFormData({ ...formData, sitePincode: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded text-xs text-black"
                     />
+                    <FieldError id="vw-sitePincode" errors={fe.errors} />
                   </div>
                 </div>
               </div>
@@ -296,22 +431,28 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
               {/* Geo Coordinates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Latitude</label>
+                  <label htmlFor="vw-latitude" className="block text-xs font-medium text-zinc-700 mb-1">Latitude</label>
                   <input
+                    id="vw-latitude"
+                    {...fe.props('vw-latitude')}
                     type="text"
                     value={formData.latitude}
                     onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-black focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
+                  <FieldError id="vw-latitude" errors={fe.errors} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Longitude</label>
+                  <label htmlFor="vw-longitude" className="block text-xs font-medium text-zinc-700 mb-1">Longitude</label>
                   <input
+                    id="vw-longitude"
+                    {...fe.props('vw-longitude')}
                     type="text"
                     value={formData.longitude}
                     onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-black focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
+                  <FieldError id="vw-longitude" errors={fe.errors} />
                 </div>
               </div>
             </div>
@@ -324,22 +465,28 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Project Start Date</label>
+                  <label htmlFor="vw-startDate" className="block text-xs font-medium text-zinc-700 mb-1">Project Start Date</label>
                   <input
+                    id="vw-startDate"
+                    {...fe.props('vw-startDate')}
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850"
                   />
+                  <FieldError id="vw-startDate" errors={fe.errors} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Expected Completion Date</label>
+                  <label htmlFor="vw-expectedCompletionDate" className="block text-xs font-medium text-zinc-700 mb-1">Expected Completion Date</label>
                   <input
+                    id="vw-expectedCompletionDate"
+                    {...fe.props('vw-expectedCompletionDate')}
                     type="date"
                     value={formData.expectedCompletionDate}
                     onChange={(e) => setFormData({ ...formData, expectedCompletionDate: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850"
                   />
+                  <FieldError id="vw-expectedCompletionDate" errors={fe.errors} />
                 </div>
               </div>
 
@@ -373,8 +520,10 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Project Manager</label>
+                  <label htmlFor="vw-projectManagerId" className="block text-xs font-medium text-zinc-700 mb-1">Project Manager</label>
                   <select
+                    id="vw-projectManagerId"
+                    {...fe.props('vw-projectManagerId')}
                     value={formData.projectManagerId}
                     onChange={(e) => setFormData({ ...formData, projectManagerId: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850 disabled:opacity-50"
@@ -387,10 +536,13 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                       </option>
                     ))}
                   </select>
+                  <FieldError id="vw-projectManagerId" errors={fe.errors} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Lead Site Engineer</label>
+                  <label htmlFor="vw-siteManagerId" className="block text-xs font-medium text-zinc-700 mb-1">Lead Site Engineer</label>
                   <select
+                    id="vw-siteManagerId"
+                    {...fe.props('vw-siteManagerId')}
                     value={formData.siteManagerId}
                     onChange={(e) => setFormData({ ...formData, siteManagerId: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850 disabled:opacity-50"
@@ -403,6 +555,7 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                       </option>
                     ))}
                   </select>
+                  <FieldError id="vw-siteManagerId" errors={fe.errors} />
                 </div>
               </div>
             </div>

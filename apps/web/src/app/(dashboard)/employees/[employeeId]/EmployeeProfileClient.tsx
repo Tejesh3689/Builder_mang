@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { EmployeeProfile, Skill, Certification, Document } from '@/lib/types';
 import { api } from '@/lib/api';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface EmployeeProfileProps {
   employeeId: string;
@@ -440,21 +441,21 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
             <div className="space-y-4">
               <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Contact & Basic Information</h4>
               <div className="space-y-2 border border-zinc-200/80 rounded-xl p-4 bg-zinc-50/20">
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Full Name</span>
-                  <span className="font-semibold text-black">{fullName}</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Full Name</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{fullName}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Personal Email</span>
-                  <span className="font-semibold text-black">{employee.email}</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Personal Email</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{employee.email}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Phone Number</span>
-                  <span className="font-semibold text-black">{employee.phone}</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Phone Number</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{employee.phone}</span>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-zinc-400">Emergency Contact</span>
-                  <span className="font-semibold text-black">+91 90023 11842 (Spouse)</span>
+                <div className="flex justify-between gap-4 py-2">
+                  <span className="text-zinc-400 shrink-0">Emergency Contact</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">+91 90023 11842 (Spouse)</span>
                 </div>
               </div>
             </div>
@@ -462,17 +463,17 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
             <div className="space-y-4">
               <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Site Access & Security</h4>
               <div className="space-y-2 border border-zinc-200/80 rounded-xl p-4 bg-zinc-50/20">
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Site Pass Status</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Site Pass Status</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${employee.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{employee.status === 'Active' ? 'Active Pass' : 'Suspended'}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Biometric Register</span>
-                  <span className="font-semibold text-emerald-600">Registered</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Biometric Register</span>
+                  <span className="font-semibold text-emerald-600 min-w-0 text-right [overflow-wrap:anywhere]">Registered</span>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-zinc-400">Primary Site Location</span>
-                  <span className="font-semibold text-black">{employee.currentSite}</span>
+                <div className="flex justify-between gap-4 py-2">
+                  <span className="text-zinc-400 shrink-0">Primary Site Location</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{employee.currentSite}</span>
                 </div>
               </div>
             </div>
@@ -485,31 +486,31 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
             <h4 className="text-xs font-bold text-zinc-900 uppercase font-mono tracking-wider">Employment Details</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-zinc-200/80 rounded-xl p-4 bg-zinc-50/20">
               <div className="space-y-2">
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Designation</span>
-                  <span className="font-semibold text-black">{employee.designation}</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Designation</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{employee.designation}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Department</span>
-                  <span className="font-semibold text-black">{employee.department}</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Department</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{employee.department}</span>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-zinc-400">System Permission</span>
-                  <span className="font-semibold text-black font-mono">SITE_TEAM</span>
+                <div className="flex justify-between gap-4 py-2">
+                  <span className="text-zinc-400 shrink-0">System Permission</span>
+                  <span className="font-semibold text-black font-mono min-w-0 text-right [overflow-wrap:anywhere]">SITE_TEAM</span>
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Joining Date</span>
-                  <span className="font-semibold text-black">{employee.joiningDate}</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Joining Date</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{employee.joiningDate}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-zinc-100">
-                  <span className="text-zinc-400">Reporting Manager</span>
-                  <span className="font-semibold text-black">{employee.reportingManager}</span>
+                <div className="flex justify-between gap-4 py-2 border-b border-zinc-100">
+                  <span className="text-zinc-400 shrink-0">Reporting Manager</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{employee.reportingManager}</span>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-zinc-400">Employment Type</span>
-                  <span className="font-semibold text-black">{employee.employmentType}</span>
+                <div className="flex justify-between gap-4 py-2">
+                  <span className="text-zinc-400 shrink-0">Employment Type</span>
+                  <span className="font-semibold text-black min-w-0 text-right [overflow-wrap:anywhere]">{employee.employmentType}</span>
                 </div>
               </div>
             </div>
@@ -690,19 +691,19 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
       <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
         <Link href="/employees" className="hover:text-black transition-colors">Employees</Link>
         <span>&rarr;</span>
-        <span className="text-black font-semibold">{fullName}</span>
+        <span className="text-black font-semibold truncate max-w-[60vw]" title={fullName}>{fullName}</span>
       </div>
 
       {/* Profile Header Card */}
       <div className="bg-white p-6 rounded-xl border border-zinc-200 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
               {initials}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-extrabold text-black tracking-tight">{fullName}</h1>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg font-extrabold text-black tracking-tight min-w-0 [overflow-wrap:anywhere]">{fullName}</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   • {employee.status}
                 </span>
@@ -771,10 +772,9 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
       </div>
 
       {/* Modal 1: Assign Project */}
-      {showAssignModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Dialog open={showAssignModal} onClose={() => { setShowAssignModal(false); setActionError(''); }} labelledBy="assign-modal-title">
           <form onSubmit={handleAssignProjectSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Assign Project & Site</h3>
+            <h3 id="assign-modal-title" className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Assign Project & Site</h3>
             {actionError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
@@ -819,14 +819,12 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Save Assignment</button>
             </div>
           </form>
-        </div>
-      )}
+      </Dialog>
 
       {/* Modal 2: Add Skill */}
-      {showSkillModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Dialog open={showSkillModal} onClose={() => { setShowSkillModal(false); setActionError(''); }} labelledBy="skill-modal-title">
           <form onSubmit={handleAddSkillSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Verified Skill</h3>
+            <h3 id="skill-modal-title" className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Verified Skill</h3>
             {actionError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
@@ -851,14 +849,12 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Save Skill</button>
             </div>
           </form>
-        </div>
-      )}
+      </Dialog>
 
       {/* Modal 3: Add Certification */}
-      {showCertModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Dialog open={showCertModal} onClose={() => { setShowCertModal(false); setActionError(''); }} labelledBy="cert-modal-title">
           <form onSubmit={handleAddCertSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Certification</h3>
+            <h3 id="cert-modal-title" className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Certification</h3>
             {actionError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
@@ -883,14 +879,12 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Save Certification</button>
             </div>
           </form>
-        </div>
-      )}
+      </Dialog>
 
       {/* Modal 4: Upload Document */}
-      {showDocModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Dialog open={showDocModal} onClose={() => { setShowDocModal(false); setActionError(''); }} labelledBy="doc-modal-title">
           <form onSubmit={handleAddDocSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Upload Document Vault</h3>
+            <h3 id="doc-modal-title" className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Upload Document Vault</h3>
             {actionError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{actionError}</p>}
             <div className="space-y-3 text-xs">
               <div>
@@ -929,8 +923,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               <button type="submit" className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg">Upload Doc</button>
             </div>
           </form>
-        </div>
-      )}
+      </Dialog>
 
     </div>
   );

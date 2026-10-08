@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { FieldError, useFieldErrors } from '@/lib/form-errors';
 
 export default function NewUserPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const fe = useFieldErrors();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -20,6 +22,7 @@ export default function NewUserPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    fe.clear();
 
     try {
       const res = await fetch('/api/admin/users', {
@@ -31,7 +34,8 @@ export default function NewUserPage() {
       if (data.success) {
         router.push('/admin/users');
       } else {
-        setError(data.error || 'Failed to create user');
+        const hasFieldErrors = fe.setFromError(data);
+        setError(hasFieldErrors ? 'Please correct the highlighted fields.' : data.error || 'Failed to create user');
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
@@ -58,8 +62,10 @@ export default function NewUserPage() {
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1">First Name *</label>
+              <label htmlFor="firstName" className="block text-sm font-medium text-zinc-700 mb-1">First Name *</label>
               <input
+                id="firstName"
+                {...fe.props('firstName')}
                 type="text"
                 required
                 placeholder="John"
@@ -67,22 +73,28 @@ export default function NewUserPage() {
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
               />
+              <FieldError id="firstName" errors={fe.errors} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1">Last Name</label>
+              <label htmlFor="lastName" className="block text-sm font-medium text-zinc-700 mb-1">Last Name</label>
               <input
+                id="lastName"
+                {...fe.props('lastName')}
                 type="text"
                 placeholder="Doe"
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
               />
+              <FieldError id="lastName" errors={fe.errors} />
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Email Address *</label>
+            <label htmlFor="email" className="block text-sm font-medium text-zinc-700 mb-1">Email Address *</label>
             <input
+              id="email"
+              {...fe.props('email')}
               type="email"
               required
               placeholder="john.doe@example.com"
@@ -90,11 +102,14 @@ export default function NewUserPage() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
             />
+            <FieldError id="email" errors={fe.errors} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Password *</label>
+            <label htmlFor="password" className="block text-sm font-medium text-zinc-700 mb-1">Password *</label>
             <input
+              id="password"
+              {...fe.props('password')}
               type="password"
               required
               minLength={6}
@@ -103,12 +118,15 @@ export default function NewUserPage() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
             />
+            <FieldError id="password" errors={fe.errors} />
             <p className="text-xs text-zinc-500 mt-1">Minimum 6 characters.</p>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Assign Role *</label>
+            <label htmlFor="role" className="block text-sm font-medium text-zinc-700 mb-1">Assign Role *</label>
             <select
+              id="role"
+              {...fe.props('role')}
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white"
@@ -119,6 +137,7 @@ export default function NewUserPage() {
               <option value="ADMIN">Admin</option>
               <option value="MANAGER">Manager</option>
             </select>
+            <FieldError id="role" errors={fe.errors} />
           </div>
 
           <div className="pt-4 border-t border-zinc-100 flex justify-end gap-3">

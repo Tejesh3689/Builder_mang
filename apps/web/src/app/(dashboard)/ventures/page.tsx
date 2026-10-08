@@ -9,15 +9,27 @@ import {
 } from 'lucide-react';
 import { CreateVentureWizard } from '@/components/ventures/CreateVentureWizard';
 import { api } from '@/lib/api';
+import { hasPermission } from '@/lib/permissions';
 
 export default function VenturesPage() {
   const [ventures, setVentures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role || 'USER';
+  // Same rule as POST /api/ventures (ventures:create is granted to ADMIN and MANAGER).
+  const canCreate = hasPermission(userRole as any, 'ventures:create');
+
+  // Reopen the wizard if the user left an unsaved draft (refresh, back navigation).
+  useEffect(() => {
+    if (!canCreate) return;
+    try {
+      if (sessionStorage.getItem('create-venture-wizard-draft')) setIsWizardOpen(true);
+    } catch {}
+  }, [canCreate]);
 
   // Filters State
   const [search, setSearch] = useState('');
@@ -26,6 +38,7 @@ export default function VenturesPage() {
 
   const fetchVentures = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const query = new URLSearchParams();
       if (search) query.append('search', search);
@@ -36,12 +49,12 @@ export default function VenturesPage() {
       if (res.success && Array.isArray(res.data)) {
         setVentures(res.data);
       } else {
-        console.error('Failed fetching ventures:', res.error);
-        setVentures([]);
+        setLoadError(res.error || 'The server returned an unexpected response.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed fetching ventures:', err);
-      setVentures([]);
+      // A failed load is not the same as "no ventures": keep it distinct so the user can retry.
+      if (err?.status !== 401) setLoadError(err?.status ? err.message : 'Could not reach the server. Check your connection.');
     } finally {
       setLoading(false);
     }
@@ -73,7 +86,7 @@ export default function VenturesPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          {userRole === 'ADMIN' && (
+          {canCreate && (
             <button
               onClick={() => setIsWizardOpen(true)}
               className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-xs transition-all hover:scale-[1.02]"
@@ -159,6 +172,15 @@ export default function VenturesPage() {
       {/* Main Venture Listing */}
       {loading ? (
         <div className="p-12 text-center text-zinc-500 text-xs animate-pulse">Loading operational ventures...</div>
+      ) : loadError ? (
+        <div role="alert" className="p-12 text-center rounded-xl bg-white border border-red-200 space-y-3 shadow-xs">
+          <ShieldAlert className="w-10 h-10 text-red-500 mx-auto" />
+          <h3 className="text-sm font-bold text-zinc-800">Couldn&apos;t load ventures</h3>
+          <p className="text-xs text-zinc-500">{loadError}</p>
+          <button onClick={fetchVentures} className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold">
+            Try again
+          </button>
+        </div>
       ) : ventures.length === 0 ? (
         <div className="p-12 text-center rounded-xl bg-white border border-zinc-200 space-y-3 shadow-xs">
           <Building2 className="w-10 h-10 text-zinc-400 mx-auto" />

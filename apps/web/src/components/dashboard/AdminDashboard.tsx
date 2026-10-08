@@ -8,13 +8,16 @@ import DashboardActivityFeed from './DashboardActivityFeed';
 
 export default function AdminDashboard({ 
   activeVentures, 
-  pendingRequests, 
-  inventoryAlerts, 
-  siteActivities 
-}: { 
-  activeVentures: any[]; 
-  pendingRequests: any[]; 
-  inventoryAlerts: any[]; 
+  pendingRequests,
+  pendingCount,
+  inventoryAlerts,
+  siteActivities
+}: {
+  activeVentures: any[];
+  pendingRequests: any[];
+  /** True number of requests in PENDING_APPROVAL (the table shows only the latest few). */
+  pendingCount: number;
+  inventoryAlerts: any[];
   siteActivities: any[]; 
 }) {
   const statusToneMap: Record<string, { bg: string; text: string; dot: string }> = {
@@ -86,11 +89,14 @@ export default function AdminDashboard({
         {/* Pending Approvals Table */}
         <DashboardTableCard 
           title="Pending Approvals" 
-          subtitle={`${pendingRequests.length} material requests awaiting decision`}
+          subtitle={`${pendingCount} material request${pendingCount === 1 ? '' : 's'} awaiting decision`}
           viewAllLink="/materials/requests"
           headers={['REQUEST', 'VENTURE', 'REQUESTED BY', 'TYPE', 'DATE', 'PRIORITY', 'STATUS']}
           colSpanClass="lg:col-span-2"
         >
+          {pendingRequests.length === 0 && (
+            <tr><td colSpan={7} className="py-6 text-center text-zinc-400">No material requests are waiting for a decision.</td></tr>
+          )}
           {pendingRequests.map((r, i) => (
             <tr key={i} className="hover:bg-zinc-50/80">
               <td className="py-3 font-mono font-medium text-zinc-500">{r.id}</td>
@@ -157,6 +163,9 @@ export default function AdminDashboard({
           viewAllLink="/materials/alerts"
           headers={['MATERIAL', 'LOCATION', 'STATUS']}
         >
+          {inventoryAlerts.length === 0 && (
+            <tr><td colSpan={3} className="py-6 text-center text-zinc-400">All stock is above its reorder level.</td></tr>
+          )}
           {inventoryAlerts.map((alt, idx) => (
             <tr key={idx}>
               <td className="py-3 font-bold text-black">{alt.name}</td>

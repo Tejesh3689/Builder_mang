@@ -62,14 +62,14 @@ export async function POST(req: Request) {
     if (reqDateStr) {
        requiredDate = new Date(reqDateStr);
        if (isNaN(requiredDate.getTime())) {
-         return NextResponse.json({ success: false, error: 'Invalid requiredDate' }, { status: 400 });
+         return NextResponse.json({ success: false, error: 'Invalid requiredDate', field: 'requiredDate' }, { status: 400 });
        }
        // Strict date-only validation - discard time
        requiredDate.setUTCHours(0,0,0,0);
        const today = new Date();
        today.setUTCHours(0,0,0,0);
        if (requiredDate < today) {
-         return NextResponse.json({ success: false, error: 'requiredDate cannot be in the past' }, { status: 400 });
+         return NextResponse.json({ success: false, error: 'Required-by date cannot be in the past', field: 'requiredDate' }, { status: 400 });
        }
     }
 
