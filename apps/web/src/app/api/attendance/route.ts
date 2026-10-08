@@ -1,118 +1,102 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAuth, buildScopedWhere, buildDataScope } from '@/lib/authorization';
-import { AttendanceSchema } from '@builder/validation';
-import { z } from 'zod';
-import { getPaginationParams } from '@/lib/pagination';
+import { requireAuth } from '@/lib/authorization';
+import { handleApiError, ApiError, parseJsonSafe } from '@/lib/api-errors';
 
-export async function GET(req: NextRequest) {
+// GET: Retrieve attendance with filters
+export async function GET(req: Request) {
   try {
     const user = await requireAuth();
-    const scopedWhere = await buildScopedWhere(user, 'attendance');
-    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
     const { searchParams } = new URL(req.url);
-    const dateStr = searchParams.get('date');
     const employeeId = searchParams.get('employeeId');
+    const dateStr = searchParams.get('date');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    // If regular user, they can only view their own attendance
+    if ((user as any).role === 'USER') {
+      if (!(user as any).employee?.id) throw new ApiError(403, 'User not linked to an employee');
+      if (employeeId && employeeId !== user.employee!.id) throw new ApiError(403, 'Forbidden');
+    }
 
     const where: any = {};
-    if (dateStr) {
-      const start = new Date(dateStr);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 1);
-      where.date = { gte: start, lt: end };
-    }
-    
-    if (employeeId) {
-      // Explicitly reject foreign employeeId
-      const emp = await prisma.employee.findFirst({
-        where: { AND: [{ id: employeeId }, scopedWhere.employee || {}] }
-      });
-      if (!emp) {
-        return NextResponse.json({ error: 'Forbidden: Employee not in scope' }, { status: 403 });
-      }
+    if ((user as any).role === 'USER') {
+      where.employeeId = user.employee!.id;
+    } else if (employeeId) {
       where.employeeId = employeeId;
     }
 
-    const { skip, take } = getPaginationParams(req);
+    if (dateStr) {
+      const d = new Date(dateStr);
+      d.setUTCHours(0,0,0,0);
+      where.date = d;
+    } else if (startDate || endDate) {
+      where.date = {};
+      if (startDate) {
+         const d = new Date(startDate);
+         d.setUTCHours(0,0,0,0);
+         where.date.gte = d;
+      }
+      if (endDate) {
+         const d = new Date(endDate);
+         d.setUTCHours(0,0,0,0);
+         where.date.lte = d;
+      }
+    }
+
     const records = await prisma.attendance.findMany({
-      where: { AND: [where, scopedWhere] },
-      skip,
-      take,
-      include: {
-        employee: { select: { firstName: true, lastName: true, reportingManagerId: true } },
-      },
+      where,
+      include: { employee: true },
       orderBy: { date: 'desc' }
     });
 
-    return NextResponse.json(records);
-  } catch (error: any) {
-    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    return NextResponse.json({ error: 'Server Error' }, { status: 500 });
+    return NextResponse.json({ success: true, data: records });
+  } catch (e) {
+    return handleApiError(e);
   }
 }
 
-export async function POST(req: NextRequest) {
+// POST: Check-in
+export async function POST(req: Request) {
   try {
     const user = await requireAuth();
-    const body = await req.json();
-
-    const data = AttendanceSchema.parse(body);
-
-    const scopedWhere = await buildScopedWhere(user, 'employee');
-    if (scopedWhere.id === 'DENY_ALL') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
-    const employee = await prisma.employee.findFirst({
-      where: { AND: [{ id: data.employeeId }, scopedWhere] }
-    });
-
-    if (!employee) {
-      return NextResponse.json({ error: 'Forbidden: Cannot create attendance for this employee' }, { status: 403 });
+    const body = await parseJsonSafe(req);
+    
+    // If regular user, force employeeId to theirs
+    let targetEmployeeId = body.employeeId;
+    if ((user as any).role === 'USER') {
+      if (!(user as any).employee?.id) throw new ApiError(403, 'User not linked to an employee');
+      targetEmployeeId = user.employee!.id;
     }
 
-    // Upsert logic for attendance
-    const start = new Date(data.date);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    if (!targetEmployeeId) throw new ApiError(400, 'employeeId is required');
 
-    const existing = await prisma.attendance.findFirst({
-      where: {
-        employeeId: data.employeeId,
-        date: { gte: start, lt: end }
-      }
-    });
+    // Date defaults to today at midnight UTC for uniqueness
+    const workingDate = body.date ? new Date(body.date) : new Date();
+    workingDate.setUTCHours(0, 0, 0, 0);
 
-    if (existing) {
-      const updated = await prisma.attendance.update({
-        where: { id: existing.id },
+    const now = new Date();
+    const checkInTime = body.checkIn ? new Date(body.checkIn) : now;
+
+    try {
+      const attendance = await prisma.attendance.create({
         data: {
-          status: data.status as any,
-          checkIn: data.checkIn ? new Date(data.checkIn) : null,
-          checkOut: data.checkOut ? new Date(data.checkOut) : null,
-          location: data.location
+          employeeId: targetEmployeeId,
+          date: workingDate,
+          checkIn: checkInTime,
+          status: 'PRESENT',
+          location: body.location || null,
+          markedById: user.id
         }
       });
-      return NextResponse.json(updated, { status: 200 });
-    }
-
-    const record = await prisma.attendance.create({
-      data: {
-        employeeId: data.employeeId,
-        date: new Date(data.date),
-        status: data.status as any,
-        checkIn: data.checkIn ? new Date(data.checkIn) : null,
-        checkOut: data.checkOut ? new Date(data.checkOut) : null,
-        location: data.location,
-        markedById: (user as any).id
+      return NextResponse.json({ success: true, data: attendance }, { status: 201 });
+    } catch (e: any) {
+      if (e.code === 'P2002') {
+         throw new ApiError(409, 'Attendance record already exists for this employee on this date');
       }
-    });
-
-    return NextResponse.json(record, { status: 201 });
-  } catch (error: any) {
-    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    if (error instanceof z.ZodError) return NextResponse.json({ error: error.errors }, { status: 422 });
-    return NextResponse.json({ error: 'Server Error' }, { status: 500 });
+      throw e;
+    }
+  } catch (e) {
+    return handleApiError(e);
   }
 }

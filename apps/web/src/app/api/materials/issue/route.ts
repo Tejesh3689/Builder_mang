@@ -77,7 +77,7 @@ export async function POST(req: Request) {
         if (!matchingReqItem) throw new ApiError(400, 'Material not in request');
         
         const qty = parseFloat(item.issuedQuantity);
-        if (matchingReqItem.issuedQuantity + qty > matchingReqItem.approvedQuantity) {
+        if (matchingReqItem.issuedQuantity.add(qty).gt(matchingReqItem.approvedQuantity)) {
            throw new ApiError(409, 'ISSUE_EXCEEDS_APPROVED_QUANTITY');
         }
       }
@@ -179,14 +179,14 @@ export async function POST(req: Request) {
                 });
                 currentIssued = updatedItem.issuedQuantity;
                 
-                if (currentIssued > updatedItem.approvedQuantity) {
+                if (currentIssued.gt(updatedItem.approvedQuantity)) {
                   throw new ApiError(409, 'ISSUE_EXCEEDS_APPROVED_QUANTITY');
                 }
               }
 
-              if (currentIssued >= reqItem.approvedQuantity && reqItem.approvedQuantity > 0) {
+              if (currentIssued.gte(reqItem.approvedQuantity) && reqItem.approvedQuantity.gt(0)) {
                  anyIssued = true;
-              } else if (currentIssued > 0) {
+              } else if (currentIssued.gt(0)) {
                  allFullyIssued = false;
                  anyIssued = true;
               } else {
@@ -221,7 +221,7 @@ export async function POST(req: Request) {
          if (isSame && existing!.items.length === items.length) {
             for (const item of items) {
                const existItem = existing!.items.find(i => i.materialId === item.materialId);
-               if (!existItem || existItem.issuedQuantity !== parseFloat(item.issuedQuantity)) {
+               if (!existItem || !existItem.issuedQuantity.equals(item.issuedQuantity)) {
                   isSame = false;
                   break;
                }

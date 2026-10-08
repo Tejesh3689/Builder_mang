@@ -126,7 +126,7 @@ export async function POST(req: Request) {
          if (isSame && existing!.items.length === finalItems.length) {
             for (const item of finalItems) {
                const existItem = existing!.items.find(i => i.materialId === item.materialId);
-               if (!existItem || existItem.requestedQuantity !== item.quantity) {
+               if (!existItem || !existItem.requestedQuantity.equals(item.quantity)) {
                   isSame = false;
                   break;
                }

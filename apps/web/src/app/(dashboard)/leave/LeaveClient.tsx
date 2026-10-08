@@ -70,8 +70,8 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
   const handleAction = async () => {
     if (!actionModal) return;
     try {
-      const res = await api.patch<{success: boolean, data?: any, error?: string}>(`/api/leaves/${actionModal.leave.id}`, {
-        status: actionModal.action === 'Approve' ? 'APPROVED' : 'REJECTED'
+      const res = await api.post<{success: boolean, data?: any, error?: string}>(`/api/leaves/${actionModal.leave.id}/process`, {
+        action: actionModal.action === 'Approve' ? 'APPROVE' : 'REJECT'
       });
       if (res.success) {
         setLeaves(prev => prev.map(l => {
