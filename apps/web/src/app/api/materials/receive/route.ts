@@ -134,10 +134,9 @@ export async function POST(req: Request) {
               }
             });
 
-<<<<<<< HEAD
             await tx.materialTransaction.create({
               data: {
-                transactionNumber: `TXN-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`,
+                transactionNumber: `TXN-${Date.now().toString().slice(-6)}${randomBytes(3).toString('hex').toUpperCase()}`,
                 materialId: item.materialId,
                 ventureId,
                 stockLocationId: fromLocationId,
@@ -151,23 +150,6 @@ export async function POST(req: Request) {
               }
             });
           }
-=======
-          await tx.materialTransaction.create({
-            data: {
-              transactionNumber: `TXN-${Date.now().toString().slice(-6)}${randomBytes(3).toString('hex').toUpperCase()}`,
-              materialId: item.materialId,
-              ventureId,
-              stockLocationId: fromLocationId,
-              transactionType: 'RECEIPT',
-              quantityIn: qty,
-              quantityOut: 0,
-              balanceAfter: currentStock ? currentStock.physicalQuantity : 0,
-              referenceType: 'RECEIPT',
-              referenceId: newReceipt.id,
-              performedById: (user as any).id
-            }
-          });
->>>>>>> 8a59970cc7c464760e8dc508544fefaf9202eff9
         }
 
         return newReceipt;
