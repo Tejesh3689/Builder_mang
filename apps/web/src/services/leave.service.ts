@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { leaveDurationDays } from '@builder/validation';
 
 export async function processLeaveApproval(leaveId: string, action: 'APPROVE' | 'REJECT', userId: string) {
   return await prisma.$transaction(async (tx) => {
@@ -24,9 +25,8 @@ export async function processLeaveApproval(leaveId: string, action: 'APPROVE' | 
     }
 
     // APPROVAL LOGIC
-    // 4. Determine requested duration in days (naive approach for this example)
-    const durationMs = leave.endDate.getTime() - leave.startDate.getTime();
-    const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1; // inclusive
+    // 4. Determine requested duration in calendar days (inclusive, business timezone)
+    const durationDays = leaveDurationDays(leave.startDate, leave.endDate);
 
     // 5. Determine applicable leave balance
     let balanceField: 'leaveBalancePaid' | 'leaveBalanceSick' | 'leaveBalanceCasual' | null = null;

@@ -356,41 +356,46 @@ async function main() {
     }
   });
 
-  await prisma.materialStock.upsert({
-    where: { materialId_stockLocationId: { materialId: cement.id, stockLocationId: mainStore.id } },
-    update: { physicalQuantity: 420, availableQuantity: 420 },
-    create: {
-      materialId: cement.id,
-      ventureId: greenHeights.id,
-      stockLocationId: mainStore.id,
-      physicalQuantity: 420,
-      availableQuantity: 420,
-    },
-  });
+  // Stock enters the system with a matching OPENING_BALANCE ledger row so that
+  // physicalQuantity always reconciles with SUM(quantityIn) - SUM(quantityOut).
+  // Existing stock rows are left alone: re-seeding must not overwrite live quantities.
+  const seedOpeningStock = async (materialId: string, quantity: number) => {
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.materialStock.findUnique({
+        where: { materialId_stockLocationId: { materialId, stockLocationId: mainStore.id } },
+      });
+      if (existing) return;
 
-  await prisma.materialStock.upsert({
-    where: { materialId_stockLocationId: { materialId: steel.id, stockLocationId: mainStore.id } },
-    update: { physicalQuantity: 8.4, availableQuantity: 8.4 },
-    create: {
-      materialId: steel.id,
-      ventureId: greenHeights.id,
-      stockLocationId: mainStore.id,
-      physicalQuantity: 8.4,
-      availableQuantity: 8.4,
-    },
-  });
+      await tx.materialStock.create({
+        data: {
+          materialId,
+          ventureId: greenHeights.id,
+          stockLocationId: mainStore.id,
+          physicalQuantity: quantity,
+          availableQuantity: quantity,
+        },
+      });
+      await tx.materialTransaction.create({
+        data: {
+          transactionNumber: `TXN-OB-${materialId.slice(0, 8)}-${mainStore.id.slice(0, 8)}`,
+          materialId,
+          ventureId: greenHeights.id,
+          stockLocationId: mainStore.id,
+          transactionType: 'OPENING_BALANCE',
+          quantityIn: quantity,
+          quantityOut: 0,
+          balanceAfter: quantity,
+          referenceType: 'OPENING_BALANCE',
+          remarks: 'Seeded opening balance',
+          performedById: admin.id,
+        },
+      });
+    });
+  };
 
-  await prisma.materialStock.upsert({
-    where: { materialId_stockLocationId: { materialId: tiles.id, stockLocationId: mainStore.id } },
-    update: { physicalQuantity: 320, availableQuantity: 320 },
-    create: {
-      materialId: tiles.id,
-      ventureId: greenHeights.id,
-      stockLocationId: mainStore.id,
-      physicalQuantity: 320,
-      availableQuantity: 320,
-    },
-  });
+  await seedOpeningStock(cement.id, 420);
+  await seedOpeningStock(steel.id, 8.4);
+  await seedOpeningStock(tiles.id, 320);
 
   // 9. Documents & Announcements
   await prisma.ventureDocument.createMany({

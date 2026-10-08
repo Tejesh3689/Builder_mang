@@ -1,7 +1,9 @@
+import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuth, buildScopedWhere } from '@/lib/authorization';
 import { handleApiError, ApiError, parseJsonSafe } from '@/lib/api-errors';
+import { runTransaction } from '@/lib/transaction';
 
 export async function POST(req: Request) {
   try {
@@ -84,11 +86,11 @@ export async function POST(req: Request) {
     }
 
     const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const random = randomBytes(3).toString('hex').toUpperCase();
     const issueNumber = `ISSUE-${timestamp}${random}`;
 
     try {
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await runTransaction(async (tx) => {
         // Create Issue Record
         const newIssue = await tx.materialIssue.create({
           data: {
@@ -137,14 +139,14 @@ export async function POST(req: Request) {
 
           await tx.materialTransaction.create({
             data: {
-              transactionNumber: `TXN-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`,
+              transactionNumber: `TXN-${Date.now().toString().slice(-6)}${randomBytes(3).toString('hex').toUpperCase()}`,
               materialId: item.materialId,
               ventureId,
               stockLocationId: fromLocationId,
               transactionType: 'ISSUE',
               quantityIn: 0,
               quantityOut: qty,
-              balanceAfter: currentStock ? currentStock.availableQuantity : 0,
+              balanceAfter: currentStock ? currentStock.physicalQuantity : 0,
               referenceType: 'ISSUE',
               referenceId: newIssue.id,
               performedById: (user as any).id
@@ -208,7 +210,7 @@ export async function POST(req: Request) {
           }
         }
         return newIssue;
-      }, { timeout: 15000 });
+      });
       return NextResponse.json({ success: true, data: result }, { status: 201 });
     } catch (e: any) {
       if (e.code === 'P2002' && e.meta?.target?.includes('id')) {
