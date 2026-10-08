@@ -11,7 +11,8 @@ export default function AdminDashboard({
   pendingRequests,
   pendingCount,
   inventoryAlerts,
-  siteActivities
+  siteActivities,
+  materialConsumption
 }: {
   activeVentures: any[];
   pendingRequests: any[];
@@ -19,6 +20,7 @@ export default function AdminDashboard({
   pendingCount: number;
   inventoryAlerts: any[];
   siteActivities: any[]; 
+  materialConsumption?: { label: string; pct: string; color: string }[];
 }) {
   const statusToneMap: Record<string, { bg: string; text: string; dot: string }> = {
     'on-track': { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', dot: 'bg-emerald-500' },
@@ -38,6 +40,23 @@ export default function AdminDashboard({
     tone: statusToneMap[st.statusKey]
   }));
 
+  const handleExport = () => {
+    const csvRows = [
+      ['ID', 'Name', 'Code', 'Location', 'Progress', 'Status'],
+      ...activeVentures.map(v => [
+        v.id, v.name, v.code, `"${v.location}"`, `${v.progress}%`, v.status
+      ])
+    ];
+    const csvString = csvRows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ventures-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto text-sm">
       {/* Top Header */}
@@ -46,6 +65,9 @@ export default function AdminDashboard({
           <h1 className="text-xl font-extrabold text-black tracking-tight">Dashboard</h1>
           <p className="text-xs text-zinc-500">Overview across all ventures</p>
         </div>
+        <button onClick={handleExport} className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 transition-colors">
+          Export Data
+        </button>
       </div>
 
       {/* Row 1: Venture Progress + Venture Status breakdown */}
@@ -126,13 +148,7 @@ export default function AdminDashboard({
             <h2 className="font-extrabold text-black mb-0.5">Material Consumption</h2>
             <p className="text-xs text-zinc-500 mb-4">This week, by category</p>
             <div className="space-y-3.5">
-              {[
-                { label: 'Cement', pct: '78%', color: 'bg-amber-600' },
-                { label: 'Steel', pct: '54%', color: 'bg-zinc-600' },
-                { label: 'Sand', pct: '40%', color: 'bg-emerald-700' },
-                { label: 'Bricks', pct: '61%', color: 'bg-amber-800' },
-                { label: 'Other', pct: '22%', color: 'bg-zinc-400' },
-              ].map((item, idx) => (
+              {(materialConsumption && materialConsumption.length > 0 ? materialConsumption : []).map((item, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex justify-between text-xs font-bold text-black">
                     <span>{item.label}</span>

@@ -34,23 +34,17 @@ export default async function DashboardPage() {
   const userId = (session?.user as any)?.id as string | undefined;
 
   if (userRole === 'SUPERVISOR') {
-<<<<<<< HEAD
-    const sessionName = session?.user?.name || '';
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-=======
     // The team is everyone whose reportingManagerId is this supervisor's *employee* id.
     const me = userId ? await prisma.employee.findUnique({ where: { userId }, select: { id: true } }) : null;
     const team = me
       ? await prisma.employee.findMany({
-          where: { reportingManagerId: me.id, status: { not: 'TERMINATED' } },
-          select: { id: true, firstName: true, lastName: true, designation: true },
-          orderBy: { firstName: 'asc' },
-        })
+        where: { reportingManagerId: me.id, status: { not: 'TERMINATED' } },
+        select: { id: true, firstName: true, lastName: true, designation: true },
+        orderBy: { firstName: 'asc' },
+      })
       : [];
     const teamIds = team.map((t) => t.id);
     const name = (e: { firstName: string; lastName: string }) => `${e.firstName} ${e.lastName}`.trim();
->>>>>>> 95c686c77ef7501a6ad7321b4cce395f50c587d9
 
     const [todayAttendance, leaves] = await Promise.all([
       prisma.attendance.findMany({ where: { employeeId: { in: teamIds }, date: todayRange() } }),
@@ -180,8 +174,8 @@ export default async function DashboardPage() {
       progress: v.progressPercentage ?? 0,
       status: v.status === 'ACTIVE' ? 'on-track'
         : v.status === 'ON_HOLD' ? 'at-risk'
-        : v.status === 'CANCELLED' ? 'delayed'
-        : v.status.toLowerCase(),
+          : v.status === 'CANCELLED' ? 'delayed'
+            : v.status.toLowerCase(),
     }));
 
     inventoryAlerts = lowStock.map((r) => {
@@ -193,6 +187,24 @@ export default async function DashboardPage() {
       t: `${a.user?.name ?? 'Someone'}: ${a.action.replace(/_/g, ' ').toLowerCase()}${a.venture?.name ? ` (${a.venture.name})` : ''}`,
       ts: timeAgo(a.createdAt),
     }));
+    let materialConsumption: { label: string; pct: string; color: string }[] = [];
+
+    // Fetch material consumption
+    const totalMaterials = await prisma.material.count();
+    if (totalMaterials > 0) {
+      const topMaterials = await prisma.material.findMany({
+        take: 4,
+        orderBy: { minimumStockLevel: 'desc' }, // Just an approximation of popular materials
+      });
+      const colors = ['bg-amber-600', 'bg-zinc-600', 'bg-emerald-700', 'bg-amber-800'];
+      materialConsumption = topMaterials.map((m, i) => ({
+        label: m.name,
+        pct: '0%', // Removed mock math. We will add actual consumption tracking freshly later.
+        color: colors[i] || 'bg-zinc-400',
+      }));
+    } else {
+      materialConsumption = [];
+    }
   } catch (err) {
     console.error('Error fetching dashboard data from DB:', err);
   }
@@ -204,6 +216,7 @@ export default async function DashboardPage() {
       pendingCount={pendingCount}
       inventoryAlerts={inventoryAlerts}
       siteActivities={siteActivities}
+      materialConsumption={typeof materialConsumption !== 'undefined' ? materialConsumption : []}
     />
   );
 }

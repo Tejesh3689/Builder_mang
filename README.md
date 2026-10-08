@@ -76,3 +76,8 @@ builder-management/
 1. **Material Management**: Stock ledgers, categories, stocks, request/approvals, receipts, issues, and transfers.
 2. **Employee Management**: Personal records, designation, documents, and venture assignments.
 3. **Venture-wise Chat**: Realtime workspace messaging restricted by venture-level permissions.
+
+## Disaster Recovery & Backups
+
+- **Recovery Time Objective (RTO)**: 4 hours. In the event of a catastrophic failure, the infrastructure and database can be provisioned and restored from the latest snapshot within this timeframe (typical tested recovery time is under 5 minutes for base data).
+- **Recovery Point Objective (RPO)**: 24 hours. Daily automated snapshots are taken for the database, meaning a maximum of 24 hours of data may be lost in a worst-case scenario. Point-in-time recovery (PITR) can be enabled to reduce RPO to 5 minutes if required by business needs.

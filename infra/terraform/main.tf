@@ -6,6 +6,16 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
+resource "aws_db_parameter_group" "postgres_utf8" {
+  name   = "builder-postgres15-utf8"
+  family = "postgres15"
+
+  parameter {
+    name  = "client_encoding"
+    value = "UTF8"
+  }
+}
+
 # PostgreSQL RDS Instance
 resource "aws_db_instance" "postgres" {
   allocated_storage    = 20
@@ -15,7 +25,7 @@ resource "aws_db_instance" "postgres" {
   instance_class       = "db.t4g.micro"
   username             = "builder_admin"
   password             = var.db_password
-  parameter_group_name = "default.postgres15"
+  parameter_group_name = aws_db_parameter_group.postgres_utf8.name
   skip_final_snapshot  = true
 }
 

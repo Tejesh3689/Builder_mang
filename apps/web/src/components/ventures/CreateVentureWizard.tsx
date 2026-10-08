@@ -146,7 +146,32 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
     setError('');
     fe.clear();
     try {
-      const res = await api.post<{success: boolean, data?: any, error?: string}>('/api/ventures', formData);
+      // Robustly parse the budget to prevent the 100x bug with comma-decimals
+      let parsedBudget = formData.estimatedBudget;
+      if (typeof parsedBudget === 'string' && parsedBudget.trim() !== '') {
+        // Find the last separator (. or ,)
+        const lastDot = parsedBudget.lastIndexOf('.');
+        const lastComma = parsedBudget.lastIndexOf(',');
+        const lastSeparator = Math.max(lastDot, lastComma);
+        
+        if (lastSeparator !== -1) {
+          const suffix = parsedBudget.substring(lastSeparator + 1);
+          // If the last separator is followed by exactly 1 or 2 digits, treat it as a decimal
+          if (suffix.length === 1 || suffix.length === 2) {
+            const prefix = parsedBudget.substring(0, lastSeparator).replace(/[.,]/g, '');
+            parsedBudget = `${prefix}.${suffix}`;
+          } else {
+            // Otherwise, it's all thousands separators
+            parsedBudget = parsedBudget.replace(/[.,]/g, '');
+          }
+        } else {
+          parsedBudget = parsedBudget.replace(/[.,]/g, '');
+        }
+      }
+
+      const payload = { ...formData, estimatedBudget: parsedBudget ? Number(parsedBudget) : undefined };
+      
+      const res = await api.post<{success: boolean, data?: any, error?: string}>('/api/ventures', payload);
       if (res.success && res.data) {
         try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
         setFormData({ ...EMPTY_FORM });
@@ -296,7 +321,8 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                   <input
                     id="vw-estimatedBudget"
                     {...fe.props('vw-estimatedBudget')}
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.estimatedBudget}
                     onChange={(e) => setFormData({ ...formData, estimatedBudget: e.target.value })}
                     placeholder="e.g. 82000000"

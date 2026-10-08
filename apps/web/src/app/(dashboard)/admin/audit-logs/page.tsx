@@ -37,7 +37,7 @@ export default async function AuditLogsPage() {
               {logs.map(log => (
                 <tr key={log.id} className="hover:bg-zinc-50/50">
                   <td className="px-6 py-4 whitespace-nowrap text-zinc-500">
-                    {new Date(log.createdAt).toLocaleString()}
+                    {new Date(log.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
                   </td>
                   <td className="px-6 py-4 font-medium text-zinc-900">{log.user?.name || 'System'}</td>
                   <td className="px-6 py-4">{log.action}</td>

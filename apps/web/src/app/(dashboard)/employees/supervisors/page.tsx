@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import SharedDirectoryClient from '@/components/SharedDirectoryClient';
 import { X } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function SupervisorsDirectoryPage() {
   const [fullName, setFullName] = useState('');
@@ -32,20 +33,16 @@ export default function SupervisorsDirectoryPage() {
         ventureId: selectedVentureId || 'none'
       };
 
-      const res = await fetch('/api/employees', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
+      const data = await api.post<any>('/api/employees', payload);
       if (data.success) {
         setFullName('');
         setPhone('+91 ');
         setSelectedVentureId('');
         onSuccess();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed adding supervisor:', err);
+      alert(err.message || 'Failed to add supervisor. Please check your inputs.');
     }
   };
 

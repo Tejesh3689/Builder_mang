@@ -32,7 +32,7 @@ export default async function MaterialTransactionsPage() {
     uom: tx.material?.unitOfMeasure?.name || 'Bags',
     ventureName: tx.venture?.name || 'Green Heights',
     quantity: tx.quantityIn > 0 ? `+${tx.quantityIn}` : `-${tx.quantityOut}`,
-    date: tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'Just now',
+    date: tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Just now',
     performedBy: tx.performedBy?.name || 'System'
   }));
 

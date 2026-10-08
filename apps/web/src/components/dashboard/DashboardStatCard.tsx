@@ -15,7 +15,7 @@ interface DashboardStatCardProps {
 
 export default function DashboardStatCard({ title, items }: DashboardStatCardProps) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-sm flex flex-col justify-between">
+    <div className="bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-sm flex flex-col justify-start h-fit">
       <div className="space-y-3.5">
         <h2 className="font-extrabold text-black mb-2">{title}</h2>
         {items.map((st, idx) => {

@@ -1,76 +1,55 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { EmployeeProfile } from '@/lib/types';
-import { api } from '@/lib/api';
+import { prisma } from '@/lib/db';
 
-export default function EmployeeDashboard() {
-  const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
+export const revalidate = 0;
 
-  useEffect(() => {
-    async function loadWorkforce() {
-      try {
-        const json = await api.get<{success: boolean, data: any[]}>('/api/employees');
-        if (json.success && Array.isArray(json.data)) {
-          const mapped: EmployeeProfile[] = json.data.map(item => {
-            const activeAssignment = item.assignments?.find((a: any) => a.status === 'ACTIVE');
-            return {
-              id: item.id,
-              employeeId: item.employeeId,
-              firstName: item.firstName,
-              lastName: item.lastName,
-              phone: item.phone || '',
-              email: item.email || '',
-              designation: item.designation,
-              department: item.department,
-              status: item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated',
-              joiningDate: item.joiningDate || '',
-              onboardingStage: item.onboardingStage || 'Active',
-              onboardingStatus: item.onboardingStatus || 'Active',
-              currentProject: activeAssignment?.venture?.name || 'Unassigned',
-              currentSite: activeAssignment?.roleAtSite || '—',
-              reportingManager: item.reportingManager ? `${item.reportingManager.firstName} ${item.reportingManager.lastName}` : '—',
-              employmentType: item.employmentType || 'Permanent',
-              attendanceRate: item.attendanceRate || '100%',
-              performanceRating: item.performanceRating || 5.0,
-              leaveBalancePaid: item.leaveBalancePaid ?? 12,
-              leaveBalanceSick: item.leaveBalanceSick ?? 8,
-              leaveBalanceCasual: item.leaveBalanceCasual ?? 10,
-              skills: item.skills || [],
-              certifications: item.certifications || [],
-              documents: item.documents || [],
-              trainingSafety: item.trainingSafety || [],
-              assignmentHistory: [],
-              activities: []
-            };
-          });
-          setEmployees(mapped);
-        }
-      } catch (err) {
-        console.error('Failed to load employees for employees dashboard:', err);
-      }
+export default async function EmployeeDashboard() {
+  const employees = await prisma.employee.findMany({
+    include: {
+      reportingManager: { select: { firstName: true, lastName: true } },
+      assignments: { include: { venture: { select: { name: true } } } },
+      certifications: true,
+      documents: true,
     }
-    loadWorkforce();
-  }, []);
+  });
+
+  const mappedEmployees = employees.map(item => {
+    const activeAssignment = item.assignments?.find(a => a.status === 'ACTIVE');
+    return {
+      id: item.id,
+      employeeId: item.employeeId,
+      firstName: item.firstName,
+      lastName: item.lastName,
+      designation: item.designation,
+      department: item.department,
+      status: item.status === 'ACTIVE' ? 'Active' : item.status === 'ON_LEAVE' ? 'On Leave' : 'Terminated',
+      joiningDate: item.joiningDate || '',
+      onboardingStage: item.onboardingStage || 'Active',
+      onboardingStatus: item.onboardingStatus || 'Active',
+      currentProject: activeAssignment?.venture?.name || 'Unassigned',
+      certifications: item.certifications || [],
+      documents: item.documents || [],
+    };
+  });
 
   // 1. Calculations
-  const totalEmployees = employees.length;
-  const activeEmployees = employees.filter((e) => e.status === 'Active' && e.onboardingStage === 'Active').length;
-  const onLeave = employees.filter((e) => e.status === 'On Leave').length;
-  const onSite = employees.filter((e) => e.status === 'Active' && e.onboardingStage === 'Active' && e.currentProject !== 'Unassigned').length;
-  const onboardingCount = employees.filter((e) => e.onboardingStage !== 'Active').length;
-  const unassigned = employees.filter((e) => e.currentProject === 'Unassigned' && e.onboardingStage === 'Active').length;
+  const totalEmployees = mappedEmployees.length;
+  const activeEmployees = mappedEmployees.filter((e) => e.status === 'Active' && e.onboardingStage === 'Active').length;
+  const onLeave = mappedEmployees.filter((e) => e.status === 'On Leave').length;
+  const onSite = mappedEmployees.filter((e) => e.status === 'Active' && e.onboardingStage === 'Active' && e.currentProject !== 'Unassigned').length;
+  const onboardingCount = mappedEmployees.filter((e) => e.onboardingStage !== 'Active').length;
+  const unassigned = mappedEmployees.filter((e) => e.currentProject === 'Unassigned' && e.onboardingStage === 'Active').length;
 
   // Compliance issues count
-  const complianceIssues = employees.reduce((acc, emp) => {
+  const complianceIssues = mappedEmployees.reduce((acc, emp) => {
     const expiredCerts = emp.certifications.filter((c) => c.status === 'Expired' || c.status === 'Expiring Soon').length;
     const missingDocs = (emp.documents.length === 0 && emp.onboardingStage === 'Active') ? 1 : 0;
     return acc + expiredCerts + missingDocs;
   }, 0);
 
   // Workforce distribution by project
-  const projectDistribution = employees.reduce((acc: Record<string, number>, emp) => {
+  const projectDistribution = mappedEmployees.reduce((acc: Record<string, number>, emp) => {
     if (emp.onboardingStage === 'Active') {
       const proj = emp.currentProject;
       acc[proj] = (acc[proj] || 0) + 1;
@@ -79,7 +58,7 @@ export default function EmployeeDashboard() {
   }, {});
 
   // Workforce distribution by department
-  const deptDistribution = employees.reduce((acc: Record<string, number>, emp) => {
+  const deptDistribution = mappedEmployees.reduce((acc: Record<string, number>, emp) => {
     if (emp.onboardingStage === 'Active') {
       const dept = emp.department;
       acc[dept] = (acc[dept] || 0) + 1;
@@ -89,14 +68,14 @@ export default function EmployeeDashboard() {
 
   // Status distribution
   const statusDistribution = {
-    Active: employees.filter((e) => e.status === 'Active' && e.onboardingStage === 'Active').length,
-    'On Leave': employees.filter((e) => e.status === 'On Leave').length,
-    Onboarding: employees.filter((e) => e.onboardingStage !== 'Active').length,
-    Terminated: employees.filter((e) => e.status === 'Terminated').length,
+    Active: mappedEmployees.filter((e) => e.status === 'Active' && e.onboardingStage === 'Active').length,
+    'On Leave': mappedEmployees.filter((e) => e.status === 'On Leave').length,
+    Onboarding: mappedEmployees.filter((e) => e.onboardingStage !== 'Active').length,
+    Terminated: mappedEmployees.filter((e) => e.status === 'Terminated').length,
   };
 
   // Expiring certifications list
-  const expiringCertsList = employees.flatMap((emp) =>
+  const expiringCertsList = mappedEmployees.flatMap((emp) =>
     emp.certifications
       .filter((c) => c.status === 'Expired' || c.status === 'Expiring Soon')
       .map((c) => ({
@@ -107,15 +86,15 @@ export default function EmployeeDashboard() {
   );
 
   // Pending Onboarding list
-  const pendingOnboardingList = employees.filter((e) => e.onboardingStage !== 'Active');
+  const pendingOnboardingList = mappedEmployees.filter((e) => e.onboardingStage !== 'Active');
 
   // Recent Joiners list (joined recently or candidate)
-  const recentJoiners = [...employees]
+  const recentJoiners = [...mappedEmployees]
     .sort((a, b) => b.joiningDate.localeCompare(a.joiningDate))
     .slice(0, 4);
 
   // Unassigned employees list
-  const unassignedList = employees.filter((e) => e.currentProject === 'Unassigned' && e.onboardingStage === 'Active');
+  const unassignedList = mappedEmployees.filter((e) => e.currentProject === 'Unassigned' && e.onboardingStage === 'Active');
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto text-sm">
