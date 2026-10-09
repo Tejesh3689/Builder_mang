@@ -59,7 +59,7 @@ export default function NewMaterialPage() {
         throw new Error(res.error || 'Failed saving material.');
       }
 
-      router.push('/materials');
+      router.push('/materials/list');
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Something went wrong.');

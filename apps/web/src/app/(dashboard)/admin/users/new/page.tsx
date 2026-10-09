@@ -132,10 +132,10 @@ export default function NewUserPage() {
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white"
             >
               <option value="MANAGER">Project Manager</option>
-              <option value="SUPERVISOR">Site Engineer</option>
-              <option value="SUPERVISOR">Supervisor</option>
+              <option value="SITE_ENGINEER">Site Engineer</option>
+              <option value="SUPERVISOR">Site Supervisor</option>
               <option value="ADMIN">Admin</option>
-              <option value="MANAGER">Manager</option>
+              <option value="PROCUREMENT_MANAGER">Procurement Manager</option>
             </select>
             <FieldError id="role" errors={fe.errors} />
           </div>

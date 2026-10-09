@@ -36,35 +36,52 @@ export default function EditUserPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-        <form className="space-y-6" onSubmit={(e) => {
+        <form className="space-y-6" onSubmit={async (e) => {
           e.preventDefault();
-          // Assume save logic here, currently a stub to fix Finding 30 identity issue
-          router.push('/admin/users');
+          const target = e.target as any;
+          const name = target.name_input.value;
+          const email = target.email_input.value;
+          const role = target.role_input.value;
+          const isActive = target.status_input.value === 'Active';
+
+          try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name, email, role, isActive })
+            });
+            if (res.ok) router.push('/admin/users');
+            else alert('Failed to update user');
+          } catch (err) {
+            console.error(err);
+            alert('An error occurred');
+          }
         }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">Name</label>
-              <input type="text" defaultValue={user.name} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+              <input id="name_input" name="name_input" type="text" defaultValue={user.name} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">Email Address</label>
-              <input type="email" defaultValue={user.email} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+              <input id="email_input" name="email_input" type="email" defaultValue={user.email} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
             </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">Role</label>
-              <select defaultValue={user.role} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-                <option value="PROJECT_MANAGER">Project Manager</option>
-                <option value="SITE_MANAGER">Site Manager</option>
-                <option value="SUPERVISOR">Supervisor</option>
-                <option value="ADMIN">Admin</option>
+              <select id="role_input" name="role_input" defaultValue={user.role} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+                <option value="MANAGER">Operations Manager</option>
+                <option value="SITE_ENGINEER">Site Engineer</option>
+                <option value="SUPERVISOR">Site Supervisor</option>
+                <option value="ADMIN">System Administrator</option>
+                <option value="PROCUREMENT_MANAGER">Procurement Manager</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">Account Status</label>
-              <select defaultValue={user.isActive ? 'Active' : 'Inactive'} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+              <select id="status_input" name="status_input" defaultValue={user.isActive ? 'Active' : 'Inactive'} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>

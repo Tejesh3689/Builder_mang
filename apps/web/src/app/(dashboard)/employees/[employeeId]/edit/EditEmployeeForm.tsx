@@ -35,10 +35,12 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
           // Filter to senior roles or managers
           const managers = data.data
             .filter((e: any) => 
-              e.designation?.toLowerCase().includes('manager') || 
-              e.designation?.toLowerCase().includes('director') || 
-              e.designation?.toLowerCase().includes('supervisor') ||
-              e.designation?.toLowerCase().includes('lead')
+              e.id !== employee.id &&
+              e.status !== 'TERMINATED' &&
+              (e.designation?.toLowerCase().includes('manager') || 
+               e.designation?.toLowerCase().includes('director') || 
+               e.designation?.toLowerCase().includes('supervisor') ||
+               e.designation?.toLowerCase().includes('lead'))
             )
             .map((e: any) => ({
               id: e.id,
@@ -374,12 +376,13 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
 
           {/* Footer buttons */}
           <div className="pt-4 border-t border-zinc-100 flex items-center justify-end gap-3">
-            <Link
-              href={`/employees/${employee.id}`}
+            <button
+              type="button"
+              onClick={() => router.back()}
               className="px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-lg text-xs font-semibold text-zinc-700 transition-colors"
             >
               Cancel
-            </Link>
+            </button>
             <button
               type="submit"
               disabled={isLoading || success}

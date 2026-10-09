@@ -147,7 +147,7 @@ export default function EmployeesClient({
       const matchesProject = selectedProject === 'All' || e.currentProject === selectedProject;
       const matchesSite = selectedSite === 'All' || e.currentSite === selectedSite;
       const matchesEmpType = selectedEmpType === 'All' || e.employmentType === selectedEmpType;
-      const matchesStatus = selectedStatus === 'All' || e.status === selectedStatus;
+      const matchesStatus = selectedStatus === 'All' ? e.status !== 'Terminated' : e.status === selectedStatus;
       const matchesManager = selectedManager === 'All' || e.reportingManager === selectedManager;
 
       const matchesSkill = selectedSkill === 'All' || e.skills.some((s) => s.skill === selectedSkill);

@@ -34,16 +34,16 @@ export async function requireVentureInScope<I extends Prisma.VentureInclude | un
   return venture as Prisma.VentureGetPayload<{ include: I }>;
 }
 
-/** Resolves an employee by id within the user's scope, or throws 404. */
+/** Resolves an employee by id or employeeId within the user's scope, or throws 404. */
 export async function requireEmployeeInScope<I extends Prisma.EmployeeInclude | undefined = undefined>(
   user: ScopedUser,
-  id: string,
+  idOrEmpId: string,
   include?: I
 ) {
   const where = await scopedWhere(user, 'employee');
   const employee = where
     ? await prisma.employee.findFirst({
-        where: { AND: [{ id }, where as Prisma.EmployeeWhereInput] },
+        where: { AND: [{ OR: [{ id: idOrEmpId }, { employeeId: idOrEmpId }] }, where as Prisma.EmployeeWhereInput] },
         include,
       })
     : null;
@@ -57,12 +57,12 @@ export async function requireEmployeeInScope<I extends Prisma.EmployeeInclude | 
  * MANAGER staff their venture from the unassigned pool without being able to
  * pull people off ventures they do not manage.
  */
-export async function requireAssignableEmployee(user: ScopedUser, id: string) {
+export async function requireAssignableEmployee(user: ScopedUser, idOrEmpId: string) {
   try {
-    return await requireEmployeeInScope(user, id);
+    return await requireEmployeeInScope(user, idOrEmpId);
   } catch (e) {
     const unassigned = await prisma.employee.findFirst({
-      where: { id, assignments: { none: { status: 'ACTIVE' } } },
+      where: { OR: [{ id: idOrEmpId }, { employeeId: idOrEmpId }], assignments: { none: { status: 'ACTIVE' } } },
     });
     if (!unassigned) throw e;
     return unassigned;

@@ -23,7 +23,23 @@ export default function DeleteUserPage() {
 
         <div className="flex gap-3 justify-center pt-4">
           <Link href="/admin/users" className="px-6 py-2.5 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-200">Cancel, keep user</Link>
-          <button onClick={() => router.push('/admin/users')} type="button" className="px-6 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700">Yes, delete user</button>
+          <button 
+            onClick={async () => {
+              const id = window.location.pathname.split('/')[3];
+              try {
+                const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+                if (res.ok) router.push('/admin/users');
+                else alert('Failed to delete user');
+              } catch (e) {
+                console.error(e);
+                alert('An error occurred');
+              }
+            }} 
+            type="button" 
+            className="px-6 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700"
+          >
+            Yes, delete user
+          </button>
         </div>
       </div>
     </div>

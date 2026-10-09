@@ -11,6 +11,8 @@ enum UserRole {
   ADMIN
   MANAGER
   SUPERVISOR
+  SITE_ENGINEER
+  PROCUREMENT_MANAGER
 }
 
 enum VentureStatus {

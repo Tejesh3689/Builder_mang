@@ -101,7 +101,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
   const [newProject, setNewProject] = useState('');
   const [newSite, setNewSite] = useState('Site A');
   const [newRole, setNewRole] = useState('Site Engineer');
-  const [newManager, setNewManager] = useState('Suresh Verma');
+  const [newManager, setNewManager] = useState('—');
   const [newDuration, setNewDuration] = useState('Feb 2026 - Present');
 
   useEffect(() => {
@@ -119,12 +119,15 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
         if (data.success && data.data) {
           const managers = data.data
             .filter((e: any) => 
-              e.designation?.toLowerCase().includes('manager') || 
-              e.designation?.toLowerCase().includes('director') || 
-              e.designation?.toLowerCase().includes('supervisor') ||
-              e.designation?.toLowerCase().includes('lead')
+              e.id !== employee?.id && 
+              e.status !== 'TERMINATED' &&
+              (e.designation?.toLowerCase().includes('manager') || 
+               e.designation?.toLowerCase().includes('director') || 
+               e.designation?.toLowerCase().includes('supervisor') ||
+               e.designation?.toLowerCase().includes('lead'))
             )
             .map((e: any) => ({
+              id: e.id,
               name: `${e.firstName} ${e.lastName}`,
               designation: e.designation
             }));
@@ -804,12 +807,12 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
                 <select value={newManager} onChange={(e) => setNewManager(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
                   <option value="—">None / Direct Report</option>
                   {seniorEmployees.map((emp, idx) => (
-                    <option key={idx} value={`${emp.name}`}>
+                    <option key={idx} value={emp.id}>
                       {emp.name} ({emp.designation})
                     </option>
                   ))}
-                  {!seniorEmployees.some(e => e.name === newManager) && newManager !== '—' && newManager && (
-                    <option value={newManager}>{newManager} (Current)</option>
+                  {!seniorEmployees.some((e: any) => e.id === newManager) && newManager !== '—' && newManager && (
+                    <option value={newManager}>Current ID: {newManager}</option>
                   )}
                 </select>
               </div>

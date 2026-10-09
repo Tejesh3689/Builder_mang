@@ -3,6 +3,23 @@ import { prisma } from '@/lib/db';
 import { requireAuth } from '@/lib/authorization';
 import { handleApiError, ApiError, parseJsonSafe } from '@/lib/api-errors';
 
+export async function GET(req: Request, { params }: { params: any }) {
+  try {
+    const actor = await requireAuth();
+    if ((actor as any).role !== 'ADMIN') throw new ApiError(403, 'Forbidden');
+    
+    const user = await prisma.user.findUnique({
+      where: { id: params.id },
+      select: { id: true, name: true, email: true, role: true, isActive: true }
+    });
+    
+    if (!user) throw new ApiError(404, 'User not found');
+    return NextResponse.json({ success: true, data: user });
+  } catch (e) {
+    return handleApiError(e);
+  }
+}
+
 export async function PATCH(req: Request, { params }: { params: any }) {
   try {
     const actor = await requireAuth();
@@ -28,6 +45,21 @@ export async function PATCH(req: Request, { params }: { params: any }) {
       if (e.code === 'P2002') throw new ApiError(409, 'Employee is already linked to another user');
       throw e;
     }
+  } catch (e) {
+    return handleApiError(e);
+  }
+}
+
+export async function DELETE(req: Request, { params }: { params: any }) {
+  try {
+    const actor = await requireAuth();
+    if ((actor as any).role !== 'ADMIN') throw new ApiError(403, 'Forbidden');
+    
+    await prisma.user.delete({
+      where: { id: params.id }
+    });
+    
+    return NextResponse.json({ success: true });
   } catch (e) {
     return handleApiError(e);
   }

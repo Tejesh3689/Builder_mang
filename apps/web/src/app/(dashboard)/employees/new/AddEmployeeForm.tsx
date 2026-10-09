@@ -15,7 +15,7 @@ export default function AddEmployeeForm() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('Mason');
   const [venture, setVenture] = useState('Green Heights Luxury Apartments');
-  const [supervisor, setSupervisor] = useState('Krishna Rao');
+  const [supervisor, setSupervisor] = useState('—');
   const [joiningDate, setJoiningDate] = useState('');
   const [employmentType, setEmploymentType] = useState<'Full-Time Contractor' | 'Permanent' | 'Daily Wage'>('Permanent');
 
@@ -36,10 +36,11 @@ export default function AddEmployeeForm() {
           // Filter to senior roles or managers
           const managers = data.data
             .filter((e: any) => 
-              e.designation?.toLowerCase().includes('manager') || 
-              e.designation?.toLowerCase().includes('director') || 
-              e.designation?.toLowerCase().includes('supervisor') ||
-              e.designation?.toLowerCase().includes('lead')
+              e.status !== 'TERMINATED' &&
+              (e.designation?.toLowerCase().includes('manager') || 
+               e.designation?.toLowerCase().includes('director') || 
+               e.designation?.toLowerCase().includes('supervisor') ||
+               e.designation?.toLowerCase().includes('lead'))
             )
             .map((e: any) => ({
               id: e.id,
