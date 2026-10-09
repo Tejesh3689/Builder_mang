@@ -46,7 +46,7 @@ export default function GlobalSearch({ navGroups }: { navGroups: NavGroup[] }) {
 
   return (
     <div className="relative hidden sm:block z-50" ref={containerRef}>
-      <div className="flex items-center gap-2 bg-zinc-100 border border-zinc-200/80 rounded-full px-4 py-1.5 w-64 text-xs text-zinc-700 focus-within:ring-2 focus-within:ring-black focus-within:border-black transition-all">
+      <div className="flex items-center gap-2 bg-zinc-100 border border-zinc-200/80 rounded-full px-4 py-1.5 w-48 lg:w-64 text-xs text-zinc-700 focus-within:ring-2 focus-within:ring-black focus-within:border-black transition-all">
         <svg className="w-4 h-4 text-zinc-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
         <input
           type="text"

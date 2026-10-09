@@ -232,18 +232,24 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar Header */}
         <header className="h-16 glass-topbar flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {/* Hamburger Trigger for Mobile */}
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
               aria-label="Open mobile menu"
-              className="lg:hidden p-2.5 -ml-2.5 rounded-lg text-zinc-600 hover:text-black hover:bg-zinc-100 transition-colors"
+              className="lg:hidden p-2.5 -ml-2.5 rounded-lg text-zinc-600 hover:text-black hover:bg-zinc-100 transition-colors shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
+<<<<<<< HEAD
             <div className="flex flex-col">
               <h1 className="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-black leading-tight truncate max-w-[150px] sm:max-w-none">
                 {routeMeta ? routeMeta.breadcrumb.toUpperCase() : pathname.split('/').filter(Boolean).join(' / ').toUpperCase()}
+=======
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-black leading-tight truncate">
+                {pathname === '/dashboard' ? 'Dashboard Overview' : pathname.split('/').filter(Boolean).join(' / ').toUpperCase()}
+>>>>>>> 67c851494c400ce0ac64e0e4716f5f82068b5e55
               </h1>
               <span className="text-[10px] sm:text-[11px] font-mono text-zinc-500">Live Workspace Status</span>
             </div>

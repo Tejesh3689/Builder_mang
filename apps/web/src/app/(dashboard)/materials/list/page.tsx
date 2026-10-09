@@ -37,13 +37,13 @@ export default async function MaterialsListPage() {
       
       if (m.stocks && m.stocks.length > 0) {
         // Find the location with the most stock
-        const sortedStocks = [...m.stocks].sort((a: any, b: any) => b.availableQuantity - a.availableQuantity);
-        available = m.stocks.reduce((sum: number, s: any) => sum + (s.availableQuantity || 0), 0);
-        reserved = m.stocks.reduce((sum: number, s: any) => sum + (s.reservedQuantity || 0), 0);
+        const sortedStocks = [...m.stocks].sort((a: any, b: any) => Number(b.availableQuantity) - Number(a.availableQuantity));
+        available = m.stocks.reduce((sum: number, s: any) => sum + Number(s.availableQuantity || 0), 0);
+        reserved = m.stocks.reduce((sum: number, s: any) => sum + Number(s.reservedQuantity || 0), 0);
         primaryLocation = sortedStocks[0].stockLocation?.name || 'Main Store';
       }
 
-      const minLevel = m.reorderLevel || 0;
+      const minLevel = Number(m.reorderLevel || 0);
       let status = 'Healthy';
       if (available === 0 && minLevel > 0) {
         status = 'Critical';
