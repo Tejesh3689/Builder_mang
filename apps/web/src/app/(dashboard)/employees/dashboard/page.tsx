@@ -248,7 +248,7 @@ export default async function EmployeeDashboard() {
                 <div>
                   <div className="font-bold text-zinc-900">{c.certification}</div>
                   <div className="text-zinc-400 text-[11px] mt-0.5">
-                    {c.employeeName} · Expiry: {c.expiryDate}
+                    {c.employeeName} · Expiry: {c.expiryDate ? c.expiryDate.toISOString().substring(0, 10) : ''}
                   </div>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${c.status === 'Expired' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>

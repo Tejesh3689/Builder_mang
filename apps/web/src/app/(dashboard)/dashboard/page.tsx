@@ -124,6 +124,7 @@ export default async function DashboardPage() {
   let activeVentures: any[] = [];
   let inventoryAlerts: any[] = [];
   let siteActivities: any[] = [];
+  let materialConsumption: { label: string; pct: string; color: string }[] = [];
 
   try {
     const [count, dbRequests, dbVentures, lowStock, audit] = await Promise.all([
@@ -187,7 +188,6 @@ export default async function DashboardPage() {
       t: `${a.user?.name ?? 'Someone'}: ${a.action.replace(/_/g, ' ').toLowerCase()}${a.venture?.name ? ` (${a.venture.name})` : ''}`,
       ts: timeAgo(a.createdAt),
     }));
-    let materialConsumption: { label: string; pct: string; color: string }[] = [];
 
     // Fetch material consumption
     const totalMaterials = await prisma.material.count();
