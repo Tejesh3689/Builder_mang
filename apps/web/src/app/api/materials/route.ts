@@ -85,6 +85,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Unit of measure name is required.' }, { status: 400 });
     }
 
+    // CAT-04: Enforce unique material names (case-insensitive)
+    const existingName = await prisma.material.findFirst({
+      where: {
+        name: { equals: cleanName, mode: 'insensitive' }
+      }
+    });
+
+    if (existingName) {
+      return NextResponse.json({ success: false, error: 'Material name must be unique' }, { status: 409 });
+    }
+
     // Upsert Category
     const category = await prisma.materialCategory.upsert({
       where: { name: cleanCategory },
