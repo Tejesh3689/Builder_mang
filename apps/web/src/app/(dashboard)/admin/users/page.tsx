@@ -29,7 +29,7 @@ export default async function UsersPage() {
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm min-w-[800px]">
             <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-600">
               <tr>
                 <th className="px-6 py-4 font-medium">Name</th>

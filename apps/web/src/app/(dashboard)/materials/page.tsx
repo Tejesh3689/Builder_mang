@@ -383,7 +383,7 @@ export default async function InventoryOverviewPage() {
                   <div key={site.locationName} className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-zinc-800 truncate max-w-[140px]">{site.locationName}</span>
-                      <span className="text-zinc-500 font-mono text-[11px] whitespace-nowrap">{site.totalQty} {site.uom || 'bags'}</span>
+                      <span className="text-zinc-500 font-mono text-[11px] whitespace-nowrap">{Number(site.totalQty)} {site.uom || 'bags'}</span>
                     </div>
                     <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
                       <div

@@ -402,7 +402,7 @@ export default function EmployeesClient({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[1000px]">
             <thead>
               <tr className="border-b border-zinc-200 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/20">
                 <th className="py-3 px-4 font-semibold">Employee</th>
