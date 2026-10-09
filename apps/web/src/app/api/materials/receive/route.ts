@@ -72,6 +72,11 @@ export async function POST(req: Request) {
       if (isNaN(aQty) || aQty < 0) throw new ApiError(400, 'Invalid accepted quantity');
       if (isNaN(rejQty) || rejQty < 0) throw new ApiError(400, 'Invalid rejected quantity');
       if (Math.abs(rQty - (aQty + rejQty)) > 0.001) throw new ApiError(400, 'Received quantity must equal accepted + rejected');
+      
+      if (item.rate !== undefined && item.rate !== null && item.rate !== "") {
+        const parsedRate = parseFloat(item.rate);
+        if (isNaN(parsedRate) || parsedRate < 0) throw new ApiError(400, 'Invalid rate: must be a positive number');
+      }
     }
 
     const timestamp = Date.now().toString().slice(-6);
