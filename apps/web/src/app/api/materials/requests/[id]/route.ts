@@ -81,10 +81,16 @@ export async function PATCH(
         }
 
         if (action === 'APPROVE') {
+          const bodyItems = Array.isArray(body.items) ? body.items : [];
           for (const item of request.items) {
+            const bodyItem = bodyItems.find((i: any) => i.materialId === item.materialId);
+            const approvedQty = (bodyItem && typeof bodyItem.approvedQuantity === 'number') 
+              ? bodyItem.approvedQuantity 
+              : item.requestedQuantity;
+              
             await tx.materialRequestItem.update({
               where: { id: item.id },
-              data: { approvedQuantity: item.requestedQuantity }
+              data: { approvedQuantity: approvedQty }
             });
           }
         }

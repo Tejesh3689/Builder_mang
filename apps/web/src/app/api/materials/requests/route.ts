@@ -56,13 +56,16 @@ export async function POST(req: Request) {
       materialId, quantity
     }));
 
-    // Check requiredDate
     const reqDateStr = body.requiredDate;
     let requiredDate = null;
     if (reqDateStr) {
        requiredDate = new Date(reqDateStr);
        if (isNaN(requiredDate.getTime())) {
          return NextResponse.json({ success: false, error: 'Invalid requiredDate', field: 'requiredDate' }, { status: 400 });
+       }
+       // Strictly reject date rollovers (e.g., '2027-02-30' rolling to '2027-03-02')
+       if (requiredDate.toISOString().substring(0, 10) !== reqDateStr.substring(0, 10)) {
+         return NextResponse.json({ success: false, error: 'Invalid requiredDate (does not exist on calendar)', field: 'requiredDate' }, { status: 400 });
        }
        // Strict date-only validation - discard time
        requiredDate.setUTCHours(0,0,0,0);

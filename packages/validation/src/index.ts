@@ -19,7 +19,8 @@ export const MaterialRequestSchema = z.object({
   items: z.array(
     z.object({
       materialId: z.string().min(1, { message: "Material is required" }),
-      quantity: z.number().positive({ message: "Quantity must be positive" }),
+      quantity: z.number().positive({ message: "Quantity must be positive" })
+        .refine(n => Math.abs(Math.round(n * 1000) - n * 1000) < 1e-6, { message: "Quantity can have at most 3 decimal places" }),
     })
   ).min(1, { message: "Add at least one item to request" }),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).default('NORMAL'),
