@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
+import { getSafeReturnTo } from '@/lib/navigation';
 
 export default function NewMaterialPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = getSafeReturnTo(searchParams.get('returnTo'), '/materials/list');
 
   // Form states
   const [name, setName] = useState('');
@@ -59,7 +63,7 @@ export default function NewMaterialPage() {
         throw new Error(res.error || 'Failed saving material.');
       }
 
-      router.push('/materials/list');
+      router.push(returnTo);
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Something went wrong.');
@@ -81,8 +85,8 @@ export default function NewMaterialPage() {
       {/* Top Header Card */}
       <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-200 shadow-xs">
         <div className="space-y-1">
-          <Link href="/materials" className="text-xs text-amber-700 hover:underline flex items-center gap-1">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Materials
+          <Link href={returnTo} className="text-xs text-amber-700 hover:underline flex items-center gap-1">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back
           </Link>
           <h1 className="text-lg font-extrabold text-black tracking-tight mt-1">Add Master Material</h1>
           <p className="text-xs text-zinc-500">Define code, description, category, and threshold for a new stock resource</p>
@@ -125,41 +129,41 @@ export default function NewMaterialPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-zinc-700 mb-1">Category</label>
-            <select
+            <Select
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
               className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-black text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="Structural">Structural (Cement, Steel)</option>
-              <option value="Finishing">Finishing (Tiles, Paints)</option>
-              <option value="Plumbing">Plumbing (Pipes, Joints)</option>
-              <option value="Electrical">Electrical (Wires, Switches)</option>
+              <SelectOption value="Structural">Structural (Cement, Steel)</SelectOption>
+              <SelectOption value="Finishing">Finishing (Tiles, Paints)</SelectOption>
+              <SelectOption value="Plumbing">Plumbing (Pipes, Joints)</SelectOption>
+              <SelectOption value="Electrical">Electrical (Wires, Switches)</SelectOption>
               {categories
                 .filter(c => !['Structural', 'Finishing', 'Plumbing', 'Electrical'].includes(c.name))
                 .map(c => (
-                  <option key={c.id} value={c.name}>{c.name}</option>
+                  <SelectOption key={c.id} value={c.name}>{c.name}</SelectOption>
                 ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label className="block text-xs font-bold text-zinc-700 mb-1">Unit of Measure</label>
-            <select
+            <Select
               value={uomName}
               onChange={(e) => setUomName(e.target.value)}
               className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-black text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="Bags">Bags (50kg)</option>
-              <option value="Tons">Tons</option>
-              <option value="Boxes">Boxes</option>
-              <option value="Meters">Meters</option>
-              <option value="Liters">Liters</option>
-              <option value="Units">Units</option>
+              <SelectOption value="Bags">Bags (50kg)</SelectOption>
+              <SelectOption value="Tons">Tons</SelectOption>
+              <SelectOption value="Boxes">Boxes</SelectOption>
+              <SelectOption value="Meters">Meters</SelectOption>
+              <SelectOption value="Liters">Liters</SelectOption>
+              <SelectOption value="Units">Units</SelectOption>
               {uoms
                 .filter(u => !['Bags', 'Tons', 'Boxes', 'Meters', 'Liters', 'Units'].includes(u.name))
                 .map(u => (
-                  <option key={u.id} value={u.name}>{u.name}</option>
+                  <SelectOption key={u.id} value={u.name}>{u.name}</SelectOption>
                 ))}
-            </select>
+            </Select>
           </div>
         </div>
 

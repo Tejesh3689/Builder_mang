@@ -8,7 +8,7 @@ export class ApiError extends Error {
 }
 
 export function handleApiError(error: any) {
-  console.error('[API Error]', error);
+  console.error(`[API Error] - Name: ${error instanceof Error ? error.name : 'Unknown'}, Code: ${error?.code}, Meta: ${JSON.stringify(error?.meta)}`, error);
 
   if (error instanceof ApiError || error?.name === 'ApiError') {
     return NextResponse.json({ success: false, error: error.message }, { status: error.status || 400 });

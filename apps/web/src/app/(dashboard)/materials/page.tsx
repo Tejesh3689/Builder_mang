@@ -242,7 +242,7 @@ export default async function InventoryOverviewPage() {
           <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
             <div className="px-5 py-3.5 border-b border-zinc-100 flex justify-between items-center">
               <h3 className="font-bold text-sm text-black">Low Stock Alerts</h3>
-              <Link href="/materials/stock" className="text-[11px] text-amber-700 hover:underline font-semibold flex items-center gap-0.5">
+              <Link href="/materials/stock/alerts" className="text-[11px] text-amber-700 hover:underline font-semibold flex items-center gap-0.5">
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>

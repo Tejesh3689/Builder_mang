@@ -26,7 +26,19 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'meetings:manage_team',
     'chat:access'
   ],
-
+  SITE_ENGINEER: [
+    'ventures:view',
+    'materials:view', 'materials:request',
+    'employees:view', 'employees:view_team',
+    'attendance:manage_team',
+    'reports:submit_dpr',
+    'chat:access'
+  ],
+  PROCUREMENT_MANAGER: [
+    'ventures:view',
+    'materials:view', 'materials:create', 'materials:approve', 'materials:stock', 'materials:issue', 'materials:receive', 'materials:transfer', 'materials:return', 'materials:adjust',
+    'chat:access'
+  ]
 };
 
 export function hasPermission(role: UserRole, permission: string): boolean {

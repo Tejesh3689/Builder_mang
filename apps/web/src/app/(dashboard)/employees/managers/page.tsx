@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import SharedDirectoryClient from '@/components/SharedDirectoryClient';
 import { X } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -75,17 +76,17 @@ export default function ManagersDirectoryPage() {
             </div>
             <div>
               <label className="block font-bold text-zinc-700 mb-1">Manager Role Type</label>
-              <select
+              <Select
                 value={managerRole}
                 onChange={(e) => setManagerRole(e.target.value)}
                 className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
               >
-                <option value="Project Manager">Project Manager</option>
-                <option value="Project Director">Project Director</option>
-                <option value="Construction Manager">Construction Manager</option>
-                <option value="Finance Manager">Finance Manager</option>
-                <option value="Purchase Manager">Purchase Manager</option>
-              </select>
+                <SelectOption value="Project Manager">Project Manager</SelectOption>
+                <SelectOption value="Project Director">Project Director</SelectOption>
+                <SelectOption value="Construction Manager">Construction Manager</SelectOption>
+                <SelectOption value="Finance Manager">Finance Manager</SelectOption>
+                <SelectOption value="Purchase Manager">Purchase Manager</SelectOption>
+              </Select>
             </div>
             <div>
               <label className="block font-bold text-zinc-700 mb-1">Phone Number</label>
@@ -109,18 +110,18 @@ export default function ManagersDirectoryPage() {
             </div>
             <div>
               <label className="block font-bold text-zinc-700 mb-1">Initial Project Assignment</label>
-              <select
+              <Select
                 value={selectedVentureId}
                 onChange={(e) => setSelectedVentureId(e.target.value)}
                 className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
               >
-                <option value="">None (Unassigned)</option>
+                <SelectOption value="">None (Unassigned)</SelectOption>
                 {ventures.map((v) => (
-                  <option key={v.id} value={v.id}>
+                  <SelectOption key={v.id} value={v.id}>
                     {v.name}
-                  </option>
+                  </SelectOption>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 

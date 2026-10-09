@@ -8,6 +8,7 @@ import { UserRole, type Prisma } from '@prisma/client';
  */
 const state: { userId: string | null } = { userId: null };
 mock.module('next-auth', {
+  // @ts-ignore
   exports: {
     getServerSession: async () => (state.userId ? { user: { id: state.userId } } : null),
   },

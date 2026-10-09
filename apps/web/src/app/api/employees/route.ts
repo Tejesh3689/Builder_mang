@@ -7,6 +7,7 @@ import { parseBody } from '@/lib/http/request';
 import { getPaginationParams } from '@/lib/pagination';
 import { employeeCreateSchema } from '@/lib/validation/employee';
 import { createEmployee } from '@/services/employee.service';
+import { buildSearchConditions } from '@/lib/search';
 
 export const GET = apiHandler(async (req) => {
   const user = await requireAuth();
@@ -18,18 +19,18 @@ export const GET = apiHandler(async (req) => {
   const search = new URL(req.url).searchParams.get('search')?.trim().slice(0, 100);
   const searchWhere: Prisma.EmployeeWhereInput = search
     ? {
-        OR: [
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
-          { employeeId: { contains: search, mode: 'insensitive' } },
-          { designation: { contains: search, mode: 'insensitive' } },
-          { department: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search } },
-        ],
+        AND: buildSearchConditions(search, [
+          term => ({ firstName: { contains: term, mode: 'insensitive' } }),
+          term => ({ lastName: { contains: term, mode: 'insensitive' } }),
+          term => ({ employeeId: { contains: term, mode: 'insensitive' } }),
+          term => ({ designation: { contains: term, mode: 'insensitive' } }),
+          term => ({ department: { contains: term, mode: 'insensitive' } }),
+          term => ({ email: { contains: term, mode: 'insensitive' } }),
+          term => ({ phone: { contains: term } })
+        ])
       }
     : {};
-  const where: Prisma.EmployeeWhereInput = { AND: [scopedWhere as Prisma.EmployeeWhereInput, searchWhere] };
+  const where: Prisma.EmployeeWhereInput = { AND: [scopedWhere as Prisma.EmployeeWhereInput, searchWhere, { status: { not: 'TERMINATED' } }] };
 
   const [employees, total] = await Promise.all([
     prisma.employee.findMany({

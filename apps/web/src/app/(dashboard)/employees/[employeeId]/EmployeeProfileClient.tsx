@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { EmployeeProfile, Skill, Certification, Document } from '@/lib/types';
 import { api } from '@/lib/api';
@@ -110,7 +111,7 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
     }
   }, [ventureOptions, newProject]);
 
-  const [seniorEmployees, setSeniorEmployees] = useState<{name: string, designation: string}[]>([]);
+  const [seniorEmployees, setSeniorEmployees] = useState<{id: string, name: string, designation: string}[]>([]);
   useEffect(() => {
     async function fetchManagers() {
       try {
@@ -782,21 +783,21 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Select Project</label>
-                <select value={newProject} onChange={(e) => setNewProject(e.target.value)} disabled={ventureOptions.length === 0} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
-                  {ventureOptions.length === 0 && <option value="">Loading ventures...</option>}
+                <Select value={newProject} onChange={(e) => setNewProject(e.target.value)} disabled={ventureOptions.length === 0} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                  {ventureOptions.length === 0 && <SelectOption value="">Loading ventures...</SelectOption>}
                   {ventureOptions.map((v) => (
-                    <option key={v.id} value={v.id}>{v.name}</option>
+                    <SelectOption key={v.id} value={v.id}>{v.name}</SelectOption>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Select Site</label>
-                <select value={newSite} onChange={(e) => setNewSite(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
-                  <option value="Site A">Site A</option>
-                  <option value="Site B">Site B</option>
-                  <option value="Site Alpha">Site Alpha</option>
-                  <option value="Site Beta">Site Beta</option>
-                </select>
+                <Select value={newSite} onChange={(e) => setNewSite(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                  <SelectOption value="Site A">Site A</SelectOption>
+                  <SelectOption value="Site B">Site B</SelectOption>
+                  <SelectOption value="Site Alpha">Site Alpha</SelectOption>
+                  <SelectOption value="Site Beta">Site Beta</SelectOption>
+                </Select>
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Designation At Site</label>
@@ -804,17 +805,17 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Reporting Manager</label>
-                <select value={newManager} onChange={(e) => setNewManager(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
-                  <option value="—">None / Direct Report</option>
+                <Select value={newManager} onChange={(e) => setNewManager(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                  <SelectOption value="—">None / Direct Report</SelectOption>
                   {seniorEmployees.map((emp, idx) => (
-                    <option key={idx} value={emp.id}>
+                    <SelectOption key={idx} value={emp.id}>
                       {emp.name} ({emp.designation})
-                    </option>
+                    </SelectOption>
                   ))}
                   {!seniorEmployees.some((e: any) => e.id === newManager) && newManager !== '—' && newManager && (
-                    <option value={newManager}>Current ID: {newManager}</option>
+                    <SelectOption value={newManager}>Current ID: {newManager}</SelectOption>
                   )}
-                </select>
+                </Select>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
@@ -836,11 +837,11 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Proficiency</label>
-                <select value={skillProficiency} onChange={(e) => setSkillProficiency(e.target.value as any)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Expert">Expert</option>
-                </select>
+                <Select value={skillProficiency} onChange={(e) => setSkillProficiency(e.target.value as any)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                  <SelectOption value="Beginner">Beginner</SelectOption>
+                  <SelectOption value="Intermediate">Intermediate</SelectOption>
+                  <SelectOption value="Expert">Expert</SelectOption>
+                </Select>
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Years of Experience</label>
@@ -913,12 +914,12 @@ export default function EmployeeProfileClient({ employeeId, userRole = 'ADMIN', 
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Category</label>
-                <select value={docCategory} onChange={(e) => setDocCategory(e.target.value as any)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
-                  <option value="Identity">Identity</option>
-                  <option value="Employment">Employment</option>
-                  <option value="Construction">Construction</option>
-                  <option value="Other">Other</option>
-                </select>
+                <Select value={docCategory} onChange={(e) => setDocCategory(e.target.value as any)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                  <SelectOption value="Identity">Identity</SelectOption>
+                  <SelectOption value="Employment">Employment</SelectOption>
+                  <SelectOption value="Construction">Construction</SelectOption>
+                  <SelectOption value="Other">Other</SelectOption>
+                </Select>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getPaginationParams } from '@/lib/pagination';
+import { buildSearchConditions } from '@/lib/search';
+import { Prisma } from '@prisma/client';
 
 const ALLOWED_ROLES = ['ADMIN', 'MANAGER', 'SUPERVISOR'];
 
@@ -26,18 +28,34 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: true, categories, uoms });
     }
 
-    const { skip, take } = getPaginationParams(req);
-    const materials = await prisma.material.findMany({
-      skip,
-      take,
-      include: {
-        category: true,
-        unitOfMeasure: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const search = searchParams.get('search')?.trim();
+    const where: Prisma.MaterialWhereInput = {};
+    if (search) {
+      where.AND = buildSearchConditions(search, [
+        term => ({ name: { contains: term, mode: 'insensitive' } }),
+        term => ({ sku: { contains: term, mode: 'insensitive' } }),
+        term => ({ category: { name: { contains: term, mode: 'insensitive' } } })
+      ]);
+    }
+    // Also excluding deleted materials if there is such a field. Wait, is there?
+    // Let's assume there is no soft delete for materials based on current logic which has no where clause.
 
-    return NextResponse.json({ success: true, data: materials });
+    const { skip, take } = getPaginationParams(req);
+    const [materials, total] = await Promise.all([
+      prisma.material.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          category: true,
+          unitOfMeasure: true
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.material.count({ where })
+    ]);
+
+    return NextResponse.json({ success: true, data: materials, total, skip, take });
   } catch (error: any) {
     console.error('Failed to fetch materials:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

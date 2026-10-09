@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import {
@@ -36,38 +37,56 @@ export default function VenturesPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
 
-  const fetchVentures = async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const query = new URLSearchParams();
-      if (search) query.append('search', search);
-      if (statusFilter !== 'ALL') query.append('status', statusFilter);
-      if (typeFilter !== 'ALL') query.append('type', typeFilter);
-
-      const res = await api.get<{success: boolean, data: any[], error?: string}>(`/api/ventures?${query.toString()}`);
-      if (res.success && Array.isArray(res.data)) {
-        setVentures(res.data);
-      } else {
-        setLoadError(res.error || 'The server returned an unexpected response.');
-      }
-    } catch (err: any) {
-      console.error('Failed fetching ventures:', err);
-      // A failed load is not the same as "no ventures": keep it distinct so the user can retry.
-      if (err?.status !== 401) setLoadError(err?.status ? err.message : 'Could not reach the server. Check your connection.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    fetchVentures();
-  }, [search, statusFilter, typeFilter]);
+    const t = setTimeout(() => { setDebouncedSearch(search.trim()); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  const handleVentureCreated = (newVenture: any) => {
-    // Re-fetch full list from DB so relational data (manager, _count) is complete
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const fetchVentures = async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const query = new URLSearchParams({ page: String(page), limit: '20' });
+        if (debouncedSearch) query.append('search', debouncedSearch);
+        if (statusFilter !== 'ALL') query.append('status', statusFilter);
+        if (typeFilter !== 'ALL') query.append('type', typeFilter);
+
+        const res = await api.get<{success: boolean, data: any[], total?: number, error?: string}>(`/api/ventures?${query.toString()}`, { signal: controller.signal });
+        if (cancelled) return;
+
+        if (res.success && Array.isArray(res.data)) {
+          setVentures(res.data);
+          setTotal(res.total ?? res.data.length);
+        } else {
+          setLoadError(res.error || 'The server returned an unexpected response.');
+        }
+      } catch (err: any) {
+        if (cancelled || err.name === 'AbortError') return;
+        console.error('Failed fetching ventures:', err);
+        if (err?.status !== 401) setLoadError(err?.status ? err.message : 'Could not reach the server. Check your connection.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
     fetchVentures();
-  };
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [debouncedSearch, statusFilter, typeFilter, page, reloadKey]);
+
+  const handleVentureCreated = (newVenture: any) => { setReloadKey(k => k + 1); };
 
   return (
     <div className="space-y-6">
@@ -119,34 +138,34 @@ export default function VenturesPage() {
         <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-xl">
             <Filter className="w-3.5 h-3.5 text-zinc-400" />
-            <select
+            <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="bg-transparent text-xs text-zinc-700 focus:outline-none cursor-pointer"
             >
-              <option value="ALL">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="PLANNING">Planning</option>
-              <option value="DRAFT">Draft</option>
-              <option value="ON_HOLD">On Hold</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
+              <SelectOption value="ALL">All Statuses</SelectOption>
+              <SelectOption value="ACTIVE">Active</SelectOption>
+              <SelectOption value="PLANNING">Planning</SelectOption>
+              <SelectOption value="DRAFT">Draft</SelectOption>
+              <SelectOption value="ON_HOLD">On Hold</SelectOption>
+              <SelectOption value="COMPLETED">Completed</SelectOption>
+              <SelectOption value="ARCHIVED">Archived</SelectOption>
+            </Select>
           </div>
 
           <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-xl">
-            <select
+            <Select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               className="bg-transparent text-xs text-zinc-700 focus:outline-none cursor-pointer"
             >
-              <option value="ALL">All Venture Types</option>
-              <option value="RESIDENTIAL">Residential</option>
-              <option value="COMMERCIAL">Commercial</option>
-              <option value="VILLA">Villa</option>
-              <option value="APARTMENT">Apartment</option>
-              <option value="PLOT_DEVELOPMENT">Plot Development</option>
-            </select>
+              <SelectOption value="ALL">All Venture Types</SelectOption>
+              <SelectOption value="RESIDENTIAL">Residential</SelectOption>
+              <SelectOption value="COMMERCIAL">Commercial</SelectOption>
+              <SelectOption value="VILLA">Villa</SelectOption>
+              <SelectOption value="APARTMENT">Apartment</SelectOption>
+              <SelectOption value="PLOT_DEVELOPMENT">Plot Development</SelectOption>
+            </Select>
           </div>
 
           {/* View Toggle */}

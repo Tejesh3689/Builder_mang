@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 
 interface TeamReportsClientProps {
   userRole?: string;
@@ -106,41 +107,41 @@ export default function TeamReportsClient({
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs p-4 flex flex-wrap items-center gap-3">
         <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider font-mono">Filters:</span>
         
-        <select
+        <Select
           value={dateRange}
           onChange={(e) => setDateRange(e.target.value)}
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
-          <option value="Today">Today</option>
-          <option value="This Week">This Week</option>
-          <option value="This Month">This Month</option>
-          <option value="Last Month">Last Month</option>
-        </select>
+          <SelectOption value="Today">Today</SelectOption>
+          <SelectOption value="This Week">This Week</SelectOption>
+          <SelectOption value="This Month">This Month</SelectOption>
+          <SelectOption value="Last Month">Last Month</SelectOption>
+        </Select>
 
-        <select
+        <Select
           value={employeeFilter}
           onChange={(e) => setEmployeeFilter(e.target.value)}
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
-          <option value="All">All Employees</option>
-          <option value="Krishna Rao">Krishna Rao</option>
-          <option value="Anil Desai">Anil Desai</option>
-          <option value="Ravi Kumar">Ravi Kumar</option>
-          <option value="Manoj Tiwari">Manoj Tiwari</option>
-          <option value="Suresh Babu">Suresh Babu</option>
-        </select>
+          <SelectOption value="All">All Employees</SelectOption>
+          <SelectOption value="Krishna Rao">Krishna Rao</SelectOption>
+          <SelectOption value="Anil Desai">Anil Desai</SelectOption>
+          <SelectOption value="Ravi Kumar">Ravi Kumar</SelectOption>
+          <SelectOption value="Manoj Tiwari">Manoj Tiwari</SelectOption>
+          <SelectOption value="Suresh Babu">Suresh Babu</SelectOption>
+        </Select>
 
-        <select
+        <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
-          <option value="All">All Statuses</option>
-          <option value="Present">Present</option>
-          <option value="Absent">Absent</option>
-          <option value="Approved">Approved</option>
-          <option value="Completed">Completed</option>
-        </select>
+          <SelectOption value="All">All Statuses</SelectOption>
+          <SelectOption value="Present">Present</SelectOption>
+          <SelectOption value="Absent">Absent</SelectOption>
+          <SelectOption value="Approved">Approved</SelectOption>
+          <SelectOption value="Completed">Completed</SelectOption>
+        </Select>
       </div>
 
       {/* Main Container Card */}

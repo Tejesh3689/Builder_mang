@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import { EmployeeProfile } from '@/lib/types';
 import { api } from '@/lib/api';
 
@@ -130,30 +131,30 @@ export default function ReportsPage() {
       {/* Filters Row */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs p-4 flex flex-wrap items-center gap-3">
         <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider font-mono">Report Scope:</span>
-        <select
+        <Select
           value={projectFilter}
           onChange={(e) => setProjectFilter(e.target.value)}
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
-          <option value="All">All Projects</option>
-          <option value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</option>
-          <option value="Skyline Gated Villas">Skyline Gated Villas</option>
-          <option value="Lake View Gated Community">Lake View Gated Community</option>
-          <option value="Sunrise Villas">Sunrise Villas</option>
-          <option value="Riverfront Towers">Riverfront Towers</option>
-        </select>
+          <SelectOption value="All">All Projects</SelectOption>
+          <SelectOption value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</SelectOption>
+          <SelectOption value="Skyline Gated Villas">Skyline Gated Villas</SelectOption>
+          <SelectOption value="Lake View Gated Community">Lake View Gated Community</SelectOption>
+          <SelectOption value="Sunrise Villas">Sunrise Villas</SelectOption>
+          <SelectOption value="Riverfront Towers">Riverfront Towers</SelectOption>
+        </Select>
 
-        <select
+        <Select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
-          <option value="All">All Departments</option>
-          <option value="Site Operations">Site Operations</option>
-          <option value="Civil Engineering">Civil Engineering</option>
-          <option value="Quality Assurance">Quality Assurance</option>
-          <option value="Planning & Civil">Planning & Civil</option>
-        </select>
+          <SelectOption value="All">All Departments</SelectOption>
+          <SelectOption value="Site Operations">Site Operations</SelectOption>
+          <SelectOption value="Civil Engineering">Civil Engineering</SelectOption>
+          <SelectOption value="Quality Assurance">Quality Assurance</SelectOption>
+          <SelectOption value="Planning & Civil">Planning & Civil</SelectOption>
+        </Select>
       </div>
 
       {/* Main Container Card */}

@@ -194,8 +194,8 @@ model Employee {
   status             EmployeeStatus              @default(ACTIVE)
   onboardingStage    String                      @default("Active")
   onboardingStatus   String                      @default("Active")
-  phone              String?
-  email              String?
+  phone              String?                     @unique
+  email              String?                     @unique
   joiningDate        String?
   reportingManagerId String?
   reportingManager   Employee?                   @relation("ReportingManager", fields: [reportingManagerId], references: [id])

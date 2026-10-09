@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, useRef, use } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Send, ArrowLeft, Building2, User, MessageSquare, UserPlus } from 'lucide-react';
@@ -260,12 +261,12 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Select Employee</label>
-                <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
+                <Select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
                   {employees.map((e) => (
-                    <option key={e.id} value={e.user.id}>{e.firstName} {e.lastName} ({e.designation})</option>
+                    <SelectOption key={e.id} value={e.user.id}>{e.firstName} {e.lastName} ({e.designation})</SelectOption>
                   ))}
-                  {employees.length === 0 && <option value="">Loading...</option>}
-                </select>
+                  {employees.length === 0 && <SelectOption value="">Loading...</SelectOption>}
+                </Select>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">

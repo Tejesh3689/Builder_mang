@@ -6,23 +6,13 @@ import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import SessionExpiredDialog from '@/components/SessionExpiredDialog';
 import GlobalSearch from '@/components/GlobalSearch';
+import { getNavGroups, getRouteMetadata } from '@/lib/navigation';
 
 export default function ClientDashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeOverride, setActiveOverride] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (pathname === '/materials') {
-      if (!activeOverride || (activeOverride !== 'Inventory Overview' && activeOverride !== 'Materials')) {
-        setActiveOverride('Inventory Overview');
-      }
-    } else {
-      setActiveOverride(null);
-    }
-  }, [pathname]);
 
   const currentUser = session?.user;
   const userName = currentUser?.name || currentUser?.email?.split('@')[0] || 'User Account';
@@ -36,180 +26,9 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
     .toUpperCase()
     .substring(0, 2);
 
-  type NavItem = { href: string; label: string; icon: string; count?: number | string; alert?: boolean };
-  type NavGroup = { group: string | null; items: NavItem[] };
-
-  const getNavGroups = (role: string): NavGroup[] => {
-    if (role === 'SUPERVISOR') {
-      return [
-        {
-          group: null,
-          items: [
-            { href: '/dashboard', label: 'Dashboard', icon: 'home' },
-          ],
-        },
-        {
-          group: 'Team Management',
-          items: [
-            { href: '/employees/team', label: 'My Team', icon: 'users' },
-            { href: '/attendance', label: 'Attendance', icon: 'check' },
-            { href: '/leave', label: 'Leave Management', icon: 'activity' },
-          ],
-        },
-        {
-          group: 'Operations',
-          items: [
-            { href: '/field-work', label: 'Field Work', icon: 'tasks' },
-            { href: '/approvals', label: 'Approvals', icon: 'check' },
-            { href: '/reports/team', label: 'Reports', icon: 'file' },
-            { href: '/meetings', label: 'Meetings', icon: 'users' },
-            { href: '/assets', label: 'Assets', icon: 'box' },
-          ],
-        },
-        {
-          group: 'Inventory',
-          items: [
-            { href: '/materials', label: 'Inventory Overview', icon: 'box' },
-            { href: '/materials/list', label: 'Materials', icon: 'cube' },
-            { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
-          ],
-        },
-        {
-          group: 'Communication',
-          items: [
-            { href: '/chat', label: 'Venture Chat', icon: 'chat' },
-          ],
-        },
-        {
-          group: 'System',
-          items: [
-            { href: '/notifications', label: 'Notifications', icon: 'bell', alert: true },
-            { href: '/profile', label: 'Profile', icon: 'settings' },
-          ],
-        },
-      ];
-    }
-
-    if (role === 'MANAGER') {
-      return [
-        {
-          group: null,
-          items: [
-            { href: '/dashboard', label: 'Dashboard', icon: 'home' },
-          ],
-        },
-        {
-          group: 'Ventures',
-          items: [
-            { href: '/ventures', label: 'My Ventures', icon: 'layers' },
-          ],
-        },
-        {
-          group: 'Team Management',
-          items: [
-            { href: '/employees/team', label: 'Extended Team', icon: 'users' },
-            { href: '/attendance', label: 'Attendance', icon: 'check' },
-            { href: '/leave', label: 'Leave Management', icon: 'activity' },
-          ],
-        },
-        {
-          group: 'Operations',
-          items: [
-            { href: '/field-work', label: 'Field Work', icon: 'tasks' },
-            { href: '/approvals', label: 'Approvals', icon: 'check' },
-            { href: '/reports/team', label: 'Reports', icon: 'file' },
-            { href: '/meetings', label: 'Meetings', icon: 'users' },
-            { href: '/assets', label: 'Assets', icon: 'box' },
-          ],
-        },
-        {
-          group: 'Inventory',
-          items: [
-            { href: '/materials', label: 'Inventory Overview', icon: 'box' },
-            { href: '/materials/list', label: 'Materials', icon: 'cube' },
-            { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
-          ],
-        },
-        {
-          group: 'Communication',
-          items: [
-            { href: '/chat', label: 'Venture Chat', icon: 'chat' },
-          ],
-        },
-        {
-          group: 'System',
-          items: [
-            { href: '/notifications', label: 'Notifications', icon: 'bell', alert: true },
-            { href: '/profile', label: 'Profile', icon: 'settings' },
-          ],
-        },
-      ];
-    }
-
-    const groups: NavGroup[] = [
-      {
-        group: null,
-        items: [
-          { href: '/dashboard', label: 'Dashboard', icon: 'home' },
-        ],
-      },
-      {
-        group: 'Ventures',
-        items: [
-          { href: '/ventures', label: 'All Ventures', icon: 'layers' },
-        ],
-      },
-      {
-        group: 'People',
-        items: [
-          { href: '/employees/dashboard', label: 'Employee Dashboard', icon: 'home' },
-          { href: '/employees', label: 'Employees', icon: 'users' },
-          { href: '/employees/managers', label: 'Managers', icon: 'briefcase' },
-          { href: '/employees/supervisors', label: 'Supervisors', icon: 'shield' },
-        ],
-      },
-      {
-        group: 'Inventory',
-        items: [
-          { href: '/materials', label: 'Inventory Overview', icon: 'box' },
-          { href: '/materials/list', label: 'Materials', icon: 'cube' },
-          { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
-        ],
-      },
-      {
-        group: 'Communication',
-        items: [
-          { href: '/chat', label: 'Venture Chat', icon: 'chat' },
-          { href: '/notifications', label: 'Notifications', icon: 'bell' },
-        ],
-      },
-      {
-        group: 'Reports',
-        items: [
-          { href: '/reports/projects', label: 'Project Reports', icon: 'file' },
-          { href: '/reports/employees', label: 'Employee Reports', icon: 'users' },
-          { href: '/reports/inventory', label: 'Inventory Reports', icon: 'box' },
-        ],
-      },
-    ];
-
-    if (role === 'ADMIN') {
-      groups.push({
-        group: 'Administration',
-        items: [
-          { href: '/admin/users', label: 'Users', icon: 'users' },
-          { href: '/admin/roles', label: 'Roles & Permissions', icon: 'shield' },
-          { href: '/admin/branches', label: 'Branches / Locations', icon: 'pin' },
-          { href: '/admin/audit-logs', label: 'Audit Logs', icon: 'list' },
-          { href: '/admin/settings', label: 'Company Settings', icon: 'settings' },
-        ],
-      });
-    }
-
-    return groups;
-  };
-
   const navGroups = getNavGroups(userRole);
+  const routeMeta = getRouteMetadata(pathname);
+  const activeHref = routeMeta ? routeMeta.parentHref : pathname;
 
   function renderIcon(name: string) {
     const iconClass = "w-4 h-4 text-zinc-500 shrink-0";
@@ -297,32 +116,31 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
           </svg>
         </button>
 
-        <div>
-          {/* Brand Header */}
-          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-5 px-2' : 'justify-between px-6 py-5'} border-b border-zinc-100`}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-sm shadow-md shadow-black/10 shrink-0">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-              </div>
-              {!isSidebarCollapsed && (
-                <div className="flex flex-col">
-                  <span className="font-extrabold text-base tracking-tight text-black leading-none">Naprocs</span>
-                  <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase mt-1">Builder Management</span>
-                </div>
-              )}
+        {/* Brand Header */}
+        <div className={`shrink-0 flex items-center ${isSidebarCollapsed ? 'justify-center py-5 px-2' : 'justify-between px-6 py-5'} border-b border-zinc-100`}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-sm shadow-md shadow-black/10 shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
             </div>
-            {/* Close Button on Mobile */}
-            <button
-              onClick={() => setIsMobileSidebarOpen(false)}
-              aria-label="Close menu"
-              className="lg:hidden p-2.5 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            {!isSidebarCollapsed && (
+              <div className="flex flex-col">
+                <span className="font-extrabold text-base tracking-tight text-black leading-none">Naprocs</span>
+                <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase mt-1">Builder Management</span>
+              </div>
+            )}
           </div>
+          {/* Close Button on Mobile */}
+          <button
+            onClick={() => setIsMobileSidebarOpen(false)}
+            aria-label="Close menu"
+            className="lg:hidden p-2.5 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
 
-          {/* Navigation Links */}
-          <div className={`${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'} overflow-y-auto max-h-[calc(100dvh-140px)]`}>
+        {/* Navigation Links */}
+        <div className={`flex-1 min-h-0 overflow-y-auto ${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'}`}>
             {navGroups.map((group, gIdx) => (
               <div key={gIdx} className="space-y-1">
                 {group.group && !isSidebarCollapsed && (
@@ -331,16 +149,13 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
                   </div>
                 )}
                 {group.items.map((item) => {
-                  const isActive = activeOverride
-                    ? item.label === activeOverride
-                    : pathname === item.href;
+                  const isActive = activeHref === item.href;
                   return (
                     <Link
                       key={item.href + item.label}
                       href={item.href}
                       title={isSidebarCollapsed ? item.label : undefined}
                       onClick={() => {
-                        setActiveOverride(item.label);
                         setIsMobileSidebarOpen(false);
                       }}
                       className={`flex items-center rounded-full text-xs font-medium transition-all duration-150 ${isSidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5'
@@ -372,11 +187,10 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
                 })}
               </div>
             ))}
-          </div>
         </div>
 
         {/* Footer Profile Chip */}
-        <div className={`${isSidebarCollapsed ? 'p-2' : 'p-4'} border-t border-zinc-100`}>
+        <div className={`shrink-0 ${isSidebarCollapsed ? 'p-2' : 'p-4'} border-t border-zinc-100`}>
           <div className={`flex items-center rounded-2xl bg-zinc-50 border border-zinc-200/80 ${isSidebarCollapsed ? 'p-1 justify-center' : 'p-2 justify-between'}`}>
             <div className="flex items-center gap-3 min-w-0">
               {isSidebarCollapsed ? (
@@ -429,7 +243,7 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
             </button>
             <div className="flex flex-col">
               <h1 className="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-black leading-tight truncate max-w-[150px] sm:max-w-none">
-                {pathname === '/dashboard' ? 'Dashboard Overview' : pathname.split('/').filter(Boolean).join(' / ').toUpperCase()}
+                {routeMeta ? routeMeta.breadcrumb.toUpperCase() : pathname.split('/').filter(Boolean).join(' / ').toUpperCase()}
               </h1>
               <span className="text-[10px] sm:text-[11px] font-mono text-zinc-500">Live Workspace Status</span>
             </div>

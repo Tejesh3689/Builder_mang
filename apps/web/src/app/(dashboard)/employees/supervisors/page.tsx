@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import SharedDirectoryClient from '@/components/SharedDirectoryClient';
 import { X } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -10,9 +11,12 @@ export default function SupervisorsDirectoryPage() {
   const [phone, setPhone] = useState('+91 ');
   const [selectedVentureId, setSelectedVentureId] = useState('');
 
+  const inFlight = React.useRef(false);
+
   const handleAddSubmit = async (e: React.FormEvent, onSuccess: () => void) => {
     e.preventDefault();
-    if (!fullName) return;
+    if (!fullName || inFlight.current) return;
+    inFlight.current = true;
 
     try {
       const nameParts = fullName.trim().split(' ');
@@ -43,6 +47,8 @@ export default function SupervisorsDirectoryPage() {
     } catch (err: any) {
       console.error('Failed adding supervisor:', err);
       alert(err.message || 'Failed to add supervisor. Please check your inputs.');
+    } finally {
+      inFlight.current = false;
     }
   };
 
@@ -82,18 +88,18 @@ export default function SupervisorsDirectoryPage() {
             </div>
             <div>
               <label className="block font-bold text-zinc-700 mb-1">Assigned Project</label>
-              <select
+              <Select
                 value={selectedVentureId}
                 onChange={(e) => setSelectedVentureId(e.target.value)}
                 className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
               >
-                <option value="">None (Unassigned)</option>
+                <SelectOption value="">None (Unassigned)</SelectOption>
                 {ventures.map((v) => (
-                  <option key={v.id} value={v.id}>
+                  <SelectOption key={v.id} value={v.id}>
                     {v.name}
-                  </option>
+                  </SelectOption>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 

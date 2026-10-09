@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, use, useRef } from 'react';
+import React, { useState, useEffect, use, useRef } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { 
   Building2, ArrowLeft, MapPin, Calendar, Users, Package, FileText, MessageSquare, 
@@ -825,49 +826,49 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Select Employee</label>
-                <select
+                <Select
                   required
                   value={selectedEmpId}
                   onChange={(e) => setSelectedEmpId(e.target.value)}
                   className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none focus:border-amber-500"
                 >
-                  <option value="">-- Choose Employee --</option>
+                  <SelectOption value="">-- Choose Employee --</SelectOption>
                   {allEmployees
                     .filter((emp) => !(venture.assignments || []).some((asgn: any) => asgn.employeeId === emp.id))
                     .map((emp) => (
-                      <option key={emp.id} value={emp.id}>
+                      <SelectOption key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName} ({emp.designation})
-                      </option>
+                      </SelectOption>
                     ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Role at Site</label>
-                <select
+                <Select
                   value={assignRole}
                   onChange={(e) => setAssignRole(e.target.value)}
                   className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
                 >
-                  <option value="Site Engineer">Site Engineer</option>
-                  <option value="Supervisor">Supervisor</option>
-                  <option value="Store Manager">Store Manager</option>
-                  <option value="Mason">Mason</option>
-                  <option value="Laborer">Laborer</option>
-                </select>
+                  <SelectOption value="Site Engineer">Site Engineer</SelectOption>
+                  <SelectOption value="Supervisor">Supervisor</SelectOption>
+                  <SelectOption value="Store Manager">Store Manager</SelectOption>
+                  <SelectOption value="Mason">Mason</SelectOption>
+                  <SelectOption value="Laborer">Laborer</SelectOption>
+                </Select>
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Venture Access Level</label>
-                <select
+                <Select
                   value={assignAccess}
                   onChange={(e) => setAssignAccess(e.target.value)}
                   className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
                 >
-                  <option value="STANDARD">STANDARD</option>
-                  <option value="FULL_ACCESS">FULL_ACCESS</option>
-                  <option value="OPERATIONS">OPERATIONS</option>
-                  <option value="MATERIALS_ONLY">MATERIALS_ONLY</option>
-                  <option value="READ_ONLY">READ_ONLY</option>
-                </select>
+                  <SelectOption value="STANDARD">STANDARD</SelectOption>
+                  <SelectOption value="FULL_ACCESS">FULL_ACCESS</SelectOption>
+                  <SelectOption value="OPERATIONS">OPERATIONS</SelectOption>
+                  <SelectOption value="MATERIALS_ONLY">MATERIALS_ONLY</SelectOption>
+                  <SelectOption value="READ_ONLY">READ_ONLY</SelectOption>
+                </Select>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 text-xs font-semibold">

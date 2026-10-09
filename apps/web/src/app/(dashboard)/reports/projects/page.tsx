@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import { ExportButton } from '@/components/ui/ExportButton';
+import { formatCurrency } from '@/lib/format';
 import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +33,7 @@ export default async function ProjectReportsPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-zinc-900">Project Reports</h1>
-        <Link href="/reports/projects/export" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 inline-block self-start">Export Report</Link>
+        <ExportButton module="project-report" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 inline-block self-start" label="Export Report" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

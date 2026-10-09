@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { EmployeeProfile } from '@/lib/types';
 import { api } from '@/lib/api';
+import { getSafeReturnTo } from '@/lib/navigation';
 
 interface EditEmployeeFormProps {
   employeeId: string;
@@ -12,6 +14,9 @@ interface EditEmployeeFormProps {
 
 export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = getSafeReturnTo(searchParams.get('returnTo'), `/employees/${employeeId}`);
+
   const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
 
   // Form states
@@ -35,7 +40,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
           // Filter to senior roles or managers
           const managers = data.data
             .filter((e: any) => 
-              e.id !== employee.id &&
+              e.id !== employee?.id &&
               e.status !== 'TERMINATED' &&
               (e.designation?.toLowerCase().includes('manager') || 
                e.designation?.toLowerCase().includes('director') || 
@@ -168,7 +173,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
 
       setSuccess(true);
       setTimeout(() => {
-        router.push(`/employees/${employee.id}`);
+        router.push(returnTo);
         router.refresh();
       }, 1000);
     } catch (err: any) {
@@ -281,95 +286,95 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
                 <label htmlFor="role" className="block text-xs font-bold text-zinc-700 mb-1">
                   Role <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="role"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="Mason">Mason</option>
-                  <option value="Electrician">Electrician</option>
-                  <option value="Plumber">Plumber</option>
-                  <option value="Carpenter">Carpenter</option>
-                  <option value="Supervisor">Supervisor</option>
-                  <option value="Site Engineer">Site Engineer</option>
-                  <option value="Project Manager">Project Manager</option>
-                  <option value="Safety Officer">Safety Officer</option>
-                  <option value="Quantity Surveyor">Quantity Surveyor</option>
-                </select>
+                  <SelectOption value="Mason">Mason</SelectOption>
+                  <SelectOption value="Electrician">Electrician</SelectOption>
+                  <SelectOption value="Plumber">Plumber</SelectOption>
+                  <SelectOption value="Carpenter">Carpenter</SelectOption>
+                  <SelectOption value="Supervisor">Supervisor</SelectOption>
+                  <SelectOption value="Site Engineer">Site Engineer</SelectOption>
+                  <SelectOption value="Project Manager">Project Manager</SelectOption>
+                  <SelectOption value="Safety Officer">Safety Officer</SelectOption>
+                  <SelectOption value="Quantity Surveyor">Quantity Surveyor</SelectOption>
+                </Select>
               </div>
 
               <div>
                 <label htmlFor="venture" className="block text-xs font-bold text-zinc-700 mb-1">
                   Assign Venture <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="venture"
                   value={venture}
                   onChange={(e) => setVenture(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</option>
-                  <option value="Skyline Gated Villas">Skyline Gated Villas</option>
-                  <option value="Lake View Gated Community">Lake View Gated Community</option>
-                  <option value="Sunrise Villas">Sunrise Villas</option>
-                  <option value="Riverfront Towers">Riverfront Towers</option>
-                  <option value="Unassigned">Unassigned</option>
-                </select>
+                  <SelectOption value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</SelectOption>
+                  <SelectOption value="Skyline Gated Villas">Skyline Gated Villas</SelectOption>
+                  <SelectOption value="Lake View Gated Community">Lake View Gated Community</SelectOption>
+                  <SelectOption value="Sunrise Villas">Sunrise Villas</SelectOption>
+                  <SelectOption value="Riverfront Towers">Riverfront Towers</SelectOption>
+                  <SelectOption value="Unassigned">Unassigned</SelectOption>
+                </Select>
               </div>
 
               <div>
                 <label htmlFor="supervisor" className="block text-xs font-bold text-zinc-700 mb-1">
                   Reporting Supervisor <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="supervisor"
                   value={supervisor}
                   onChange={(e) => setSupervisor(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="—">None / Direct Report</option>
+                  <SelectOption value="—">None / Direct Report</SelectOption>
                   {seniorEmployees.map((emp, idx) => (
-                    <option key={idx} value={emp.id}>
+                    <SelectOption key={idx} value={emp.id}>
                       {emp.name} ({emp.designation})
-                    </option>
+                    </SelectOption>
                   ))}
                   {!seniorEmployees.some(e => e.id === supervisor) && supervisor !== '—' && supervisor && (
-                    <option value={supervisor}>Current ID: {supervisor}</option>
+                    <SelectOption value={supervisor}>Current ID: {supervisor}</SelectOption>
                   )}
-                </select>
+                </Select>
               </div>
 
               <div>
                 <label htmlFor="employmentType" className="block text-xs font-bold text-zinc-700 mb-1">
                   Employment Type <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="employmentType"
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value as any)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="Permanent">Permanent</option>
-                  <option value="Full-Time Contractor">Full-Time Contractor</option>
-                  <option value="Daily Wage">Daily Wage</option>
-                </select>
+                  <SelectOption value="Permanent">Permanent</SelectOption>
+                  <SelectOption value="Full-Time Contractor">Full-Time Contractor</SelectOption>
+                  <SelectOption value="Daily Wage">Daily Wage</SelectOption>
+                </Select>
               </div>
 
               <div>
                 <label htmlFor="status" className="block text-xs font-bold text-zinc-700 mb-1">
                   Employment Status <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="status"
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="Active">Active</option>
-                  <option value="On Leave">On Leave</option>
-                  <option value="Terminated">Terminated</option>
-                </select>
+                  <SelectOption value="Active">Active</SelectOption>
+                  <SelectOption value="On Leave">On Leave</SelectOption>
+                  <SelectOption value="Terminated">Terminated</SelectOption>
+                </Select>
               </div>
             </div>
           </div>
@@ -378,7 +383,7 @@ export default function EditEmployeeForm({ employeeId }: EditEmployeeFormProps) 
           <div className="pt-4 border-t border-zinc-100 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={() => router.push(returnTo)}
               className="px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-lg text-xs font-semibold text-zinc-700 transition-colors"
             >
               Cancel

@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 
 export default function ExportProjectReportPage() {
@@ -25,11 +26,11 @@ export default function ExportProjectReportPage() {
           
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">Format</label>
-            <select className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-              <option>PDF Document (.pdf)</option>
-              <option>Excel Spreadsheet (.xlsx)</option>
-              <option>CSV Data (.csv)</option>
-            </select>
+            <Select className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+              <SelectOption>PDF Document (.pdf)</SelectOption>
+              <SelectOption>Excel Spreadsheet (.xlsx)</SelectOption>
+              <SelectOption>CSV Data (.csv)</SelectOption>
+            </Select>
           </div>
 
           <div className="pt-4 border-t border-zinc-100 flex justify-end gap-3">

@@ -15,10 +15,19 @@ export function apiHandler<Ctx = unknown>(
   errorContext: ErrorContext = {}
 ) {
   return async (req: Request, ctx: Ctx): Promise<Response> => {
-    try {
-      return await handler(req, ctx);
-    } catch (error) {
-      return toErrorResponse(error, errorContext);
+    let retries = 0;
+    while (true) {
+      try {
+        return await handler(req, ctx);
+      } catch (error: any) {
+        if (retries < 2 && error?.code === 'P1001') {
+          console.log(`[RETRY] Retrying after P1001 (Attempt ${retries + 1}/2)...`);
+          await new Promise((res) => setTimeout(res, 500));
+          retries++;
+          continue;
+        }
+        return toErrorResponse(error, errorContext);
+      }
     }
   };
 }

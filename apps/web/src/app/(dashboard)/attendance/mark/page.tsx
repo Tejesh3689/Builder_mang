@@ -1,4 +1,5 @@
-import React from 'react';
+import React from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 
 export default function MarkAttendancePage() {
   return (
@@ -25,22 +26,22 @@ export default function MarkAttendancePage() {
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">Team Member</label>
-                <select className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-black focus:border-black sm:text-sm bg-white">
-                  <option>Select a team member</option>
-                  <option>Ravi Kumar (Electrician)</option>
-                  <option>Anil Desai (Plumber)</option>
-                  <option>Suresh Babu (Mason)</option>
-                </select>
+                <Select className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-black focus:border-black sm:text-sm bg-white">
+                  <SelectOption>Select a team member</SelectOption>
+                  <SelectOption>Ravi Kumar (Electrician)</SelectOption>
+                  <SelectOption>Anil Desai (Plumber)</SelectOption>
+                  <SelectOption>Suresh Babu (Mason)</SelectOption>
+                </Select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">Status</label>
-                <select className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-black focus:border-black sm:text-sm bg-white">
-                  <option>Present</option>
-                  <option>Absent</option>
-                  <option>Late</option>
-                  <option>Half Day</option>
-                </select>
+                <Select className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-black focus:border-black sm:text-sm bg-white">
+                  <SelectOption>Present</SelectOption>
+                  <SelectOption>Absent</SelectOption>
+                  <SelectOption>Late</SelectOption>
+                  <SelectOption>Half Day</SelectOption>
+                </Select>
               </div>
 
               <div>

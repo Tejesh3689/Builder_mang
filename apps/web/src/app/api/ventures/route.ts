@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { VentureStatus, VentureType, type Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { getPaginationParams } from '@/lib/pagination';
@@ -7,6 +8,7 @@ import { badRequest } from '@/lib/http/errors';
 import { parseBody } from '@/lib/http/request';
 import { ventureCreateSchema } from '@/lib/validation/venture';
 import { createVenture } from '@/services/venture.service';
+import { buildSearchConditions } from '@/lib/search';
 
 export const GET = apiHandler(async (request) => {
   const user = await requireAuth();
@@ -37,28 +39,36 @@ export const GET = apiHandler(async (request) => {
     });
   }
   if (search) {
-    and.push({
-      OR: [
-        { name: { contains: search, mode: 'insensitive' } },
-        { code: { contains: search, mode: 'insensitive' } },
-        { siteCity: { contains: search, mode: 'insensitive' } },
-      ],
-    });
+    const searchConds = buildSearchConditions(search, [
+      term => ({ name: { contains: term, mode: 'insensitive' } }),
+      term => ({ code: { contains: term, mode: 'insensitive' } }),
+      term => ({ siteCity: { contains: term, mode: 'insensitive' } }),
+      term => ({ regCity: { contains: term, mode: 'insensitive' } }),
+      term => ({ projectManager: { firstName: { contains: term, mode: 'insensitive' } } }),
+      term => ({ projectManager: { lastName: { contains: term, mode: 'insensitive' } } }),
+      term => ({ siteManager: { firstName: { contains: term, mode: 'insensitive' } } }),
+      term => ({ siteManager: { lastName: { contains: term, mode: 'insensitive' } } })
+    ]);
+    and.push(...searchConds);
   }
 
   const { skip, take } = getPaginationParams(request);
-  const ventures = await prisma.venture.findMany({
-    where: { AND: and },
-    skip,
-    take,
-    include: {
-      projectManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
-      siteManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
-      _count: { select: { assignments: true, stocks: true, documents: true, requests: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-  return ok(ventures);
+  const where = { AND: and };
+  const [ventures, total] = await Promise.all([
+    prisma.venture.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        projectManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
+        siteManager: { select: { id: true, firstName: true, lastName: true, designation: true } },
+        _count: { select: { assignments: true, stocks: true, documents: true, requests: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.venture.count({ where })
+  ]);
+  return NextResponse.json({ success: true, data: ventures, total, skip, take });
 }, { resource: 'venture', context: 'ventures GET' });
 
 export const POST = apiHandler(async (request) => {

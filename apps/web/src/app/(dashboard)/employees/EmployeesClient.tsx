@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { EmployeeProfile } from '@/lib/types';
 
@@ -29,20 +30,15 @@ export default function EmployeesClient({
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(searchTerm.trim()); setPage(1); }, 300);
-    return () => clearTimeout(t);
-  }, [searchTerm]);
-
-  // Fetch from live REST API
-  useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     async function fetchEmployees() {
       setLoading(true);
       setLoadError(null);
       try {
         const query = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
         if (debouncedSearch) query.set('search', debouncedSearch);
-        const json = await api.get<{ success: boolean, data: any[], total?: number }>(`/api/employees?${query}`);
+        const json = await api.get<{ success: boolean, data: any[], total?: number }>(`/api/employees?${query}`, { signal: controller.signal });
         if (cancelled) return;
         setTotal(json.total ?? json.data?.length ?? 0);
         if (json.success && json.data) {
@@ -96,7 +92,10 @@ export default function EmployeesClient({
       }
     }
     fetchEmployees();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [page, debouncedSearch, reloadKey]);
 
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -281,112 +280,112 @@ export default function EmployeesClient({
           </div>
 
           {/* Department Filter */}
-          <select
+          <Select
             value={selectedDept}
             onChange={(e) => setSelectedDept(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Departments</option>
+            <SelectOption value="All">All Departments</SelectOption>
             {departments.filter((d) => d !== 'All').map((d) => (
-              <option key={d} value={d}>{d}</option>
+              <SelectOption key={d} value={d}>{d}</SelectOption>
             ))}
-          </select>
+          </Select>
 
           {/* Designation Filter */}
-          <select
+          <Select
             value={selectedDesignation}
             onChange={(e) => setSelectedDesignation(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Designations</option>
+            <SelectOption value="All">All Designations</SelectOption>
             {designations.filter((d) => d !== 'All').map((d) => (
-              <option key={d} value={d}>{d}</option>
+              <SelectOption key={d} value={d}>{d}</SelectOption>
             ))}
-          </select>
+          </Select>
 
           {/* Project Filter */}
-          <select
+          <Select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Projects</option>
+            <SelectOption value="All">All Projects</SelectOption>
             {projects.filter((p) => p !== 'All').map((p) => (
-              <option key={p} value={p}>{p}</option>
+              <SelectOption key={p} value={p}>{p}</SelectOption>
             ))}
-          </select>
+          </Select>
 
           {/* Site Filter */}
-          <select
+          <Select
             value={selectedSite}
             onChange={(e) => setSelectedSite(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Sites</option>
+            <SelectOption value="All">All Sites</SelectOption>
             {sites.filter((s) => s !== 'All').map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <SelectOption key={s} value={s}>{s}</SelectOption>
             ))}
-          </select>
+          </Select>
 
           {/* Employment Type */}
-          <select
+          <Select
             value={selectedEmpType}
             onChange={(e) => setSelectedEmpType(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Employment Types</option>
+            <SelectOption value="All">All Employment Types</SelectOption>
             {employmentTypes.filter((et) => et !== 'All').map((et) => (
-              <option key={et} value={et}>{et}</option>
+              <SelectOption key={et} value={et}>{et}</SelectOption>
             ))}
-          </select>
+          </Select>
 
           {/* Status Filter */}
-          <select
+          <Select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Statuses</option>
+            <SelectOption value="All">All Statuses</SelectOption>
             {statuses.filter((s) => s !== 'All').map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <SelectOption key={s} value={s}>{s}</SelectOption>
             ))}
-          </select>
+          </Select>
 
           {/* Manager Filter */}
-          <select
+          <Select
             value={selectedManager}
             onChange={(e) => setSelectedManager(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Managers</option>
+            <SelectOption value="All">All Managers</SelectOption>
             {managers.filter((m) => m !== 'All').map((m) => (
-              <option key={m} value={m}>{m}</option>
+              <SelectOption key={m} value={m}>{m}</SelectOption>
             ))}
-          </select>
+          </Select>
 
           {/* Skills Filter */}
-          <select
+          <Select
             value={selectedSkill}
             onChange={(e) => setSelectedSkill(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Skills</option>
+            <SelectOption value="All">All Skills</SelectOption>
             {skillsList.filter((s) => s !== 'All').map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <SelectOption key={s} value={s}>{s}</SelectOption>
             ))}
-          </select>
+          </Select>
 
           {/* Cert Status Filter */}
-          <select
+          <Select
             value={selectedCertStatus}
             onChange={(e) => setSelectedCertStatus(e.target.value)}
             className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           >
-            <option value="All">All Certifications Status</option>
+            <SelectOption value="All">All Certifications Status</SelectOption>
             {certStatuses.filter((cs) => cs !== 'All').map((cs) => (
-              <option key={cs} value={cs}>{cs}</option>
+              <SelectOption key={cs} value={cs}>{cs}</SelectOption>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 

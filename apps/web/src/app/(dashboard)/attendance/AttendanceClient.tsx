@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import { api } from '@/lib/api';
 
 interface AttendanceClientProps {
@@ -116,15 +117,15 @@ export default function AttendanceClient({ userRole = 'ADMIN', sessionName = '' 
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">{activeTab} Records</h3>
-              <select 
+              <Select 
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
                 className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 bg-zinc-50 outline-none"
               >
                 {['Today', 'Yesterday', 'This Week', 'This Month'].map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
+                  <SelectOption key={opt} value={opt}>{opt}</SelectOption>
                 ))}
-              </select>
+              </Select>
             </div>
             
             <div className="overflow-x-auto border border-zinc-200/80 rounded-xl">

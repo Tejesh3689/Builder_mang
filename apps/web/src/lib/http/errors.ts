@@ -65,6 +65,8 @@ function fkField(meta: Record<string, unknown> | undefined): string | undefined 
 export function toErrorResponse(error: unknown, ctx: ErrorContext = {}): NextResponse {
   const resource = ctx.resource ?? 'record';
 
+  console.error(`[ERROR MAPPER] ${ctx.context || 'Unknown context'} - Name: ${error instanceof Error ? error.name : 'Unknown'}, Code: ${(error as any)?.code}, Meta: ${JSON.stringify((error as any)?.meta)}`, error);
+
   if (error instanceof ApiError) {
     return body(error.status, error.message, error.code, { field: error.field, details: error.details });
   }
@@ -95,6 +97,10 @@ export function toErrorResponse(error: unknown, ctx: ErrorContext = {}): NextRes
         return body(409, 'The record was changed by another request. Please retry.', 'CONFLICT');
       case 'P2028':
       case 'P2024':
+      case 'P1001':
+      case 'P1002':
+      case 'P1008':
+      case 'P1017':
         return body(503, 'The server is busy. Please retry.', 'SERVICE_BUSY');
     }
   }

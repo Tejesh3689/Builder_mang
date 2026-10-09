@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { ExportButton } from '@/components/ui/ExportButton';
 import prisma from '@/lib/db';
 import { requireAuth } from '@/lib/authorization';
 
@@ -42,7 +43,7 @@ export default async function EmployeeReportsPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-zinc-900">Employee Reports</h1>
-        <Link href="/reports/employees/export" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 inline-block self-start">Export Report</Link>
+        <ExportButton module="employee-report" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 inline-block self-start" label="Export Report" />
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">

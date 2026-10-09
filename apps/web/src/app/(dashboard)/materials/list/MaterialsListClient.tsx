@@ -1,10 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 
 export default function MaterialsListClient({ initialData }: { initialData: any[] }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(searchQuery.trim()); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('All Status');
 
@@ -59,31 +68,31 @@ export default function MaterialsListClient({ initialData }: { initialData: any[
               className="w-full pl-9 pr-4 py-2 bg-white border border-zinc-200 rounded-lg text-[13px] text-zinc-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-shadow"
             />
           </div>
-          <select 
+          <Select 
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="w-full sm:w-40 px-3 py-2 bg-white border border-zinc-200 rounded-lg text-[13px] font-medium text-zinc-700 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
           >
-            <option>All Categories</option>
-            <option>Cement</option>
-            <option>Steel</option>
-            <option>Sand</option>
-            <option>Bricks</option>
-            <option>Aggregate</option>
-            <option>Paint</option>
-            <option>Electrical</option>
-            <option>Plumbing</option>
-          </select>
-          <select 
+            <SelectOption>All Categories</SelectOption>
+            <SelectOption>Cement</SelectOption>
+            <SelectOption>Steel</SelectOption>
+            <SelectOption>Sand</SelectOption>
+            <SelectOption>Bricks</SelectOption>
+            <SelectOption>Aggregate</SelectOption>
+            <SelectOption>Paint</SelectOption>
+            <SelectOption>Electrical</SelectOption>
+            <SelectOption>Plumbing</SelectOption>
+          </Select>
+          <Select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="w-full sm:w-36 px-3 py-2 bg-white border border-zinc-200 rounded-lg text-[13px] font-medium text-zinc-700 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
           >
-            <option>All Status</option>
-            <option>Healthy</option>
-            <option>Low Stock</option>
-            <option>Critical</option>
-          </select>
+            <SelectOption>All Status</SelectOption>
+            <SelectOption>Healthy</SelectOption>
+            <SelectOption>Low Stock</SelectOption>
+            <SelectOption>Critical</SelectOption>
+          </Select>
         </div>
         <Link 
           href="/materials/new"

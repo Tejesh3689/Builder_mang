@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FieldError, useFieldErrors } from '@/lib/form-errors';
@@ -18,8 +19,12 @@ export default function NewUserPage() {
     role: 'MANAGER',
   });
 
+  const inFlight = React.useRef(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLoading(true);
     setError('');
     fe.clear();
@@ -41,6 +46,7 @@ export default function NewUserPage() {
       setError(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
+      inFlight.current = false;
     }
   };
 
@@ -124,19 +130,19 @@ export default function NewUserPage() {
           
           <div>
             <label htmlFor="role" className="block text-sm font-medium text-zinc-700 mb-1">Assign Role *</label>
-            <select
+            <Select
               id="role"
               {...fe.props('role')}
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white"
             >
-              <option value="MANAGER">Project Manager</option>
-              <option value="SITE_ENGINEER">Site Engineer</option>
-              <option value="SUPERVISOR">Site Supervisor</option>
-              <option value="ADMIN">Admin</option>
-              <option value="PROCUREMENT_MANAGER">Procurement Manager</option>
-            </select>
+              <SelectOption value="MANAGER">Project Manager</SelectOption>
+              <SelectOption value="SITE_ENGINEER">Site Engineer</SelectOption>
+              <SelectOption value="SUPERVISOR">Site Supervisor</SelectOption>
+              <SelectOption value="ADMIN">Admin</SelectOption>
+              <SelectOption value="PROCUREMENT_MANAGER">Procurement Manager</SelectOption>
+            </Select>
             <FieldError id="role" errors={fe.errors} />
           </div>
 

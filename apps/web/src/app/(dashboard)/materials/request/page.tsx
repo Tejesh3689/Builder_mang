@@ -1,14 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { api, newIdempotencyKey } from '@/lib/api';
 import { FieldError, useFieldErrors } from '@/lib/form-errors';
+import { getSafeReturnTo } from '@/lib/navigation';
 
 export default function MaterialRequestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = getSafeReturnTo(searchParams.get('returnTo'), '/materials');
 
   const [ventures, setVentures] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -74,7 +78,7 @@ export default function MaterialRequestPage() {
         throw new Error(res.error || 'Failed submitting request');
       }
 
-      router.push('/materials/requests');
+      router.push(returnTo);
       router.refresh();
     } catch (err: any) {
       const hasFieldErrors = fe.setFromError(err);
@@ -95,7 +99,7 @@ export default function MaterialRequestPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto py-6">
       <div className="flex items-center gap-3">
-        <Link href="/materials" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
+        <Link href={returnTo} className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div>
@@ -116,7 +120,7 @@ export default function MaterialRequestPage() {
             <div className="space-y-4">
               <div>
                 <label htmlFor="ventureId" className="block text-sm font-medium text-zinc-700 mb-1">Project / Venture</label>
-                <select
+                <Select
                   id="ventureId"
                   {...fe.props('ventureId')}
                   className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-black focus:border-black sm:text-sm bg-white"
@@ -124,17 +128,17 @@ export default function MaterialRequestPage() {
                   onChange={e => setVentureId(e.target.value)}
                   required
                 >
-                  <option value="">Select venture</option>
+                  <SelectOption value="">Select venture</SelectOption>
                   {ventures.map(v => (
-                    <option key={v.id} value={v.id}>{v.name}</option>
+                    <SelectOption key={v.id} value={v.id}>{v.name}</SelectOption>
                   ))}
-                </select>
+                </Select>
                 <FieldError id="ventureId" errors={fe.errors} />
               </div>
 
               <div>
                 <label htmlFor="materialId" className="block text-sm font-medium text-zinc-700 mb-1">Material Needed</label>
-                <select
+                <Select
                   id="materialId"
                   {...fe.props('materialId')}
                   className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-black focus:border-black sm:text-sm bg-white"
@@ -142,11 +146,11 @@ export default function MaterialRequestPage() {
                   onChange={e => setMaterialId(e.target.value)}
                   required
                 >
-                  <option value="">Select material</option>
+                  <SelectOption value="">Select material</SelectOption>
                   {materials.map(m => (
-                    <option key={m.id} value={m.id}>{m.name} ({m.unitOfMeasure?.name})</option>
+                    <SelectOption key={m.id} value={m.id}>{m.name} ({m.unitOfMeasure?.name})</SelectOption>
                   ))}
-                </select>
+                </Select>
                 <FieldError id="materialId" errors={fe.errors} />
               </div>
 
@@ -217,7 +221,7 @@ export default function MaterialRequestPage() {
             <div className="pt-4 flex justify-end gap-3 border-t border-zinc-100">
               <button 
                 type="button" 
-                onClick={() => router.back()}
+                onClick={() => router.push(returnTo)}
                 className="px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-md shadow-sm hover:bg-zinc-50"
               >
                 Cancel

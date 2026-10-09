@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FieldError, useFieldErrors } from '@/lib/form-errors';
@@ -62,9 +63,13 @@ export default function AddEmployeeForm() {
     setSelectedFiles((prev) => [...prev, ...filesArray]);
   };
 
+  const inFlight = React.useRef(false);
+
   // Submit handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (inFlight.current) return;
+    inFlight.current = true;
     setIsLoading(true);
     setError(null);
     fe.clear();
@@ -120,7 +125,6 @@ export default function AddEmployeeForm() {
       }
       if (failed.length) {
         setError(`Employee created, but some documents were not uploaded — ${failed.join('; ')}`);
-        setIsLoading(false);
         return;
       }
 
@@ -132,7 +136,9 @@ export default function AddEmployeeForm() {
     } catch (err: any) {
       const hasFieldErrors = fe.setFromError(err);
       setError(hasFieldErrors ? 'Please correct the highlighted fields.' : err.message || 'An error occurred while creating the employee.');
+    } finally {
       setIsLoading(false);
+      inFlight.current = false;
     }
   };
 
@@ -227,17 +233,17 @@ export default function AddEmployeeForm() {
                 <label htmlFor="employmentType" className="block text-xs font-bold text-zinc-700 mb-1">
                   Employment Type <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="employmentType"
                   {...fe.props('employmentType')}
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value as any)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="Permanent">Permanent</option>
-                  <option value="Full-Time Contractor">Full-Time Contractor</option>
-                  <option value="Daily Wage">Daily Wage</option>
-                </select>
+                  <SelectOption value="Permanent">Permanent</SelectOption>
+                  <SelectOption value="Full-Time Contractor">Full-Time Contractor</SelectOption>
+                  <SelectOption value="Daily Wage">Daily Wage</SelectOption>
+                </Select>
                 <FieldError id="employmentType" errors={fe.errors} />
               </div>
             </div>
@@ -253,23 +259,23 @@ export default function AddEmployeeForm() {
                 <label htmlFor="role" className="block text-xs font-bold text-zinc-700 mb-1">
                   Role <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="role"
                   {...fe.props('role')}
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="Mason">Mason</option>
-                  <option value="Electrician">Electrician</option>
-                  <option value="Plumber">Plumber</option>
-                  <option value="Carpenter">Carpenter</option>
-                  <option value="Supervisor">Supervisor</option>
-                  <option value="Site Engineer">Site Engineer</option>
-                  <option value="Project Manager">Project Manager</option>
-                  <option value="Safety Officer">Safety Officer</option>
-                  <option value="Quantity Surveyor">Quantity Surveyor</option>
-                </select>
+                  <SelectOption value="Mason">Mason</SelectOption>
+                  <SelectOption value="Electrician">Electrician</SelectOption>
+                  <SelectOption value="Plumber">Plumber</SelectOption>
+                  <SelectOption value="Carpenter">Carpenter</SelectOption>
+                  <SelectOption value="Supervisor">Supervisor</SelectOption>
+                  <SelectOption value="Site Engineer">Site Engineer</SelectOption>
+                  <SelectOption value="Project Manager">Project Manager</SelectOption>
+                  <SelectOption value="Safety Officer">Safety Officer</SelectOption>
+                  <SelectOption value="Quantity Surveyor">Quantity Surveyor</SelectOption>
+                </Select>
                 <FieldError id="role" errors={fe.errors} />
               </div>
 
@@ -277,20 +283,20 @@ export default function AddEmployeeForm() {
                 <label htmlFor="venture" className="block text-xs font-bold text-zinc-700 mb-1">
                   Assign Venture <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="venture"
                   {...fe.props('venture')}
                   value={venture}
                   onChange={(e) => setVenture(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</option>
-                  <option value="Skyline Gated Villas">Skyline Gated Villas</option>
-                  <option value="Lake View Gated Community">Lake View Gated Community</option>
-                  <option value="Sunrise Villas">Sunrise Villas</option>
-                  <option value="Riverfront Towers">Riverfront Towers</option>
-                  <option value="Unassigned">Unassigned / Awaiting Deployment</option>
-                </select>
+                  <SelectOption value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</SelectOption>
+                  <SelectOption value="Skyline Gated Villas">Skyline Gated Villas</SelectOption>
+                  <SelectOption value="Lake View Gated Community">Lake View Gated Community</SelectOption>
+                  <SelectOption value="Sunrise Villas">Sunrise Villas</SelectOption>
+                  <SelectOption value="Riverfront Towers">Riverfront Towers</SelectOption>
+                  <SelectOption value="Unassigned">Unassigned / Awaiting Deployment</SelectOption>
+                </Select>
                 <FieldError id="venture" errors={fe.errors} />
               </div>
 
@@ -298,23 +304,23 @@ export default function AddEmployeeForm() {
                 <label htmlFor="supervisor" className="block text-xs font-bold text-zinc-700 mb-1">
                   Reporting Supervisor <span className="text-red-500">*</span>
                 </label>
-                <select
+                <Select
                   id="supervisor"
                   {...fe.props('supervisor')}
                   value={supervisor}
                   onChange={(e) => setSupervisor(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white text-zinc-800"
                 >
-                  <option value="—">None / Direct Report</option>
+                  <SelectOption value="—">None / Direct Report</SelectOption>
                   {seniorEmployees.map((emp, idx) => (
-                    <option key={idx} value={emp.id}>
+                    <SelectOption key={idx} value={emp.id}>
                       {emp.name} ({emp.designation})
-                    </option>
+                    </SelectOption>
                   ))}
                   {!seniorEmployees.some(e => e.id === supervisor) && supervisor !== '—' && supervisor && (
-                    <option value={supervisor}>{supervisor} (Current)</option>
+                    <SelectOption value={supervisor}>{supervisor} (Current)</SelectOption>
                   )}
-                </select>
+                </Select>
                 <FieldError id="supervisor" errors={fe.errors} />
               </div>
 

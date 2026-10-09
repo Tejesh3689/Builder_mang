@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import { X, Building2, MapPin, Calendar, Users, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { api } from '@/lib/api';
@@ -296,24 +297,24 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="vw-type" className="block text-xs font-medium text-zinc-700 mb-1">Venture Type</label>
-                  <select
+                  <Select
                     id="vw-type"
                     {...fe.props('vw-type')}
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   >
-                    <option value="RESIDENTIAL">Residential</option>
-                    <option value="COMMERCIAL">Commercial</option>
-                    <option value="VILLA">Villa</option>
-                    <option value="APARTMENT">Apartment</option>
-                    <option value="PLOT_DEVELOPMENT">Plot Development</option>
-                    <option value="INDUSTRIAL">Industrial</option>
-                    <option value="INFRASTRUCTURE">Infrastructure</option>
-                    <option value="RENOVATION">Renovation</option>
-                    <option value="MIXED_USE">Mixed Use</option>
-                    <option value="OTHER">Other</option>
-                  </select>
+                    <SelectOption value="RESIDENTIAL">Residential</SelectOption>
+                    <SelectOption value="COMMERCIAL">Commercial</SelectOption>
+                    <SelectOption value="VILLA">Villa</SelectOption>
+                    <SelectOption value="APARTMENT">Apartment</SelectOption>
+                    <SelectOption value="PLOT_DEVELOPMENT">Plot Development</SelectOption>
+                    <SelectOption value="INDUSTRIAL">Industrial</SelectOption>
+                    <SelectOption value="INFRASTRUCTURE">Infrastructure</SelectOption>
+                    <SelectOption value="RENOVATION">Renovation</SelectOption>
+                    <SelectOption value="MIXED_USE">Mixed Use</SelectOption>
+                    <SelectOption value="OTHER">Other</SelectOption>
+                  </Select>
                   <FieldError id="vw-type" errors={fe.errors} />
                 </div>
                 <div>
@@ -547,7 +548,7 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="vw-projectManagerId" className="block text-xs font-medium text-zinc-700 mb-1">Project Manager</label>
-                  <select
+                  <Select
                     id="vw-projectManagerId"
                     {...fe.props('vw-projectManagerId')}
                     value={formData.projectManagerId}
@@ -555,18 +556,18 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850 disabled:opacity-50"
                     disabled={employees.length === 0}
                   >
-                    <option value="">{employees.length === 0 ? 'No employees available' : 'Select Employee...'}</option>
+                    <SelectOption value="">{employees.length === 0 ? 'No employees available' : 'Select Employee...'}</SelectOption>
                     {employees.map((emp: any) => (
-                      <option key={emp.id} value={emp.id}>
+                      <SelectOption key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName} (#{emp.employeeId})
-                      </option>
+                      </SelectOption>
                     ))}
-                  </select>
+                  </Select>
                   <FieldError id="vw-projectManagerId" errors={fe.errors} />
                 </div>
                 <div>
                   <label htmlFor="vw-siteManagerId" className="block text-xs font-medium text-zinc-700 mb-1">Lead Site Engineer</label>
-                  <select
+                  <Select
                     id="vw-siteManagerId"
                     {...fe.props('vw-siteManagerId')}
                     value={formData.siteManagerId}
@@ -574,13 +575,13 @@ export function CreateVentureWizard({ isOpen, onClose, onSuccess }: CreateVentur
                     className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-850 disabled:opacity-50"
                     disabled={employees.length === 0}
                   >
-                    <option value="">{employees.length === 0 ? 'No employees available' : 'Select Employee...'}</option>
+                    <SelectOption value="">{employees.length === 0 ? 'No employees available' : 'Select Employee...'}</SelectOption>
                     {employees.map((emp: any) => (
-                      <option key={emp.id} value={emp.id}>
+                      <SelectOption key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName} (#{emp.employeeId})
-                      </option>
+                      </SelectOption>
                     ))}
-                  </select>
+                  </Select>
                   <FieldError id="vw-siteManagerId" errors={fe.errors} />
                 </div>
               </div>

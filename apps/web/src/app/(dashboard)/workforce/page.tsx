@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { EmployeeProfile } from '@/lib/types';
 import { api } from '@/lib/api';
@@ -346,7 +347,7 @@ export default function WorkforcePage() {
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Crew Supervisor</label>
-                <select
+                <Select
                   value={crewSupervisor}
                   onChange={(e) => setOriginalSupervisor(e.target.value)}
                   className="w-full border border-zinc-200 p-2 rounded-lg bg-white"
@@ -354,33 +355,33 @@ export default function WorkforcePage() {
                   {employees
                     .filter((emp) => emp.designation === 'Supervisor' && emp.onboardingStage === 'Active')
                     .map((emp) => (
-                      <option key={emp.id} value={`${emp.firstName} ${emp.lastName}`}>{emp.firstName} {emp.lastName}</option>
+                      <SelectOption key={emp.id} value={`${emp.firstName} ${emp.lastName}`}>{emp.firstName} {emp.lastName}</SelectOption>
                     ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Project Site</label>
-                <select
+                <Select
                   value={crewProject}
                   onChange={(e) => setCrewProject(e.target.value)}
                   className="w-full border border-zinc-200 p-2 rounded-lg bg-white"
                 >
-                  <option value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</option>
-                  <option value="Skyline Gated Villas">Skyline Gated Villas</option>
-                  <option value="Lake View Gated Community">Lake View Gated Community</option>
-                  <option value="Sunrise Villas">Sunrise Villas</option>
-                </select>
+                  <SelectOption value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</SelectOption>
+                  <SelectOption value="Skyline Gated Villas">Skyline Gated Villas</SelectOption>
+                  <SelectOption value="Lake View Gated Community">Lake View Gated Community</SelectOption>
+                  <SelectOption value="Sunrise Villas">Sunrise Villas</SelectOption>
+                </Select>
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Shift</label>
-                <select
+                <Select
                   value={crewShift}
                   onChange={(e) => setCrewShift(e.target.value)}
                   className="w-full border border-zinc-200 p-2 rounded-lg bg-white"
                 >
-                  <option value="Day Shift (08:00 - 17:00)">Day Shift (08:00 - 17:00)</option>
-                  <option value="Night Shift (20:00 - 05:00)">Night Shift (20:00 - 05:00)</option>
-                </select>
+                  <SelectOption value="Day Shift (08:00 - 17:00)">Day Shift (08:00 - 17:00)</SelectOption>
+                  <SelectOption value="Night Shift (20:00 - 05:00)">Night Shift (20:00 - 05:00)</SelectOption>
+                </Select>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">

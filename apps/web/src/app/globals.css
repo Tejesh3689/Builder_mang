@@ -91,6 +91,11 @@ textarea[aria-invalid="true"] {
 }
 
 /* Premium Scrollbar Styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(161, 161, 170, 0.4) transparent; /* zinc-400 with opacity */
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -99,9 +104,17 @@ textarea[aria-invalid="true"] {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
+  background: rgba(161, 161, 170, 0.4);
+  border-radius: 9999px; /* fully rounded thumb */
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(113, 113, 122, 0.6); /* zinc-500 with opacity */
+}
+
+/* Explicitly hide scrollbar where intentional */
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

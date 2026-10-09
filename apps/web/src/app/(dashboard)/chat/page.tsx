@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { MessageSquare, Building2, Plus, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -146,18 +147,18 @@ export default function ChatRoomsPage() {
               </div>
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Venture Association (Optional)</label>
-                <select
+                <Select
                   value={selectedVentureId}
                   onChange={(e) => setSelectedVentureId(e.target.value)}
                   className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
                 >
-                  <option value="">None (Global Channel)</option>
+                  <SelectOption value="">None (Global Channel)</SelectOption>
                   {ventures.map((v) => (
-                    <option key={v.id} value={v.id}>
+                    <SelectOption key={v.id} value={v.id}>
                       {v.name}
-                    </option>
+                    </SelectOption>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 text-xs font-semibold">

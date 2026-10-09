@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 
@@ -71,20 +72,20 @@ export default function EditUserPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">Role</label>
-              <select id="role_input" name="role_input" defaultValue={user.role} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-                <option value="MANAGER">Operations Manager</option>
-                <option value="SITE_ENGINEER">Site Engineer</option>
-                <option value="SUPERVISOR">Site Supervisor</option>
-                <option value="ADMIN">System Administrator</option>
-                <option value="PROCUREMENT_MANAGER">Procurement Manager</option>
-              </select>
+              <Select id="role_input" name="role_input" defaultValue={user.role} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+                <SelectOption value="MANAGER">Operations Manager</SelectOption>
+                <SelectOption value="SITE_ENGINEER">Site Engineer</SelectOption>
+                <SelectOption value="SUPERVISOR">Site Supervisor</SelectOption>
+                <SelectOption value="ADMIN">System Administrator</SelectOption>
+                <SelectOption value="PROCUREMENT_MANAGER">Procurement Manager</SelectOption>
+              </Select>
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">Account Status</label>
-              <select id="status_input" name="status_input" defaultValue={user.isActive ? 'Active' : 'Inactive'} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
+              <Select id="status_input" name="status_input" defaultValue={user.isActive ? 'Active' : 'Inactive'} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+                <SelectOption value="Active">Active</SelectOption>
+                <SelectOption value="Inactive">Inactive</SelectOption>
+              </Select>
             </div>
           </div>
 

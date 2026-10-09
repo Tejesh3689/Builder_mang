@@ -10,9 +10,8 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
   const page = parseInt(params.page || '1', 10);
   const dateStr = params.date;
 
-  // Return 400 if date query param is present but not a valid date string
   if (dateStr && isNaN(new Date(dateStr).getTime())) {
-    return new Response('Invalid date parameter', { status: 400 });
+    return <div className="p-6 text-red-600">Invalid date parameter</div>;
   }
   const skip = (page - 1) * 100;
   
