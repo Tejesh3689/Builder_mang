@@ -715,12 +715,12 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                   const senderName = msg.sender?.name || msg.senderName || 'Anonymous';
                   const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:42 AM';
                   return (
-                    <div key={msg.id} className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1">
+                    <div key={msg.id} className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1 break-words">
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="font-bold text-amber-700">{senderName}</span>
                         <span className="text-zinc-400">{msgTime}</span>
                       </div>
-                      <p className="text-zinc-800">{msg.content}</p>
+                      <p className="text-zinc-800 break-words">{msg.content}</p>
                     </div>
                   );
                 })}

@@ -22,6 +22,7 @@ export const MaterialRequestSchema = z.object({
       quantity: z.number().positive({ message: "Quantity must be positive" }),
     })
   ).min(1, { message: "Add at least one item to request" }),
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).default('NORMAL'),
 });
 
 export const StockAdjustmentSchema = z.object({

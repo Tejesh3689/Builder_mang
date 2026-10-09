@@ -206,12 +206,12 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
               <div className="w-8 h-8 rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                 {senderInitials}
               </div>
-              <div className="p-3.5 rounded-2xl rounded-tl-none bg-zinc-50 border border-zinc-200 text-xs max-w-md space-y-1">
+              <div className="p-3.5 rounded-2xl rounded-tl-none bg-zinc-50 border border-zinc-200 text-xs max-w-md space-y-1 break-words">
                 <div className="flex justify-between items-center gap-8 border-b border-zinc-200/50 pb-0.5 mb-1 text-[9px] font-mono text-zinc-400">
                   <span className="font-bold text-amber-700">{senderName} ({msg.sender?.role || 'Staff'})</span>
                   <span>{msgTime}</span>
                 </div>
-                <p className="text-zinc-800 leading-normal font-medium">{msg.content}</p>
+                <p className="text-zinc-800 leading-normal font-medium break-words">{msg.content}</p>
               </div>
             </div>
           );

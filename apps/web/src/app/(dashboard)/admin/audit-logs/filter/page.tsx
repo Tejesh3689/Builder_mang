@@ -1,9 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function FilterAuditLogsPage() {
+  const router = useRouter();
+  const [date, setDate] = useState('');
+  
+  const handleApply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (date) {
+      router.push(`/admin/audit-logs?date=${date}`);
+    } else {
+      router.push(`/admin/audit-logs`);
+    }
+  };
+
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
@@ -14,42 +27,17 @@ export default function FilterAuditLogsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+        <form className="space-y-6" onSubmit={handleApply}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1">Start Date</label>
-              <input type="date" className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Date</label>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1">End Date</label>
-              <input type="date" className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Filter by User</label>
-            <select className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-              <option>All Users</option>
-              <option>Admin Manager</option>
-              <option>John Doe</option>
-              <option>System</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Action Type</label>
-            <select className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-              <option>All Actions</option>
-              <option>Logins</option>
-              <option>Data Modifications</option>
-              <option>Settings Changes</option>
-              <option>System Events</option>
-            </select>
           </div>
 
           <div className="pt-4 border-t border-zinc-100 flex justify-end gap-3">
             <Link href="/admin/audit-logs" className="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-200">Clear Filters</Link>
-            <button type="button" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Apply Filters</button>
+            <button type="submit" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Apply Filters</button>
           </div>
         </form>
       </div>

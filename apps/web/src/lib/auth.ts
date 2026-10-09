@@ -6,7 +6,7 @@ import redis from '@/lib/redis';
 import { accountStateSelect, isAccountUsable } from '@/lib/policies/account';
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET ?? (() => { throw new Error('NEXTAUTH_SECRET is required'); })(),
+  secret: process.env.NEXTAUTH_SECRET || (() => { throw new Error('NEXTAUTH_SECRET is required'); })(),
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -91,6 +91,11 @@ export const authOptions: NextAuthOptions = {
         } catch (error: any) {
           // Log real errors internally for auditing (could use a real logger here)
           console.error('[AUTH_ERROR]', error.message);
+          
+          if (error.code === 'P1001' || error.code === 'P1002' || error.name === 'PrismaClientInitializationError') {
+             throw new Error('Service temporarily unavailable.');
+          }
+
           // Always throw a generic error to the client
           throw new Error('Invalid email or password.');
         }

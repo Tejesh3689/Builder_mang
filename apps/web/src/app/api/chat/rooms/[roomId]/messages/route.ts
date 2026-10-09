@@ -20,10 +20,13 @@ export async function GET(
     const resolvedParams = await params;
     const { roomId } = resolvedParams;
 
-    // Verify active user status
+    // Verify active user status and room membership in one query
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { employee: true }
+      include: { 
+        employee: true,
+        chatMembers: userRole !== 'ADMIN' ? { where: { roomId } } : false
+      }
     });
 
     if (!user || !user.isActive || (user.employee && user.employee.status === 'TERMINATED')) {
@@ -31,14 +34,8 @@ export async function GET(
     }
 
     // Enforce membership check for GET — non-ADMINs must be a member of the room
-    if (userRole !== 'ADMIN') {
-      const isMember = await prisma.chatMember.findUnique({
-        where: { roomId_userId: { roomId, userId } },
-        include: { room: true }
-      });
-      if (!isMember) {
-        return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
-      }
+    if (userRole !== 'ADMIN' && (!user.chatMembers || user.chatMembers.length === 0)) {
+      return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
     }
 
     const { skip, take } = getPaginationParams(req);
@@ -91,18 +88,17 @@ export async function POST(
     if (userRole !== 'ADMIN') {
       const user = await prisma.user.findUnique({
         where: { id: senderId },
-        include: { employee: true }
+        include: { 
+          employee: true,
+          chatMembers: { where: { roomId } }
+        }
       });
 
       if (!user || !user.isActive || (user.employee && user.employee.status === 'TERMINATED')) {
         return NextResponse.json({ success: false, error: 'User is inactive or terminated' }, { status: 403 });
       }
 
-      const isMember = await prisma.chatMember.findUnique({
-        where: { roomId_userId: { roomId, userId: senderId } },
-        include: { room: true }
-      });
-      if (!isMember) {
+      if (!user.chatMembers || user.chatMembers.length === 0) {
         return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
       }
     }

@@ -22,8 +22,18 @@ const announcementSchema = z.object({
 export const GET = apiHandler<Ctx>(async (_request, { params }) => {
   const user = await requireAuth();
   const venture = await requireVentureInScope(user, (await params).ventureId);
+  const allowedAudiences = ['ALL'];
+  if (user.role === 'ADMIN' || user.role === 'MANAGER') {
+    allowedAudiences.push('MANAGEMENT', 'SITE_STAFF');
+  } else {
+    allowedAudiences.push('SITE_STAFF');
+  }
+
   const announcements = await prisma.ventureAnnouncement.findMany({
-    where: { ventureId: venture.id },
+    where: { 
+      ventureId: venture.id,
+      audience: { in: allowedAudiences as any[] }
+    },
     orderBy: { createdAt: 'desc' },
   });
   return ok(announcements);
