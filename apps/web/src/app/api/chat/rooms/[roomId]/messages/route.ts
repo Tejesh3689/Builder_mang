@@ -46,7 +46,8 @@ export async function GET(
       include: {
         sender: {
           select: { id: true, name: true, email: true, role: true }
-        }
+        },
+        reads: true
       },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }]
     });
