@@ -30,7 +30,7 @@ export default async function StockLedgerPage() {
     materialCode: s.material?.code || 'MAT-CEM',
     category: s.material?.category?.name || 'Structural',
     ventureName: s.venture?.name || 'Green Heights Apartments',
-    quantity: s.physicalQuantity || 0,
+    quantity: Number(s.physicalQuantity || 0),
     uom: s.material?.unitOfMeasure?.name || 'Bags'
   }));
 

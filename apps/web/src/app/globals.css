@@ -105,3 +105,26 @@ textarea[aria-invalid="true"] {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
+
+/* Fix iOS Safari auto-zoom on inputs */
+@media (max-width: 1180px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Ensure minimum touch targets on coarse pointer devices (phones/tablets) */
+@media (pointer: coarse) {
+  button, input, select, textarea {
+    min-height: 44px;
+  }
+  button {
+    min-width: 44px;
+  }
+  /* Ensure inline links like 'Sign In' have enough hit area */
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

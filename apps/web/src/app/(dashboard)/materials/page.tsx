@@ -58,19 +58,19 @@ export default async function InventoryOverviewPage() {
     });
 
     lowStockItems = allStocks
-      .filter((s: any) => s.availableQuantity <= (s.material.reorderLevel || 0) && s.availableQuantity > 0)
+      .filter((s: any) => Number(s.availableQuantity) <= Number(s.material.reorderLevel || 0) && Number(s.availableQuantity) > 0)
       .slice(0, 5)
       .map((s: any) => ({
         id: s.id,
         name: s.material.name,
-        available: s.availableQuantity,
-        minLevel: s.material.reorderLevel || 20,
+        available: Number(s.availableQuantity),
+        minLevel: Number(s.material.reorderLevel || 20),
         uom: s.material.unitOfMeasure?.name || 'Units',
-        level: s.availableQuantity <= (s.material.reorderLevel || 0) / 2 ? 'CRITICAL' : 'LOW',
+        level: Number(s.availableQuantity) <= Number(s.material.reorderLevel || 0) / 2 ? 'CRITICAL' : 'LOW',
       }));
 
     criticalStockItems = allStocks.filter(
-      (s: any) => s.availableQuantity <= (s.material.reorderLevel || 0) / 2
+      (s: any) => Number(s.availableQuantity) <= Number(s.material.reorderLevel || 0) / 2
     );
 
     // Site-wise stock aggregation (first material found with most stock)
@@ -78,12 +78,12 @@ export default async function InventoryOverviewPage() {
       .reduce((acc: any[], s: any) => {
         const existing = acc.find((x) => x.locationId === s.stockLocationId);
         if (existing) {
-          existing.totalQty += s.availableQuantity;
+          existing.totalQty += Number(s.availableQuantity);
         } else {
           acc.push({
             locationId: s.stockLocationId,
             locationName: s.stockLocation?.name || 'Main Store',
-            totalQty: s.availableQuantity,
+            totalQty: Number(s.availableQuantity),
             uom: s.material.unitOfMeasure?.name || 'Bags',
           });
         }
@@ -110,9 +110,9 @@ export default async function InventoryOverviewPage() {
       where: ventureFilter ? { createdAt: { gte: todayStart }, venture: ventureFilter } : { createdAt: { gte: todayStart } },
     });
     todayTxs.forEach((tx: any) => {
-      if (tx.transactionType === 'RECEIPT') todayReceived += tx.quantityIn;
-      if (tx.transactionType === 'ISSUE') todayIssued += tx.quantityOut;
-      if (tx.transactionType.includes('TRANSFER')) todayTransfers += tx.quantityOut || tx.quantityIn;
+      if (tx.transactionType === 'RECEIPT') todayReceived += Number(tx.quantityIn);
+      if (tx.transactionType === 'ISSUE') todayIssued += Number(tx.quantityOut);
+      if (tx.transactionType.includes('TRANSFER')) todayTransfers += Number(tx.quantityOut || tx.quantityIn);
     });
 
     // Pending requests
@@ -146,7 +146,7 @@ export default async function InventoryOverviewPage() {
     id: tx.id,
     date: new Date(tx.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
     type: tx.transactionType,
-    qty: tx.quantityIn > 0 ? `+${tx.quantityIn}` : `-${tx.quantityOut}`,
+    qty: Number(tx.quantityIn) > 0 ? `+${Number(tx.quantityIn)}` : `-${Number(tx.quantityOut)}`,
     uom: tx.material?.unitOfMeasure?.name || 'Bags',
     fromTo: `${tx.stockLocation?.name || 'Main Store'} → ${tx.venture?.name || 'Site'}`,
     by: tx.performedBy?.name || 'System',
