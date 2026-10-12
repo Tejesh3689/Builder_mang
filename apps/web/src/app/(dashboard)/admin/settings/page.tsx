@@ -278,11 +278,10 @@ export default function CompanySettingsPage() {
             type="button"
             onClick={handleSave}
             disabled={!isDirty || isPending}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm ${
-              isDirty && !isPending
-                ? 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer'
-                : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-            }`}
+            className={`px-5 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm ${isDirty && !isPending
+              ? 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer'
+              : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+              }`}
           >
             {isPending && (
               <span className="w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
@@ -327,11 +326,10 @@ export default function CompanySettingsPage() {
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id as TabSection)}
-            className={`px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-              activeTab === tab.id
-                ? 'border-amber-600 text-amber-700'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:border-zinc-300'
-            }`}
+            className={`px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === tab.id
+              ? 'border-amber-600 text-amber-700'
+              : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:border-zinc-300'
+              }`}
           >
             {tab.label}
           </button>
@@ -354,9 +352,8 @@ export default function CompanySettingsPage() {
                   type="text"
                   value={formData.legalName || ''}
                   onChange={(e) => handleFieldChange('legalName', e.target.value)}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.legalName ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.legalName ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.legalName && <p className="text-xs text-red-600 mt-1">{fieldErrors.legalName}</p>}
               </div>
@@ -370,9 +367,8 @@ export default function CompanySettingsPage() {
                   type="text"
                   value={formData.displayName || ''}
                   onChange={(e) => handleFieldChange('displayName', e.target.value)}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.displayName ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.displayName ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.displayName && <p className="text-xs text-red-600 mt-1">{fieldErrors.displayName}</p>}
               </div>
@@ -386,9 +382,8 @@ export default function CompanySettingsPage() {
                   type="email"
                   value={formData.supportEmail || ''}
                   onChange={(e) => handleFieldChange('supportEmail', e.target.value)}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.supportEmail ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.supportEmail ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.supportEmail && <p className="text-xs text-red-600 mt-1">{fieldErrors.supportEmail}</p>}
               </div>
@@ -403,9 +398,8 @@ export default function CompanySettingsPage() {
                   placeholder="+91 9876543210"
                   value={formData.phone || ''}
                   onChange={(e) => handleFieldChange('phone', e.target.value)}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.phone ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.phone ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.phone && <p className="text-xs text-red-600 mt-1">{fieldErrors.phone}</p>}
               </div>
@@ -420,9 +414,8 @@ export default function CompanySettingsPage() {
                   placeholder="https://example.com"
                   value={formData.website || ''}
                   onChange={(e) => handleFieldChange('website', e.target.value)}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.website ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.website ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.website && <p className="text-xs text-red-600 mt-1">{fieldErrors.website}</p>}
               </div>
@@ -437,9 +430,8 @@ export default function CompanySettingsPage() {
                   placeholder="29ABCDE1234F1Z5"
                   value={formData.gstin || ''}
                   onChange={(e) => handleFieldChange('gstin', e.target.value.toUpperCase())}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm uppercase outline-none ${
-                    fieldErrors.gstin ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm uppercase outline-none ${fieldErrors.gstin ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.gstin && <p className="text-xs text-red-600 mt-1">{fieldErrors.gstin}</p>}
               </div>
@@ -454,9 +446,8 @@ export default function CompanySettingsPage() {
                   placeholder="ABCDE1234F"
                   value={formData.pan || ''}
                   onChange={(e) => handleFieldChange('pan', e.target.value.toUpperCase())}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm uppercase outline-none ${
-                    fieldErrors.pan ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm uppercase outline-none ${fieldErrors.pan ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.pan && <p className="text-xs text-red-600 mt-1">{fieldErrors.pan}</p>}
               </div>
@@ -471,9 +462,8 @@ export default function CompanySettingsPage() {
                   placeholder="560001"
                   value={formData.pincode || ''}
                   onChange={(e) => handleFieldChange('pincode', e.target.value)}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.pincode ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.pincode ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.pincode && <p className="text-xs text-red-600 mt-1">{fieldErrors.pincode}</p>}
               </div>
@@ -671,9 +661,8 @@ export default function CompanySettingsPage() {
                   type="time"
                   value={formData.shiftStart || '09:00'}
                   onChange={(e) => handleFieldChange('shiftStart', e.target.value)}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.shiftStart ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.shiftStart ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.shiftStart && <p className="text-xs text-red-600 mt-1">{fieldErrors.shiftStart}</p>}
               </div>
@@ -687,9 +676,8 @@ export default function CompanySettingsPage() {
                   type="time"
                   value={formData.shiftEnd || '18:00'}
                   onChange={(e) => handleFieldChange('shiftEnd', e.target.value)}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.shiftEnd ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.shiftEnd ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 {fieldErrors.shiftEnd && <p className="text-xs text-red-600 mt-1">{fieldErrors.shiftEnd}</p>}
               </div>
@@ -705,9 +693,8 @@ export default function CompanySettingsPage() {
                   max="120"
                   value={formData.lateGraceMinutes ?? 15}
                   onChange={(e) => handleFieldChange('lateGraceMinutes', Number(e.target.value))}
-                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${
-                    fieldErrors.lateGraceMinutes ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
-                  }`}
+                  className={`w-full px-3.5 py-2 border rounded-lg text-sm outline-none ${fieldErrors.lateGraceMinutes ? 'border-red-500 bg-red-50/30' : 'border-zinc-300 focus:border-amber-500'
+                    }`}
                 />
                 <p className="text-[11px] text-zinc-500 mt-1">Arrivals beyond this grace window are recorded as LATE.</p>
                 {fieldErrors.lateGraceMinutes && <p className="text-xs text-red-600 mt-1">{fieldErrors.lateGraceMinutes}</p>}
