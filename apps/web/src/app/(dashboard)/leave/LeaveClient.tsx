@@ -148,7 +148,7 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
                 </div>
               ) : (
                 <div className="overflow-x-auto border border-zinc-200/80 rounded-xl">
-                  <table className="w-full text-left text-xs min-w-[700px]">
+                  <table className="w-full text-left text-xs table-auto">
                     <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200/80">
                       <tr>
                         <th className="py-2.5 px-4">Employee</th>

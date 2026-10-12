@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import RecentTransactionsTable from './RecentTransactionsTable';
 import prisma from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -95,7 +96,7 @@ export default async function InventoryOverviewPage() {
     // Recent transactions
     recentTransactions = await prisma.materialTransaction.findMany({
       where: ventureFilter ? { venture: ventureFilter } : undefined,
-      take: 5,
+      take: 25,
       orderBy: { createdAt: 'desc' },
       include: {
         material: { include: { unitOfMeasure: true } },
@@ -246,23 +247,23 @@ export default async function InventoryOverviewPage() {
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[500px] text-xs text-left">
+            <div className="overflow-x-auto scrollbar-hide">
+              <table className="w-full text-xs text-left table-auto">
                 <thead>
                   <tr className="border-b border-zinc-100 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/50">
-                    <th className="py-2.5 px-5 font-semibold">Material</th>
-                    <th className="py-2.5 px-5 font-semibold">Available</th>
-                    <th className="py-2.5 px-5 font-semibold">Min Level</th>
-                    <th className="py-2.5 px-5 font-semibold">Status</th>
+                    <th className="py-2 px-3 xl:px-4 font-semibold">Material</th>
+                    <th className="py-2 px-3 xl:px-4 font-semibold">Available</th>
+                    <th className="py-2 px-3 xl:px-4 font-semibold">Min Level</th>
+                    <th className="py-2 px-3 xl:px-4 font-semibold">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
                   {displayLowStock.map((item: any) => (
                     <tr key={item.id} className="hover:bg-zinc-50/20">
-                      <td className="py-3 px-5 font-bold text-black">{item.name}</td>
-                      <td className="py-3 px-5 text-zinc-700 font-mono">{item.available} <span className="text-zinc-400">{item.uom}</span></td>
-                      <td className="py-3 px-5 text-zinc-500 font-mono">{item.minLevel}</td>
-                      <td className="py-3 px-5">
+                      <td className="py-2 px-3 xl:px-4 font-bold text-black">{item.name}</td>
+                      <td className="py-2 px-3 xl:px-4 text-zinc-700 font-mono">{item.available} <span className="text-zinc-400">{item.uom}</span></td>
+                      <td className="py-2 px-3 xl:px-4 text-zinc-500 font-mono">{item.minLevel}</td>
+                      <td className="py-2 px-3 xl:px-4">
                         {item.level === 'CRITICAL' ? (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">● Critical</span>
                         ) : (
@@ -282,52 +283,7 @@ export default async function InventoryOverviewPage() {
           </div>
 
           {/* Recent Transactions */}
-          <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-zinc-100 flex justify-between items-center">
-              <h3 className="font-bold text-sm text-black">Recent Transactions</h3>
-              <Link href="/materials/transactions" className="text-[11px] text-amber-700 hover:underline font-semibold flex items-center gap-0.5">
-                View all <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-xs text-left">
-                <thead>
-                  <tr className="border-b border-zinc-100 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/50">
-                    <th className="py-2.5 px-5 font-semibold">Date</th>
-                    <th className="py-2.5 px-5 font-semibold">Type</th>
-                    <th className="py-2.5 px-5 font-semibold">Qty</th>
-                    <th className="py-2.5 px-5 font-semibold">From → To</th>
-                    <th className="py-2.5 px-5 font-semibold">By</th>
-                    <th className="py-2.5 px-5 font-semibold">Ref</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {displayTransactions.map((tx: any) => {
-                    const { label, cls } = getTxTypeStyle(tx.type);
-                    return (
-                      <tr key={tx.id} className="hover:bg-zinc-50/20">
-                        <td className="py-3 px-5 font-mono text-zinc-500 whitespace-nowrap">{tx.date}</td>
-                        <td className="py-3 px-5">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${cls}`}>{label}</span>
-                        </td>
-                        <td className={`py-3 px-5 font-extrabold ${tx.qty?.startsWith('+') ? 'text-emerald-500' : 'text-amber-700'}`}>
-                          {tx.qty} <span className="text-zinc-400 font-normal text-[10px]">{tx.uom}</span>
-                        </td>
-                        <td className="py-3 px-5 text-zinc-600 max-w-[200px] truncate">{tx.fromTo}</td>
-                        <td className="py-3 px-5 text-zinc-700 font-medium whitespace-nowrap">{tx.by}</td>
-                        <td className="py-3 px-5 font-mono text-zinc-400 text-[10px]">{tx.ref}</td>
-                      </tr>
-                    );
-                  })}
-                  {displayTransactions.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-zinc-400 text-xs">No recent transactions</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <RecentTransactionsTable transactions={displayTransactions} />
         </div>
 
         {/* Right Column: 1/3 wide */}
@@ -342,7 +298,7 @@ export default async function InventoryOverviewPage() {
               </Link>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[280px] text-xs text-left">
+              <table className="w-full text-xs text-left table-auto">
                 <thead>
                   <tr className="border-b border-zinc-100 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/50">
                     <th className="py-2.5 px-4 font-semibold">Request</th>

@@ -93,22 +93,27 @@ textarea[aria-invalid="true"] {
 /* Premium Scrollbar Styling */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(161, 161, 170, 0.4) transparent; /* zinc-400 with opacity */
+  scrollbar-color: rgba(161, 161, 170, 0.35) transparent;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(161, 161, 170, 0.4);
-  border-radius: 9999px; /* fully rounded thumb */
+  background: rgba(161, 161, 170, 0.35);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(113, 113, 122, 0.6); /* zinc-500 with opacity */
+  background: rgba(113, 113, 122, 0.55);
 }
 
 /* Explicitly hide scrollbar where intentional */

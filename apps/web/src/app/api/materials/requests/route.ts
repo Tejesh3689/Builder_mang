@@ -97,6 +97,11 @@ export async function POST(req: Request) {
     const random = randomBytes(3).toString('hex').toUpperCase();
     const requestNumber = `REQ-${timestamp}${random}`;
 
+    // Read company settings for material request approval requirement
+    const { getCompanySettings } = await import('@/services/settings.service');
+    const companySettings = await getCompanySettings();
+    const initialStatus = companySettings.requireMaterialRequestApproval === false ? 'APPROVED' : 'PENDING_APPROVAL';
+
     try {
       const newRequest = await prisma.$transaction(async (tx) => {
         return await tx.materialRequest.create({
@@ -107,12 +112,13 @@ export async function POST(req: Request) {
             priority: body.priority || 'NORMAL',
             requiredDate,
             remarks,
-            status: 'PENDING_APPROVAL',
+            status: initialStatus,
             createdById: (user as any).id,
             items: {
               create: finalItems.map(item => ({
                 materialId: item.materialId,
-                requestedQuantity: item.quantity
+                requestedQuantity: item.quantity,
+                approvedQuantity: initialStatus === 'APPROVED' ? item.quantity : 0
               }))
             }
           }

@@ -1,4 +1,5 @@
 'use client';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 
 import React, { useState, useEffect, useMemo } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
 
@@ -330,7 +331,8 @@ export default function WorkforcePage() {
 
       {/* Modal: Create Crew */}
       {showCrewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <ModalPortal>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowCrewModal(false); }}>
           <form onSubmit={handleCreateCrew} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-md w-full space-y-4">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Create New Construction Crew</h3>
             <div className="space-y-3 text-xs">
@@ -390,6 +392,7 @@ export default function WorkforcePage() {
             </div>
           </form>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

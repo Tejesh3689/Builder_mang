@@ -7,10 +7,12 @@ import { useSession, signOut } from 'next-auth/react';
 import SessionExpiredDialog from '@/components/SessionExpiredDialog';
 import GlobalSearch from '@/components/GlobalSearch';
 import { getNavGroups, getRouteMetadata } from '@/lib/navigation';
+import { CompanySettingsProvider, useCompanySettings } from '@/components/providers/CompanySettingsProvider';
 
-export default function ClientDashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { settings } = useCompanySettings();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -101,7 +103,7 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
         {/* Toggle Bar Button for Desktop Collapsing */}
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="hidden lg:flex absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 rounded-full border border-zinc-200 bg-white shadow-xs items-center justify-center text-zinc-500 hover:text-black hover:bg-zinc-50 z-50 cursor-pointer transition-transform duration-200"
+          className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 rounded-full border border-zinc-200 bg-white shadow-xs items-center justify-center text-zinc-500 hover:text-black hover:bg-zinc-50 z-20 cursor-pointer transition-transform duration-200"
           title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
           <svg
@@ -119,13 +121,18 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
         {/* Brand Header */}
         <div className={`shrink-0 flex items-center ${isSidebarCollapsed ? 'justify-center py-5 px-2' : 'justify-between px-6 py-5'} border-b border-zinc-100`}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-sm shadow-md shadow-black/10 shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-sm shadow-md shadow-black/10 shrink-0 overflow-hidden">
+              {settings.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={settings.logoUrl} alt={settings.displayName} className="w-full h-full object-cover" />
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+              )}
             </div>
             {!isSidebarCollapsed && (
               <div className="flex flex-col">
-                <span className="font-extrabold text-base tracking-tight text-black leading-none">Naprocs</span>
-                <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase mt-1">Builder Management</span>
+                <span className="font-extrabold text-base tracking-tight text-black leading-none truncate max-w-[130px]">{settings.displayName || 'Naprocs'}</span>
+                <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase mt-1 truncate max-w-[130px]">{settings.legalName || 'Builder Management'}</span>
               </div>
             )}
           </div>
@@ -140,7 +147,7 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
         </div>
 
         {/* Navigation Links */}
-        <div className={`flex-1 min-h-0 overflow-y-auto ${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'}`}>
+        <div className={`flex-1 min-h-0 overflow-y-auto scrollbar-hide ${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'}`}>
           {navGroups.map((group, gIdx) => (
             <div key={gIdx} className="space-y-1">
               {group.group && !isSidebarCollapsed && (
@@ -268,3 +275,12 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
     </div>
   );
 }
+
+export default function ClientDashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <CompanySettingsProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </CompanySettingsProvider>
+  );
+}
+

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { api } from '@/lib/api';
+import { Pagination } from '@/components/ui/Pagination';
 
 interface SharedDirectoryClientProps {
   title: string;
@@ -33,6 +34,8 @@ export default function SharedDirectoryClient({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const fetchData = async () => {
     try {
@@ -59,6 +62,11 @@ export default function SharedDirectoryClient({
                           e.email?.toLowerCase().includes(searchTerm.toLowerCase());
     return isRoleMatch && matchesSearch;
   });
+
+  const paginatedEmployees = filteredEmployees.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const getAvatarColor = (name: string) => {
     const char = name.charCodeAt(0) % 5;
@@ -90,14 +98,17 @@ export default function SharedDirectoryClient({
 
       {/* Search & Actions Panel */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 shadow-xs w-full sm:max-w-md">
+        <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 shadow-xs w-full sm:max-w-md focus-within:ring-1 focus-within:ring-zinc-400 focus-within:border-zinc-400 transition-all">
           <Search className="w-4 h-4 text-zinc-400 shrink-0" />
           <input
             type="text"
             placeholder={`Search ${title.toLowerCase()}...`}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-transparent border-none outline-hidden text-xs w-full text-zinc-800 placeholder-zinc-400 focus:outline-none"
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-xs w-full text-zinc-800 placeholder-zinc-400"
           />
         </div>
 
@@ -111,13 +122,13 @@ export default function SharedDirectoryClient({
 
       {/* Directory Table */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-left text-xs">
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full table-auto text-left text-xs">
             <thead>
               {tableHeaders}
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {filteredEmployees.map((emp) => renderRow(emp, employees, getAvatarColor))}
+              {paginatedEmployees.map((emp) => renderRow(emp, employees, getAvatarColor))}
               
               {filteredEmployees.length === 0 && (
                 <tr>
@@ -129,6 +140,12 @@ export default function SharedDirectoryClient({
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredEmployees.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {renderAddModal(showAddModal, () => setShowAddModal(false), ventures, fetchData)}

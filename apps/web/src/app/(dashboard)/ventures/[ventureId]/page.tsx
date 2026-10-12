@@ -1,4 +1,5 @@
 'use client';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 
 import React, { useState, useEffect, use, useRef } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
 
@@ -820,7 +821,8 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
 
       {/* Modal: Assign New Employee */}
       {showAssignModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <ModalPortal>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAssignModal(false); }}>
           <form onSubmit={handleAssignEmployee} className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-xl p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Assign Employee to Venture</h3>
             <div className="space-y-3 text-xs">
@@ -889,6 +891,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
             </div>
           </form>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

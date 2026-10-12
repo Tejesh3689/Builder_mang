@@ -2,19 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Select, SelectOption } from '@/components/ui/Select';
-
 import Link from 'next/link';
+import { Pagination } from '@/components/ui/Pagination';
 
 export default function MaterialsListClient({ initialData }: { initialData: any[] }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const pageSize = 10;
 
-  useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(searchQuery.trim()); setPage(1); }, 300);
-    return () => clearTimeout(t);
-  }, [searchQuery]);
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('All Status');
 
@@ -25,6 +20,11 @@ export default function MaterialsListClient({ initialData }: { initialData: any[
     const matchesStatus = statusFilter === 'All Status' || item.status === statusFilter;
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  const paginatedData = filteredData.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
   const getStatusStyle = (status: string) => {
     switch(status) {
@@ -65,13 +65,19 @@ export default function MaterialsListClient({ initialData }: { initialData: any[
               type="text" 
               placeholder="Search materials by name or SKU..." 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
               className="w-full pl-9 pr-4 py-2 bg-white border border-zinc-200 rounded-lg text-[13px] text-zinc-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-shadow"
             />
           </div>
           <Select 
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setPage(1);
+            }}
             className="w-full sm:w-40 px-3 py-2 bg-white border border-zinc-200 rounded-lg text-[13px] font-medium text-zinc-700 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
           >
             <SelectOption>All Categories</SelectOption>
@@ -86,7 +92,10 @@ export default function MaterialsListClient({ initialData }: { initialData: any[
           </Select>
           <Select 
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
             className="w-full sm:w-36 px-3 py-2 bg-white border border-zinc-200 rounded-lg text-[13px] font-medium text-zinc-700 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
           >
             <SelectOption>All Status</SelectOption>
@@ -99,53 +108,45 @@ export default function MaterialsListClient({ initialData }: { initialData: any[
           href="/materials/new"
           className="w-full sm:w-auto px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white font-semibold text-[13px] rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           Add Material
         </Link>
       </div>
 
-      {/* Table */}
+      {/* Materials Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[1000px]">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-white border-b border-zinc-200 text-[10px] uppercase font-bold tracking-widest text-zinc-500 font-mono">
-              <th className="px-5 py-3 font-semibold">Material</th>
-              <th className="px-5 py-3 font-semibold">SKU</th>
-              <th className="px-5 py-3 font-semibold">Category</th>
-              <th className="px-5 py-3 font-semibold">Unit</th>
-              <th className="px-5 py-3 font-semibold">Available</th>
-              <th className="px-5 py-3 font-semibold">Reserved</th>
-              <th className="px-5 py-3 font-semibold">Min Level</th>
-              <th className="px-5 py-3 font-semibold">Location</th>
-              <th className="px-5 py-3 font-semibold text-center">Status</th>
-              <th className="px-5 py-3 font-semibold">Last Movement</th>
+            <tr className="border-b border-zinc-200 bg-zinc-50/70 text-[11px] font-bold text-zinc-500 uppercase tracking-wider font-mono">
+              <th className="px-5 py-3.5 whitespace-nowrap">Material Name</th>
+              <th className="px-5 py-3.5 whitespace-nowrap">SKU / Code</th>
+              <th className="px-5 py-3.5 whitespace-nowrap">Category</th>
+              <th className="px-5 py-3.5 whitespace-nowrap text-right">Available Stock</th>
+              <th className="px-5 py-3.5 whitespace-nowrap text-right">Reserved</th>
+              <th className="px-5 py-3.5 whitespace-nowrap">Primary Location</th>
+              <th className="px-5 py-3.5 whitespace-nowrap text-center">Status</th>
+              <th className="px-5 py-3.5 whitespace-nowrap">Last Movement</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 text-[13px]">
-            {filteredData.map((item) => (
-              <tr key={item.id} className="hover:bg-zinc-50/80 transition-colors group">
-                <td className="px-5 py-4 whitespace-nowrap">
-                  <span className="font-extrabold text-zinc-900 group-hover:text-[#d97706] transition-colors">{item.name}</span>
+          <tbody className="divide-y divide-zinc-200/80">
+            {paginatedData.map((item) => (
+              <tr key={item.id} className="hover:bg-zinc-50/60 transition-colors">
+                <td className="px-5 py-4 whitespace-nowrap font-bold text-zinc-900 text-sm">
+                  {item.name}
                 </td>
-                <td className="px-5 py-4 whitespace-nowrap text-zinc-500 font-mono text-[11px] font-medium tracking-wide">
+                <td className="px-5 py-4 whitespace-nowrap font-mono text-zinc-500 text-xs font-semibold">
                   {item.sku}
                 </td>
-                <td className="px-5 py-4 whitespace-nowrap text-zinc-700 font-medium">
+                <td className="px-5 py-4 whitespace-nowrap text-zinc-600 font-medium text-xs">
                   {item.category}
                 </td>
-                <td className="px-5 py-4 whitespace-nowrap text-zinc-500">
-                  {item.unit}
+                <td className="px-5 py-4 whitespace-nowrap text-right font-mono font-bold text-zinc-900 text-sm">
+                  {item.available} {item.unit}
                 </td>
-                <td className="px-5 py-4 whitespace-nowrap font-bold text-zinc-900">
-                  {item.available}
-                </td>
-                <td className="px-5 py-4 whitespace-nowrap font-bold text-zinc-700">
-                  {item.reserved}
-                </td>
-                <td className="px-5 py-4 whitespace-nowrap font-bold text-zinc-700">
-                  {item.minLevel}
+                <td className="px-5 py-4 whitespace-nowrap text-right font-mono text-zinc-500 text-xs">
+                  {item.reserved} {item.unit}
                 </td>
                 <td className="px-5 py-4 whitespace-nowrap text-zinc-600 font-medium text-xs">
                   {item.location}
@@ -177,6 +178,12 @@ export default function MaterialsListClient({ initialData }: { initialData: any[
           </tbody>
         </table>
       </div>
+      <Pagination
+        currentPage={page}
+        totalItems={filteredData.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

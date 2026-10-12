@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
 
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import SharedDirectoryClient from '@/components/SharedDirectoryClient';
 import { X } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -55,7 +56,8 @@ export default function SupervisorsDirectoryPage() {
   const renderAddModal = (show: boolean, onClose: () => void, ventures: any[], onAddSuccess: () => void) => {
     if (!show) return null;
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <ModalPortal>
+      <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
         <form onSubmit={(e) => handleAddSubmit(e, () => { onClose(); onAddSuccess(); })} className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-lg p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-2">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Supervisor Account</h3>
@@ -120,6 +122,7 @@ export default function SupervisorsDirectoryPage() {
           </div>
         </form>
       </div>
+      </ModalPortal>
     );
   };
 

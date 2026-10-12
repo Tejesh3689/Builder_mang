@@ -119,6 +119,31 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const projectOptions = React.useMemo(() => {
+    const set = new Set<string>();
+    employees.forEach(e => {
+      if (e.currentProject && e.currentProject !== 'Unassigned') set.add(e.currentProject);
+    });
+    return Array.from(set).sort();
+  }, [employees]);
+
+  const deptOptions = React.useMemo(() => {
+    const set = new Set<string>();
+    employees.forEach(e => {
+      if (e.department) set.add(e.department);
+    });
+    return Array.from(set).sort();
+  }, [employees]);
+
+  const complianceRows = React.useMemo(() => {
+    return filteredStaff.flatMap((e) =>
+      (e.certifications || []).map((c) => ({
+        ...c,
+        employeeName: `${e.firstName} ${e.lastName}`
+      }))
+    );
+  }, [filteredStaff]);
+
   return (
     <div className="space-y-4 max-w-[1400px] mx-auto text-sm">
       {/* Page Header */}
@@ -145,11 +170,9 @@ export default function ReportsPage() {
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <SelectOption value="All">All Projects</SelectOption>
-          <SelectOption value="Green Heights Luxury Apartments">Green Heights Luxury Apartments</SelectOption>
-          <SelectOption value="Skyline Gated Villas">Skyline Gated Villas</SelectOption>
-          <SelectOption value="Lake View Gated Community">Lake View Gated Community</SelectOption>
-          <SelectOption value="Sunrise Villas">Sunrise Villas</SelectOption>
-          <SelectOption value="Riverfront Towers">Riverfront Towers</SelectOption>
+          {projectOptions.map(p => (
+            <SelectOption key={p} value={p}>{p}</SelectOption>
+          ))}
         </Select>
 
         <Select
@@ -158,10 +181,9 @@ export default function ReportsPage() {
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <SelectOption value="All">All Departments</SelectOption>
-          <SelectOption value="Site Operations">Site Operations</SelectOption>
-          <SelectOption value="Civil Engineering">Civil Engineering</SelectOption>
-          <SelectOption value="Quality Assurance">Quality Assurance</SelectOption>
-          <SelectOption value="Planning & Civil">Planning & Civil</SelectOption>
+          {deptOptions.map(d => (
+            <SelectOption key={d} value={d}>{d}</SelectOption>
+          ))}
         </Select>
       </div>
 
@@ -187,7 +209,9 @@ export default function ReportsPage() {
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">
-              Report Data Preview ({filteredStaff.length} rows)
+              Report Data Preview ({
+                activeTab === 'Compliance' ? complianceRows.length : filteredStaff.length
+              } rows)
             </h3>
             <button
               onClick={() => handleExport(activeTab)}
@@ -200,88 +224,123 @@ export default function ReportsPage() {
 
           <div className="overflow-x-auto border border-zinc-200 rounded-xl">
             {activeTab === 'Employee' && (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
-                  <tr>
-                    <th className="py-2.5 px-4">Employee ID</th>
-                    <th className="py-2.5 px-4">Name</th>
-                    <th className="py-2.5 px-4">Role</th>
-                    <th className="py-2.5 px-4">Department</th>
-                    <th className="py-2.5 px-4">Email</th>
-                    <th className="py-2.5 px-4">Joining Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {filteredStaff.map((e) => (
-                    <tr key={e.id} className="hover:bg-zinc-50/20">
-                      <td className="py-3 px-4 font-mono text-zinc-500">{e.employeeId}</td>
-                      <td className="py-3 px-4 font-bold text-zinc-950">{e.firstName} {e.lastName}</td>
-                      <td className="py-3 px-4">{e.designation}</td>
-                      <td className="py-3 px-4 text-zinc-500">{e.department}</td>
-                      <td className="py-3 px-4 text-zinc-500">{e.email}</td>
-                      <td className="py-3 px-4 font-mono text-zinc-500">{e.joiningDate}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                {filteredStaff.length > 0 ? (
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
+                      <tr>
+                        <th className="py-2.5 px-4">Employee ID</th>
+                        <th className="py-2.5 px-4">Name</th>
+                        <th className="py-2.5 px-4">Role</th>
+                        <th className="py-2.5 px-4">Department</th>
+                        <th className="py-2.5 px-4">Email</th>
+                        <th className="py-2.5 px-4">Joining Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {filteredStaff.map((e) => (
+                        <tr key={e.id} className="hover:bg-zinc-50/20">
+                          <td className="py-3 px-4 font-mono text-zinc-500">{e.employeeId}</td>
+                          <td className="py-3 px-4 font-bold text-zinc-950">{e.firstName} {e.lastName}</td>
+                          <td className="py-3 px-4">{e.designation}</td>
+                          <td className="py-3 px-4 text-zinc-500">{e.department}</td>
+                          <td className="py-3 px-4 text-zinc-500">{e.email}</td>
+                          <td className="py-3 px-4 font-mono text-zinc-500">{e.joiningDate}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="py-16 text-center bg-zinc-50/50 space-y-1">
+                    <p className="text-xs font-bold text-zinc-700">No employee records in database</p>
+                    <p className="text-[11px] text-zinc-400">
+                      {employees.length === 0
+                        ? 'There are currently no active employees recorded in the system.'
+                        : 'No employees match the selected project or department filter.'}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {activeTab === 'Workforce' && (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
-                  <tr>
-                    <th className="py-2.5 px-4">Employee ID</th>
-                    <th className="py-2.5 px-4">Name</th>
-                    <th className="py-2.5 px-4">Role</th>
-                    <th className="py-2.5 px-4">Project</th>
-                    <th className="py-2.5 px-4">Site Location</th>
-                    <th className="py-2.5 px-4">Reporting Manager</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {filteredStaff.map((e) => (
-                    <tr key={e.id} className="hover:bg-zinc-50/20">
-                      <td className="py-3 px-4 font-mono text-zinc-500">{e.employeeId}</td>
-                      <td className="py-3 px-4 font-bold text-zinc-950">{e.firstName} {e.lastName}</td>
-                      <td className="py-3 px-4">{e.designation}</td>
-                      <td className="py-3 px-4 text-zinc-800 font-semibold">{e.currentProject}</td>
-                      <td className="py-3 px-4 text-zinc-500">{e.currentSite}</td>
-                      <td className="py-3 px-4 text-zinc-500">{e.reportingManager}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                {filteredStaff.length > 0 ? (
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
+                      <tr>
+                        <th className="py-2.5 px-4">Employee ID</th>
+                        <th className="py-2.5 px-4">Name</th>
+                        <th className="py-2.5 px-4">Role</th>
+                        <th className="py-2.5 px-4">Project</th>
+                        <th className="py-2.5 px-4">Site Location</th>
+                        <th className="py-2.5 px-4">Reporting Manager</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {filteredStaff.map((e) => (
+                        <tr key={e.id} className="hover:bg-zinc-50/20">
+                          <td className="py-3 px-4 font-mono text-zinc-500">{e.employeeId}</td>
+                          <td className="py-3 px-4 font-bold text-zinc-950">{e.firstName} {e.lastName}</td>
+                          <td className="py-3 px-4">{e.designation}</td>
+                          <td className="py-3 px-4 text-zinc-800 font-semibold">{e.currentProject}</td>
+                          <td className="py-3 px-4 text-zinc-500">{e.currentSite}</td>
+                          <td className="py-3 px-4 text-zinc-500">{e.reportingManager}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="py-16 text-center bg-zinc-50/50 space-y-1">
+                    <p className="text-xs font-bold text-zinc-700">No workforce allocation records</p>
+                    <p className="text-[11px] text-zinc-400">
+                      {employees.length === 0
+                        ? 'There are currently no employees allocated to active projects.'
+                        : 'No project allocations match the selected filter criteria.'}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {activeTab === 'Compliance' && (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
-                  <tr>
-                    <th className="py-2.5 px-4">Employee</th>
-                    <th className="py-2.5 px-4">Certification</th>
-                    <th className="py-2.5 px-4">Certificate ID</th>
-                    <th className="py-2.5 px-4">Expiry Date</th>
-                    <th className="py-2.5 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {filteredStaff.flatMap((e) =>
-                    e.certifications.map((c) => (
-                      <tr key={c.id} className="hover:bg-zinc-50/20">
-                        <td className="py-3 px-4 font-bold text-zinc-950">{e.firstName} {e.lastName}</td>
-                        <td className="py-3 px-4 font-semibold text-zinc-800">{c.certification}</td>
-                        <td className="py-3 px-4 font-mono text-zinc-500">{c.certificateNo}</td>
-                        <td className="py-3 px-4 font-mono text-zinc-500">{c.expiryDate}</td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold border ${
-                            c.status === 'Valid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
-                          }`}>{c.status}</span>
-                        </td>
+              <>
+                {complianceRows.length > 0 ? (
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
+                      <tr>
+                        <th className="py-2.5 px-4">Employee</th>
+                        <th className="py-2.5 px-4">Certification</th>
+                        <th className="py-2.5 px-4">Certificate ID</th>
+                        <th className="py-2.5 px-4">Expiry Date</th>
+                        <th className="py-2.5 px-4">Status</th>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {complianceRows.map((c) => (
+                        <tr key={c.id} className="hover:bg-zinc-50/20">
+                          <td className="py-3 px-4 font-bold text-zinc-950">{c.employeeName}</td>
+                          <td className="py-3 px-4 font-semibold text-zinc-800">{c.certification}</td>
+                          <td className="py-3 px-4 font-mono text-zinc-500">{c.certificateNo}</td>
+                          <td className="py-3 px-4 font-mono text-zinc-500">{c.expiryDate}</td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold border ${
+                              c.status === 'Valid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
+                            }`}>{c.status}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="py-16 text-center bg-zinc-50/50 space-y-1">
+                    <p className="text-xs font-bold text-zinc-700">No compliance records in database</p>
+                    <p className="text-[11px] text-zinc-400">
+                      There are currently no compliance or certification certificates recorded for employees.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

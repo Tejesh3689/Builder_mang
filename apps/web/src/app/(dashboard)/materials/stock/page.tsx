@@ -53,8 +53,8 @@ export default async function StockLedgerPage() {
           <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">Current Stock Levels</h3>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-left text-xs">
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full table-auto text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-100 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/50">
                 <th className="py-3 px-6 font-semibold">Material Name & Code</th>

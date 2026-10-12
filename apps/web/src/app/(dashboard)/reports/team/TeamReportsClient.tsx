@@ -1,46 +1,114 @@
 'use client';
 
-import React, { useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
-
+import React, { useState, useMemo } from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
 
 interface TeamReportsClientProps {
   userRole?: string;
   sessionName?: string;
   initialAttendance?: any[];
   initialLeaves?: any[];
+  initialFieldWork?: any[];
+  employees?: { id: string; name: string }[];
+}
+
+function isDateInRange(dateStr?: string, range?: string): boolean {
+  if (!dateStr || !range || range === 'All Time') return true;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return true;
+  
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  if (range === 'Today') {
+    return targetDay.getTime() === todayStart.getTime();
+  }
+
+  if (range === 'This Week') {
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 7;
+  }
+
+  if (range === 'This Month') {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+
+  if (range === 'Last Month') {
+    const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    return d.getFullYear() === lastMonthYear && d.getMonth() === lastMonth;
+  }
+
+  return true;
 }
 
 export default function TeamReportsClient({ 
   userRole = 'ADMIN', 
   sessionName = '',
   initialAttendance = [],
-  initialLeaves = []
+  initialLeaves = [],
+  initialFieldWork = [],
+  employees = []
 }: TeamReportsClientProps) {
   const isSupervisor = userRole === 'SUPERVISOR';
   const isManager = userRole === 'MANAGER';
   
-  const [activeTab, setActiveTab] = useState('Team Attendance');
-  const [dateRange, setDateRange] = useState('This Month');
+  const [activeTab, setActiveTab] = useState<'Team Attendance' | 'Leave' | 'Field Work'>('Team Attendance');
+  const [dateRange, setDateRange] = useState('All Time');
   const [employeeFilter, setEmployeeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const mockFieldWork = [
-    { id: 'FW-1', date: '2026-08-18', employeeName: 'Krishna Rao', client: 'Alpha Corp', location: 'Whitefield', duration: 4, status: 'Completed' },
-    { id: 'FW-2', date: '2026-08-19', employeeName: 'Anil Desai', client: 'Beta LLC', location: 'Electronic City', duration: 6, status: 'Completed' },
-  ];
-
-  const getFilteredData = (data: any[]) => {
-    return data.filter(d => {
-      if (isSupervisor && d.managerName && d.managerName !== sessionName) return false;
-      const matchesEmp = employeeFilter === 'All' || d.employeeName === employeeFilter;
-      const matchesStatus = statusFilter === 'All' || d.status === statusFilter;
-      return matchesEmp && matchesStatus;
+  const filteredAttendance = useMemo(() => {
+    return initialAttendance.filter(a => {
+      const matchesEmp = employeeFilter === 'All' || a.employeeName === employeeFilter;
+      const matchesStatus = statusFilter === 'All' || a.status.toLowerCase() === statusFilter.toLowerCase();
+      const matchesDate = isDateInRange(a.date, dateRange);
+      return matchesEmp && matchesStatus && matchesDate;
     });
-  };
+  }, [initialAttendance, employeeFilter, statusFilter, dateRange]);
 
-  const filteredAttendance = getFilteredData(initialAttendance);
-  const filteredLeave = getFilteredData(initialLeaves);
-  const filteredFieldWork = getFilteredData(mockFieldWork);
+  const filteredLeave = useMemo(() => {
+    return initialLeaves.filter(l => {
+      const matchesEmp = employeeFilter === 'All' || l.employeeName === employeeFilter;
+      const matchesStatus = statusFilter === 'All' || l.status.toLowerCase() === statusFilter.toLowerCase();
+      const matchesDate = isDateInRange(l.startDate, dateRange);
+      return matchesEmp && matchesStatus && matchesDate;
+    });
+  }, [initialLeaves, employeeFilter, statusFilter, dateRange]);
+
+  const filteredFieldWork = useMemo(() => {
+    return initialFieldWork.filter(f => {
+      const matchesEmp = employeeFilter === 'All' || f.employeeName === employeeFilter;
+      const matchesStatus = statusFilter === 'All' || f.status.toLowerCase() === statusFilter.toLowerCase();
+      const matchesDate = isDateInRange(f.date, dateRange);
+      return matchesEmp && matchesStatus && matchesDate;
+    });
+  }, [initialFieldWork, employeeFilter, statusFilter, dateRange]);
+
+  // Dynamic KPI Metrics derived from real database data
+  const totalAtt = filteredAttendance.length;
+  const presentAtt = filteredAttendance.filter(a => a.status === 'Present' || a.status === 'Field Work' || a.status === 'Late').length;
+  const avgAttendanceRate = totalAtt > 0 ? `${(Math.round((presentAtt / totalAtt) * 1000) / 10).toFixed(1)}%` : '0%';
+  const attendanceSubtitle = totalAtt > 0 
+    ? `${presentAtt} of ${totalAtt} logged present` 
+    : 'No attendance records in database';
+
+  const approvedLeaves = filteredLeave.filter(l => l.status === 'APPROVED' || l.status === 'Approved');
+  const totalLeaveDays = approvedLeaves.reduce((sum, l) => sum + (Number(l.duration) || 0), 0);
+  const leaveSubtitle = approvedLeaves.length > 0 
+    ? `${approvedLeaves.length} approved request${approvedLeaves.length === 1 ? '' : 's'}` 
+    : 'No approved leaves in database';
+
+  const totalFieldHours = filteredFieldWork.reduce((sum, f) => sum + (Number(f.duration) || 0), 0);
+  const fieldWorkSubtitle = filteredFieldWork.length > 0 
+    ? `Across ${filteredFieldWork.length} field visit${filteredFieldWork.length === 1 ? '' : 's'}` 
+    : 'No field work records in database';
+
+  const teamCount = employeeFilter !== 'All' ? 1 : employees.length;
+  const teamSubtitle = teamCount > 0 
+    ? `${teamCount} active member${teamCount === 1 ? '' : 's'} in scope` 
+    : 'No employees in database';
 
   const handleExport = () => {
     let headers: string[] = [];
@@ -100,23 +168,25 @@ export default function TeamReportsClient({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
           <div className="text-xs text-zinc-400 font-medium">Avg Attendance Rate</div>
-          <div className="text-2xl font-black text-zinc-800 tracking-tight">92.4%</div>
-          <div className="text-[10px] text-emerald-500 font-bold">+2.1% from last month</div>
+          <div className="text-2xl font-black text-zinc-800 tracking-tight">{avgAttendanceRate}</div>
+          <div className={`text-[10px] font-bold ${totalAtt > 0 ? 'text-emerald-600' : 'text-zinc-400'}`}>
+            {attendanceSubtitle}
+          </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
           <div className="text-xs text-zinc-400 font-medium">Total Leave Days</div>
-          <div className="text-2xl font-black text-amber-600 tracking-tight">14</div>
-          <div className="text-[10px] text-zinc-500">Approved this period</div>
+          <div className="text-2xl font-black text-amber-600 tracking-tight">{totalLeaveDays}</div>
+          <div className="text-[10px] text-zinc-500">{leaveSubtitle}</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
           <div className="text-xs text-zinc-400 font-medium">Field Work Hours</div>
-          <div className="text-2xl font-black text-blue-600 tracking-tight">128h</div>
-          <div className="text-[10px] text-zinc-500">Across 3 active sites</div>
+          <div className="text-2xl font-black text-blue-600 tracking-tight">{totalFieldHours}h</div>
+          <div className="text-[10px] text-zinc-500">{fieldWorkSubtitle}</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
-          <div className="text-xs text-zinc-400 font-medium">Team Productivity</div>
-          <div className="text-2xl font-black text-purple-600 tracking-tight">88%</div>
-          <div className="text-[10px] text-purple-500 font-bold">On target</div>
+          <div className="text-xs text-zinc-400 font-medium">Active Team Members</div>
+          <div className="text-2xl font-black text-purple-600 tracking-tight">{teamCount}</div>
+          <div className="text-[10px] text-zinc-500">{teamSubtitle}</div>
         </div>
       </div>
 
@@ -129,6 +199,7 @@ export default function TeamReportsClient({
           onChange={(e) => setDateRange(e.target.value)}
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
+          <SelectOption value="All Time">All Time</SelectOption>
           <SelectOption value="Today">Today</SelectOption>
           <SelectOption value="This Week">This Week</SelectOption>
           <SelectOption value="This Month">This Month</SelectOption>
@@ -141,11 +212,9 @@ export default function TeamReportsClient({
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <SelectOption value="All">All Employees</SelectOption>
-          <SelectOption value="Krishna Rao">Krishna Rao</SelectOption>
-          <SelectOption value="Anil Desai">Anil Desai</SelectOption>
-          <SelectOption value="Ravi Kumar">Ravi Kumar</SelectOption>
-          <SelectOption value="Manoj Tiwari">Manoj Tiwari</SelectOption>
-          <SelectOption value="Suresh Babu">Suresh Babu</SelectOption>
+          {employees.map(e => (
+            <SelectOption key={e.id} value={e.name}>{e.name}</SelectOption>
+          ))}
         </Select>
 
         <Select
@@ -154,21 +223,39 @@ export default function TeamReportsClient({
           className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         >
           <SelectOption value="All">All Statuses</SelectOption>
-          <SelectOption value="Present">Present</SelectOption>
-          <SelectOption value="Absent">Absent</SelectOption>
-          <SelectOption value="Approved">Approved</SelectOption>
-          <SelectOption value="Completed">Completed</SelectOption>
+          {activeTab === 'Team Attendance' && (
+            <>
+              <SelectOption value="Present">Present</SelectOption>
+              <SelectOption value="Absent">Absent</SelectOption>
+              <SelectOption value="Late">Late</SelectOption>
+              <SelectOption value="Field Work">Field Work</SelectOption>
+              <SelectOption value="On Leave">On Leave</SelectOption>
+            </>
+          )}
+          {activeTab === 'Leave' && (
+            <>
+              <SelectOption value="APPROVED">Approved</SelectOption>
+              <SelectOption value="PENDING">Pending</SelectOption>
+              <SelectOption value="REJECTED">Rejected</SelectOption>
+              <SelectOption value="CANCELLED">Cancelled</SelectOption>
+            </>
+          )}
+          {activeTab === 'Field Work' && (
+            <>
+              <SelectOption value="Completed">Completed</SelectOption>
+            </>
+          )}
         </Select>
       </div>
 
       {/* Main Container Card */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs overflow-hidden">
         <div className="flex border-b border-zinc-200 bg-zinc-50/30 overflow-x-auto">
-          {['Team Attendance', 'Leave', 'Field Work'].map((tab) => (
+          {(['Team Attendance', 'Leave', 'Field Work'] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-none shrink-0 ${
+              onClick={() => { setActiveTab(tab); setStatusFilter('All'); }}
+              className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-none shrink-0 cursor-pointer ${
                 activeTab === tab
                   ? 'border-black text-black bg-white'
                   : 'border-transparent text-zinc-400 hover:text-black'
@@ -183,7 +270,11 @@ export default function TeamReportsClient({
         <div className="p-6">
           <div className="flex flex-wrap gap-4 justify-between items-center mb-4">
             <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">
-              Report Data Preview
+              Report Data Preview ({
+                activeTab === 'Team Attendance' ? filteredAttendance.length :
+                activeTab === 'Leave' ? filteredLeave.length :
+                filteredFieldWork.length
+              } rows)
             </h3>
             <button
               onClick={handleExport}
@@ -196,106 +287,137 @@ export default function TeamReportsClient({
 
           <div className="overflow-x-auto border border-zinc-200 rounded-xl">
             {activeTab === 'Team Attendance' && (
-              <table className="w-full text-left text-xs min-w-[700px]">
-                <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
-                  <tr>
-                    <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4">Employee</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4">Login</th>
-                    <th className="py-2.5 px-4">Logout</th>
-                    <th className="py-2.5 px-4">Hours</th>
-                    <th className="py-2.5 px-4">Site</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {filteredAttendance.map(a => (
-                    <tr key={a.id} className="hover:bg-zinc-50/20">
-                      <td className="py-3 px-4 font-medium text-zinc-600">{a.date}</td>
-                      <td className="py-3 px-4 font-bold text-black">{a.employeeName}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${a.status === 'Present' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                          {a.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-zinc-500 font-mono">{a.login}</td>
-                      <td className="py-3 px-4 text-zinc-500 font-mono">{a.logout}</td>
-                      <td className="py-3 px-4 font-bold text-zinc-700">{a.hours}h</td>
-                      <td className="py-3 px-4 text-zinc-500">{a.site}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                {filteredAttendance.length > 0 ? (
+                  <table className="w-full text-left text-xs min-w-[700px]">
+                    <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
+                      <tr>
+                        <th className="py-2.5 px-4">Date</th>
+                        <th className="py-2.5 px-4">Employee</th>
+                        <th className="py-2.5 px-4">Status</th>
+                        <th className="py-2.5 px-4">Login</th>
+                        <th className="py-2.5 px-4">Logout</th>
+                        <th className="py-2.5 px-4">Hours</th>
+                        <th className="py-2.5 px-4">Site</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {filteredAttendance.map(a => (
+                        <tr key={a.id} className="hover:bg-zinc-50/20">
+                          <td className="py-3 px-4 font-medium text-zinc-600">{a.date}</td>
+                          <td className="py-3 px-4 font-bold text-black">{a.employeeName}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${a.status === 'Present' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                              {a.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-zinc-500 font-mono">{a.login}</td>
+                          <td className="py-3 px-4 text-zinc-500 font-mono">{a.logout}</td>
+                          <td className="py-3 px-4 font-bold text-zinc-700">{a.hours}h</td>
+                          <td className="py-3 px-4 text-zinc-500">{a.site}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="py-16 text-center bg-zinc-50/50 space-y-1">
+                    <p className="text-xs font-bold text-zinc-700">No attendance records in database</p>
+                    <p className="text-[11px] text-zinc-400">
+                      {initialAttendance.length === 0
+                        ? 'There are currently no attendance logs recorded in the system.'
+                        : 'No attendance records match the selected filter criteria.'}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {activeTab === 'Leave' && (
-              <table className="w-full text-left text-xs min-w-[700px]">
-                <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
-                  <tr>
-                    <th className="py-2.5 px-4">Employee</th>
-                    <th className="py-2.5 px-4">Leave Type</th>
-                    <th className="py-2.5 px-4">Start Date</th>
-                    <th className="py-2.5 px-4">End Date</th>
-                    <th className="py-2.5 px-4">Duration</th>
-                    <th className="py-2.5 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {filteredLeave.map(l => (
-                    <tr key={l.id} className="hover:bg-zinc-50/20">
-                      <td className="py-3 px-4 font-bold text-black">{l.employeeName}</td>
-                      <td className="py-3 px-4 text-zinc-700 font-medium">{l.type}</td>
-                      <td className="py-3 px-4 font-medium text-zinc-600">{l.startDate}</td>
-                      <td className="py-3 px-4 font-medium text-zinc-600">{l.endDate}</td>
-                      <td className="py-3 px-4 font-bold text-zinc-700">{l.duration} Days</td>
-                      <td className="py-3 px-4">
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                          {l.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                {filteredLeave.length > 0 ? (
+                  <table className="w-full text-left text-xs min-w-[700px]">
+                    <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
+                      <tr>
+                        <th className="py-2.5 px-4">Employee</th>
+                        <th className="py-2.5 px-4">Leave Type</th>
+                        <th className="py-2.5 px-4">Start Date</th>
+                        <th className="py-2.5 px-4">End Date</th>
+                        <th className="py-2.5 px-4">Duration</th>
+                        <th className="py-2.5 px-4">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {filteredLeave.map(l => (
+                        <tr key={l.id} className="hover:bg-zinc-50/20">
+                          <td className="py-3 px-4 font-bold text-black">{l.employeeName}</td>
+                          <td className="py-3 px-4 text-zinc-700 font-medium">{l.type}</td>
+                          <td className="py-3 px-4 font-medium text-zinc-600">{l.startDate}</td>
+                          <td className="py-3 px-4 font-medium text-zinc-600">{l.endDate}</td>
+                          <td className="py-3 px-4 font-bold text-zinc-700">{l.duration} Days</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${l.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                              {l.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="py-16 text-center bg-zinc-50/50 space-y-1">
+                    <p className="text-xs font-bold text-zinc-700">No leave requests in database</p>
+                    <p className="text-[11px] text-zinc-400">
+                      {initialLeaves.length === 0
+                        ? 'There are currently no leave requests recorded in the system.'
+                        : 'No leave requests match the selected filter criteria.'}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {activeTab === 'Field Work' && (
-              <table className="w-full text-left text-xs min-w-[700px]">
-                <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
-                  <tr>
-                    <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4">Employee</th>
-                    <th className="py-2.5 px-4">Client/Project</th>
-                    <th className="py-2.5 px-4">Location</th>
-                    <th className="py-2.5 px-4">Duration</th>
-                    <th className="py-2.5 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {filteredFieldWork.map(f => (
-                    <tr key={f.id} className="hover:bg-zinc-50/20">
-                      <td className="py-3 px-4 font-medium text-zinc-600">{f.date}</td>
-                      <td className="py-3 px-4 font-bold text-black">{f.employeeName}</td>
-                      <td className="py-3 px-4 text-zinc-700 font-medium">{f.client}</td>
-                      <td className="py-3 px-4 text-zinc-600">{f.location}</td>
-                      <td className="py-3 px-4 font-bold text-zinc-700">{f.duration}h</td>
-                      <td className="py-3 px-4">
-                        <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                          {f.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            
-            {((activeTab === 'Team Attendance' && filteredAttendance.length === 0) || 
-              (activeTab === 'Leave' && filteredLeave.length === 0) || 
-              (activeTab === 'Field Work' && filteredFieldWork.length === 0)) && (
-              <div className="text-center py-12 text-zinc-400 text-xs bg-zinc-50/50">
-                No report data found matching filters.
-              </div>
+              <>
+                {filteredFieldWork.length > 0 ? (
+                  <table className="w-full text-left text-xs min-w-[700px]">
+                    <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
+                      <tr>
+                        <th className="py-2.5 px-4">Date</th>
+                        <th className="py-2.5 px-4">Employee</th>
+                        <th className="py-2.5 px-4">Client/Project</th>
+                        <th className="py-2.5 px-4">Location</th>
+                        <th className="py-2.5 px-4">Duration</th>
+                        <th className="py-2.5 px-4">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {filteredFieldWork.map(f => (
+                        <tr key={f.id} className="hover:bg-zinc-50/20">
+                          <td className="py-3 px-4 font-medium text-zinc-600">{f.date}</td>
+                          <td className="py-3 px-4 font-bold text-black">{f.employeeName}</td>
+                          <td className="py-3 px-4 text-zinc-700 font-medium">{f.client}</td>
+                          <td className="py-3 px-4 text-zinc-600">{f.location}</td>
+                          <td className="py-3 px-4 font-bold text-zinc-700">{f.duration}h</td>
+                          <td className="py-3 px-4">
+                            <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              {f.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="py-16 text-center bg-zinc-50/50 space-y-1">
+                    <p className="text-xs font-bold text-zinc-700">No field work records in database</p>
+                    <p className="text-[11px] text-zinc-400">
+                      {initialFieldWork.length === 0
+                        ? 'There are currently no field work entries recorded in the system.'
+                        : 'No field work entries match the selected filter criteria.'}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -29,8 +29,8 @@ export const ROUTE_METADATA: RouteMetadata[] = [
   { pattern: /^\/admin\/branches$/, title: 'Branches / Locations', parentHref: '/admin/branches', breadcrumb: 'System Settings / Branches' },
   { pattern: /^\/admin\/audit-logs\/filter$/, title: 'Filter Audit Logs', parentHref: '/admin/audit-logs', breadcrumb: 'System Settings / Audit Logs / Filter' },
   { pattern: /^\/admin\/audit-logs$/, title: 'Audit Logs', parentHref: '/admin/audit-logs', breadcrumb: 'System Settings / Audit Logs' },
-  { pattern: /^\/admin\/settings\/upload-logo$/, title: 'Upload Logo', parentHref: '/admin/settings', breadcrumb: 'System Settings / Company Settings / Upload Logo' },
-  { pattern: /^\/admin\/settings$/, title: 'Company Settings', parentHref: '/admin/settings', breadcrumb: 'System Settings / Company Settings' },
+  { pattern: /^\/admin\/settings\/upload-logo$/, title: 'Upload Logo', parentHref: '/admin/settings', breadcrumb: 'Administration / Company Settings / Upload Logo' },
+  { pattern: /^\/admin\/settings$/, title: 'Company Settings', parentHref: '/admin/settings', breadcrumb: 'Administration / Company Settings' },
   { pattern: /^\/admin$/, title: 'System Administration', parentHref: '/admin', breadcrumb: 'System Settings' },
 
   // Employees
@@ -194,7 +194,7 @@ export function getNavGroups(role: string): NavGroup[] {
       ],
     },
     {
-      group: null,
+      group: 'Employee',
       items: [
         { href: '/employees', label: 'Employee Master', icon: 'users' },
         { href: '/workforce', label: 'Workforce Assignments', icon: 'tasks' },

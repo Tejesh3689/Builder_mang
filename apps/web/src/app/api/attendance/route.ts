@@ -78,13 +78,40 @@ export async function POST(req: Request) {
     const now = new Date();
     const checkInTime = body.checkIn ? new Date(body.checkIn) : now;
 
+    // Read company settings for workforce shift rules
+    const { getCompanySettings } = await import('@/services/settings.service');
+    const settings = await getCompanySettings();
+
+    // Evaluate check-in time against shiftStart + lateGraceMinutes in company timezone
+    let computedStatus = 'PRESENT';
+    if (settings.shiftStart) {
+      const [shiftH, shiftM] = settings.shiftStart.split(':').map(Number);
+      const graceMinutes = settings.lateGraceMinutes ?? 15;
+      
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: settings.timezone || 'Asia/Kolkata',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+      }).formatToParts(checkInTime);
+      
+      const localH = Number(parts.find(p => p.type === 'hour')?.value ?? 0);
+      const localM = Number(parts.find(p => p.type === 'minute')?.value ?? 0);
+      const checkInMinutes = localH * 60 + localM;
+      const shiftDeadlineMinutes = shiftH * 60 + shiftM + graceMinutes;
+      
+      if (checkInMinutes > shiftDeadlineMinutes) {
+        computedStatus = 'LATE';
+      }
+    }
+
     try {
       const attendance = await prisma.attendance.create({
         data: {
           employeeId: targetEmployeeId,
           date: workingDate,
           checkIn: checkInTime,
-          status: 'PRESENT',
+          status: (body.status || computedStatus) as any,
           location: body.location || null,
           markedById: user.id
         }

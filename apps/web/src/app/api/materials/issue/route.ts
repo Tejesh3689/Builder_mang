@@ -112,24 +112,33 @@ export async function POST(req: Request) {
           }
         });
 
+        // Read company settings for allowNegativeStock rule
+        const { getCompanySettings } = await import('@/services/settings.service');
+        const companySettings = await getCompanySettings();
+        const allowNegative = companySettings.allowNegativeStock === true;
+
         // Deduct Stock and update ledger
         for (const item of items) {
           const qty = parseFloat(item.issuedQuantity);
           
+          const stockWhere: any = {
+            materialId: item.materialId,
+            stockLocationId: fromLocationId,
+            ventureId,
+          };
+          if (!allowNegative) {
+            stockWhere.availableQuantity = { gte: qty };
+          }
+
           const res = await tx.materialStock.updateMany({
-            where: {
-              materialId: item.materialId,
-              stockLocationId: fromLocationId,
-              ventureId,
-              availableQuantity: { gte: qty }
-            },
+            where: stockWhere,
             data: {
               availableQuantity: { decrement: qty },
               physicalQuantity: { decrement: qty }
             }
           });
 
-          if (res.count === 0) {
+          if (res.count === 0 && !allowNegative) {
             throw new ApiError(409, 'ISSUE_EXCEEDS_AVAILABLE_STOCK');
           }
 

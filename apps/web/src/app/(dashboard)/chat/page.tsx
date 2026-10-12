@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
 
 import Link from 'next/link';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import { MessageSquare, Building2, Plus, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -130,7 +131,8 @@ export default function ChatRoomsPage() {
 
       {/* Modal: Create Chat Room */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <ModalPortal>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAddModal(false); }}>
           <form onSubmit={handleCreateRoom} className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-xl p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto">
             <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Create Scoped Channel</h3>
             <div className="space-y-3 text-xs">
@@ -179,6 +181,7 @@ export default function ChatRoomsPage() {
             </div>
           </form>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

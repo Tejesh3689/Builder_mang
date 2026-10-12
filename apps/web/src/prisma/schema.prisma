@@ -950,3 +950,49 @@ model LeaveRequest {
 
   @@map("leave_requests")
 }
+
+model CompanySettings {
+  id                             String   @id @default("default")
+  version                        Int      @default(1)
+  legalName                      String   @default("Builder Management Inc.")
+  displayName                    String   @default("Builder Management")
+  supportEmail                   String   @default("support@builder.com")
+  phone                          String?
+  website                        String?
+  gstin                          String?
+  pan                            String?
+  addressLine                    String?
+  city                           String?
+  state                          String?
+  pincode                        String?
+  currency                       String   @default("INR")
+  timezone                       String   @default("Asia/Kolkata")
+  dateFormat                     String   @default("DD/MM/YYYY")
+  fiscalYearStartMonth           Int      @default(4)
+  weekStartsOn                   String   @default("MONDAY")
+  shiftStart                     String   @default("09:00")
+  shiftEnd                       String   @default("18:00")
+  lateGraceMinutes               Int      @default(15)
+  weeklyOffDays                  String   @default("SUNDAY")
+  allowNegativeStock             Boolean  @default(false)
+  requireMaterialRequestApproval Boolean  @default(true)
+  sessionTimeoutMinutes          Int      @default(480)
+  passwordMinLength              Int      @default(8)
+  passwordRequireUppercase       Boolean  @default(true)
+  passwordRequireNumber          Boolean  @default(true)
+  passwordRequireSpecial         Boolean  @default(false)
+  updatedAt                      DateTime @updatedAt
+  updatedById                    String?
+
+  @@map("company_settings")
+}
+
+model CompanyLogo {
+  id        String   @id @default("default")
+  mimeType  String
+  data      Bytes
+  updatedAt DateTime @updatedAt
+
+  @@map("company_logos")
+}
+

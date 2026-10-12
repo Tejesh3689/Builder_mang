@@ -259,7 +259,7 @@ export default function EmployeesClient({
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Search bar */}
-          <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 shadow-xs col-span-1 md:col-span-2">
+          <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 shadow-xs col-span-1 md:col-span-2 focus-within:ring-1 focus-within:ring-zinc-400 focus-within:border-zinc-400 transition-all">
             <svg className="w-4 h-4 text-zinc-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -269,7 +269,7 @@ export default function EmployeesClient({
               aria-label="Search employees"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-transparent border-none outline-hidden text-xs w-full text-zinc-800 placeholder-zinc-400"
+              className="bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-xs w-full text-zinc-800 placeholder-zinc-400"
             />
           </div>
 
@@ -394,20 +394,20 @@ export default function EmployeesClient({
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs min-w-[1000px]">
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full text-left text-xs table-auto">
             <thead>
               <tr className="border-b border-zinc-200 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/20">
-                <th className="py-3 px-4 font-semibold">Employee</th>
-                <th className="py-3 px-4 font-semibold">Employee ID</th>
-                <th className="py-3 px-4 font-semibold">Designation</th>
-                <th className="py-3 px-4 font-semibold">Department</th>
-                <th className="py-3 px-4 font-semibold">Project</th>
-                <th className="py-3 px-4 font-semibold">Site</th>
-                <th className="py-3 px-4 font-semibold">Reporting Manager</th>
-                <th className="py-3 px-4 font-semibold">Employment Type</th>
-                <th className="py-3 px-4 font-semibold">Status</th>
-                <th className="py-3 px-4 font-semibold text-center">Actions</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold">Employee</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold whitespace-nowrap">ID</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold">Designation</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold">Department</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold">Project</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold">Site</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold">Manager</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold whitespace-nowrap">Type</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold">Status</th>
+                <th className="py-2.5 px-2.5 xl:px-3 font-semibold text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -417,12 +417,12 @@ export default function EmployeesClient({
                   return (
                     <tr key={e.id} className="hover:bg-zinc-50/30 transition-colors group">
                       {/* Employee Info */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg border flex items-center justify-center font-bold text-[10px] shrink-0 ${getAvatarColor(`${e.firstName} ${e.lastName}`)}`}>
+                      <td className="py-2 px-2.5 xl:px-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-7 h-7 rounded-lg border flex items-center justify-center font-bold text-[9px] shrink-0 ${getAvatarColor(`${e.firstName} ${e.lastName}`)}`}>
                             {initials}
                           </div>
-                          <div className="min-w-0 max-w-[240px]">
+                          <div className="min-w-0 max-w-[130px] xl:max-w-[170px]">
                             <Link href={`/employees/${e.id}`} title={`${e.firstName} ${e.lastName}`} className="font-bold text-zinc-800 hover:text-black hover:underline block truncate">
                               {e.firstName} {e.lastName}
                             </Link>
@@ -432,30 +432,30 @@ export default function EmployeesClient({
                       </td>
 
                       {/* ID */}
-                      <td className="py-3.5 px-4 font-mono text-zinc-500">{e.employeeId}</td>
+                      <td className="py-2 px-2.5 xl:px-3 font-mono text-zinc-500 text-[11px] whitespace-nowrap">{e.employeeId}</td>
 
                       {/* Designation */}
-                      <td className="py-3.5 px-4 text-zinc-700 font-semibold">{e.designation}</td>
+                      <td className="py-2 px-2.5 xl:px-3 text-zinc-700 font-semibold max-w-[100px] truncate" title={e.designation}>{e.designation}</td>
 
                       {/* Department */}
-                      <td className="py-3.5 px-4 text-zinc-500">{e.department}</td>
+                      <td className="py-2 px-2.5 xl:px-3 text-zinc-500 max-w-[85px] truncate" title={e.department}>{e.department}</td>
 
                       {/* Project */}
-                      <td className="py-3.5 px-4 font-semibold text-zinc-900">{e.currentProject}</td>
+                      <td className="py-2 px-2.5 xl:px-3 font-semibold text-zinc-900 max-w-[100px] truncate" title={e.currentProject}>{e.currentProject}</td>
 
                       {/* Site */}
-                      <td className="py-3.5 px-4 text-zinc-500">{e.currentSite}</td>
+                      <td className="py-2 px-2.5 xl:px-3 text-zinc-500 max-w-[80px] truncate" title={e.currentSite}>{e.currentSite}</td>
 
                       {/* Manager */}
-                      <td className="py-3.5 px-4 text-zinc-500">{e.reportingManager}</td>
+                      <td className="py-2 px-2.5 xl:px-3 text-zinc-500 max-w-[95px] truncate" title={e.reportingManager}>{e.reportingManager}</td>
 
                       {/* Employment Type */}
-                      <td className="py-3.5 px-4 text-zinc-600">{e.employmentType}</td>
+                      <td className="py-2 px-2.5 xl:px-3 text-zinc-600 whitespace-nowrap text-[11px]">{e.employmentType}</td>
 
                       {/* Status */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2 px-2.5 xl:px-3 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                             e.status === 'Active'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
                               : e.status === 'On Leave'
@@ -469,8 +469,8 @@ export default function EmployeesClient({
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-center gap-1.5">
+                      <td className="py-2 px-2.5 xl:px-3 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1">
                           {/* View Profile */}
                           <Link
                             href={`/employees/${e.id}`}

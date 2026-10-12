@@ -31,6 +31,28 @@ export const POST = apiHandler(async (req) => {
   const user = await requireAuth();
   assertPermission(user, 'admin:users'); // ADMIN only
   const input = await parseBody(req, createUserSchema);
+
+  // Read company password complexity settings
+  const { getCompanySettings } = await import('@/services/settings.service');
+  const companySettings = await getCompanySettings();
+
+  if (input.password.length < (companySettings.passwordMinLength || 8)) {
+    const { badRequest } = await import('@/lib/http/errors');
+    throw badRequest(`Password must be at least ${companySettings.passwordMinLength || 8} characters long.`, 'password');
+  }
+  if (companySettings.passwordRequireUppercase && !/[A-Z]/.test(input.password)) {
+    const { badRequest } = await import('@/lib/http/errors');
+    throw badRequest('Password must contain at least one uppercase letter.', 'password');
+  }
+  if (companySettings.passwordRequireNumber && !/[0-9]/.test(input.password)) {
+    const { badRequest } = await import('@/lib/http/errors');
+    throw badRequest('Password must contain at least one number.', 'password');
+  }
+  if (companySettings.passwordRequireSpecial && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(input.password)) {
+    const { badRequest } = await import('@/lib/http/errors');
+    throw badRequest('Password must contain at least one special character.', 'password');
+  }
+
   const passwordHash = await bcrypt.hash(input.password, 10);
 
   const newUser = await prisma.$transaction(async (tx) => {

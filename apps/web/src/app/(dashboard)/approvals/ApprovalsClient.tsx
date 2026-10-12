@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { Dialog } from '@/components/ui/Dialog';
 import { hasPermission } from '@/lib/permissions';
 import { leaveDurationDays, toCalendarDate } from '@builder/validation';
+import { Pagination } from '@/components/ui/Pagination';
 
 type RequestType = 'Leave' | 'Materials';
 
@@ -92,33 +93,52 @@ export default function ApprovalsClient({ userRole = 'ADMIN' }: ApprovalsClientP
   const [acting, setActing] = useState(false);
   const actingRef = useRef(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
+
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     try {
       const [leaves, materials] = await Promise.all([
         api.get<any>('/api/leaves?status=PENDING&limit=100'),
-        canSeeMaterials ? api.get<any>('/api/materials/requests?status=PENDING_APPROVAL&limit=100') : Promise.resolve({ data: [] }),
+        canSeeMaterials
+          ? api.get<any>('/api/materials/requests?status=PENDING_APPROVAL&limit=100')
+          : Promise.resolve({ success: true, data: [] }),
       ]);
-      const leaveRows: any[] = Array.isArray(leaves) ? leaves : leaves?.data ?? [];
-      const materialRows: any[] = materials?.data ?? [];
-      setRequests(
-        [...leaveRows.map(fromLeave), ...materialRows.map(fromMaterialRequest)].sort(
-          (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-        )
-      );
+      const lItems: ApprovalRequest[] = (leaves.data ?? []).map(fromLeave);
+      const mItems: ApprovalRequest[] = (materials.data ?? []).map(fromMaterialRequest);
+      setRequests([...lItems, ...mItems]);
+      setCurrentPage(1);
     } catch (err: any) {
-      if (err?.status !== 401) setLoadError(err?.message || 'Failed to load pending requests.');
+      if (err?.status !== 401) {
+        setLoadError(err?.message || 'Failed to load approvals');
+      }
     } finally {
       setLoading(false);
     }
   }, [canSeeMaterials]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const filteredRequests = requests.filter(r => activeCategory === 'All' || r.type === activeCategory);
-  const canAct = (r: ApprovalRequest) => (r.type === 'Leave' ? canDecideLeave : canSeeMaterials);
-  const commentRequired = actionModal?.action === 'Reject' && actionModal.req.type === 'Materials';
+  const filteredRequests = requests.filter(r => {
+    if (activeCategory === 'All') return true;
+    return r.type === activeCategory;
+  });
+
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const canAct = (req: ApprovalRequest) => {
+    if (req.type === 'Leave') return canDecideLeave;
+    if (req.type === 'Materials') return canSeeMaterials;
+    return false;
+  };
 
   const openAction = (req: ApprovalRequest, action: 'Approve' | 'Reject') => {
     setComment('');
@@ -126,12 +146,13 @@ export default function ApprovalsClient({ userRole = 'ADMIN' }: ApprovalsClientP
     setActionModal({ req, action });
   };
 
+  const commentRequired = actionModal?.action === 'Reject' && actionModal?.req.type === 'Materials';
+
   const handleAction = async () => {
-    // The ref blocks a second click that lands before React re-renders with `acting`.
     if (!actionModal || actingRef.current) return;
     const { req, action } = actionModal;
     if (commentRequired && !comment.trim()) {
-      setActionError('A reason is required to reject a material request.');
+      setActionError('A reason is required when rejecting a material request.');
       return;
     }
     actingRef.current = true;
@@ -173,8 +194,8 @@ export default function ApprovalsClient({ userRole = 'ADMIN' }: ApprovalsClientP
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto text-sm">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-xs">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-zinc-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-black tracking-tight">{isManager ? 'Extended Team Approvals' : isSupervisor ? 'Team Approvals' : 'Global Approvals'}</h1>
           <p className="text-xs text-zinc-500 mt-1">{isManager ? 'Review pending requests from your extended hierarchy' : isSupervisor ? 'Review pending requests from your assigned crew' : 'Manage all organization-wide requests'}</p>
@@ -191,7 +212,10 @@ export default function ApprovalsClient({ userRole = 'ADMIN' }: ApprovalsClientP
           {tabs.map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveCategory(tab)}
+              onClick={() => {
+                setActiveCategory(tab);
+                setCurrentPage(1);
+              }}
               className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors focus:outline-none shrink-0 ${
                 activeCategory === tab
                   ? 'border-black text-black bg-white'
@@ -220,33 +244,33 @@ export default function ApprovalsClient({ userRole = 'ADMIN' }: ApprovalsClientP
               </div>
             ) : (
               <div className="overflow-x-auto border border-zinc-200/80 rounded-xl">
-                <table className="w-full text-left text-xs min-w-[700px]">
+                <table className="w-full text-left text-xs table-auto">
                   <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200/80">
                     <tr>
-                      <th className="py-2.5 px-4">Requested By</th>
-                      <th className="py-2.5 px-4">Request Type</th>
-                      <th className="py-2.5 px-4">Date</th>
+                      <th className="py-2.5 px-4 whitespace-nowrap">Requested By</th>
+                      <th className="py-2.5 px-4 whitespace-nowrap">Request Type</th>
+                      <th className="py-2.5 px-4 whitespace-nowrap">Date</th>
                       <th className="py-2.5 px-4">Summary</th>
-                      <th className="py-2.5 px-4">Submitted</th>
-                      <th className="py-2.5 px-4 text-center">Actions</th>
+                      <th className="py-2.5 px-4 whitespace-nowrap">Submitted</th>
+                      <th className="py-2.5 px-4 text-center whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100">
-                    {filteredRequests.map(req => (
+                    {paginatedRequests.map(req => (
                       <tr key={`${req.type}-${req.id}`} className="hover:bg-zinc-50/50 transition-colors">
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 whitespace-nowrap">
                           <div className="font-bold text-black">{req.employeeName}</div>
                           <div className="text-[10px] text-zinc-500 font-mono">{req.employeeId}</div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getTypeColor(req.type)}`}>
                             {req.type}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-zinc-600 font-medium">{req.date}</td>
-                        <td className="py-3 px-4 text-zinc-600 truncate max-w-[250px]" title={req.summary}>{req.summary}</td>
-                        <td className="py-3 px-4 text-zinc-500 text-[10px]">{timeAgo(req.submittedAt)}</td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 text-zinc-600 font-medium whitespace-nowrap font-mono text-xs">{req.date}</td>
+                        <td className="py-3 px-4 text-zinc-600 truncate max-w-[280px]" title={req.summary}>{req.summary}</td>
+                        <td className="py-3 px-4 text-zinc-500 text-[10px] whitespace-nowrap font-mono">{timeAgo(req.submittedAt)}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center justify-center gap-3">
                             <button
                               onClick={() => setViewModal(req)}
@@ -276,6 +300,12 @@ export default function ApprovalsClient({ userRole = 'ADMIN' }: ApprovalsClientP
                     ))}
                   </tbody>
                 </table>
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredRequests.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                />
               </div>
             )}
           </div>

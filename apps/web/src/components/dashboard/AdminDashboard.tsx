@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import DashboardStatCard from './DashboardStatCard';
 import DashboardTableCard from './DashboardTableCard';
 import DashboardActivityFeed from './DashboardActivityFeed';
+import { Pagination } from '@/components/ui/Pagination';
 
 export default function AdminDashboard({ 
   activeVentures, 
@@ -22,6 +23,13 @@ export default function AdminDashboard({
   siteActivities: any[]; 
   materialConsumption?: { label: string; pct: string; color: string }[];
 }) {
+  const [pendingPage, setPendingPage] = useState(1);
+  const [alertsPage, setAlertsPage] = useState(1);
+  const pageSize = 5;
+
+  const paginatedPending = pendingRequests.slice((pendingPage - 1) * pageSize, pendingPage * pageSize);
+  const paginatedAlerts = inventoryAlerts.slice((alertsPage - 1) * pageSize, alertsPage * pageSize);
+
   const statusToneMap: Record<string, { bg: string; text: string; dot: string }> = {
     'on-track': { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', dot: 'bg-emerald-500' },
     'at-risk': { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-800', dot: 'bg-amber-500' },
@@ -115,27 +123,37 @@ export default function AdminDashboard({
           viewAllLink="/materials/requests"
           headers={['REQUEST', 'VENTURE', 'REQUESTED BY', 'TYPE', 'DATE', 'PRIORITY', 'STATUS']}
           colSpanClass="lg:col-span-2"
+          footer={
+            pendingRequests.length > pageSize ? (
+              <Pagination
+                currentPage={pendingPage}
+                totalItems={pendingRequests.length}
+                pageSize={pageSize}
+                onPageChange={setPendingPage}
+              />
+            ) : null
+          }
         >
-          {pendingRequests.length === 0 && (
+          {paginatedPending.length === 0 && (
             <tr><td colSpan={7} className="py-6 text-center text-zinc-400">No material requests are waiting for a decision.</td></tr>
           )}
-          {pendingRequests.map((r, i) => (
+          {paginatedPending.map((r, i) => (
             <tr key={i} className="hover:bg-zinc-50/80">
-              <td className="py-3 font-mono font-medium text-zinc-500">{r.id}</td>
-              <td className="py-3 font-bold text-black">{r.company}</td>
-              <td className="py-3 text-zinc-600">{r.requestedBy}</td>
-              <td className="py-3 text-zinc-600">{r.material}</td>
-              <td className="py-3 font-mono text-zinc-500">{r.date}</td>
-              <td className="py-3">
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+              <td className="py-3.5 pr-4 whitespace-nowrap font-mono font-medium text-xs text-zinc-700">{r.id}</td>
+              <td className="py-3.5 pr-4 font-bold text-black max-w-[200px] truncate">{r.company}</td>
+              <td className="py-3.5 pr-4 whitespace-nowrap text-zinc-700">{r.requestedBy}</td>
+              <td className="py-3.5 pr-4 text-zinc-600 max-w-[180px] truncate">{r.material}</td>
+              <td className="py-3.5 pr-4 whitespace-nowrap font-mono text-zinc-500 text-xs">{r.date}</td>
+              <td className="py-3.5 pr-4 whitespace-nowrap">
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                   r.priority === 'Critical' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
-                  • {r.priority}
+                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span> {r.priority}
                 </span>
               </td>
-              <td className="py-3">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                  • {r.status}
+              <td className="py-3.5 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span> {r.status}
                 </span>
               </td>
             </tr>
@@ -164,8 +182,9 @@ export default function AdminDashboard({
         </div>
       </div>
 
-      {/* Row 3: Site Activity Timeline + Inventory Alerts */}
+      {/* Row 3: Site Activity + Inventory Alerts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Site Activity Card */}
         <DashboardActivityFeed 
           title="Site Activity" 
           subtitle="Across all ventures" 
@@ -178,19 +197,29 @@ export default function AdminDashboard({
           title="Inventory Alerts"
           viewAllLink="/materials/alerts"
           headers={['MATERIAL', 'LOCATION', 'STATUS']}
+          footer={
+            inventoryAlerts.length > pageSize ? (
+              <Pagination
+                currentPage={alertsPage}
+                totalItems={inventoryAlerts.length}
+                pageSize={pageSize}
+                onPageChange={setAlertsPage}
+              />
+            ) : null
+          }
         >
-          {inventoryAlerts.length === 0 && (
+          {paginatedAlerts.length === 0 && (
             <tr><td colSpan={3} className="py-6 text-center text-zinc-400">All stock is above its reorder level.</td></tr>
           )}
-          {inventoryAlerts.map((alt, idx) => (
+          {paginatedAlerts.map((alt, idx) => (
             <tr key={idx}>
-              <td className="py-3 font-bold text-black">{alt.name}</td>
-              <td className="py-3 text-zinc-500 font-mono text-[11px]">{alt.location}</td>
-              <td className="py-3">
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+              <td className="py-3.5 pr-4 font-bold text-black max-w-[160px] truncate">{alt.name}</td>
+              <td className="py-3.5 pr-4 text-zinc-500 font-mono text-[11px] whitespace-nowrap">{alt.location}</td>
+              <td className="py-3.5 whitespace-nowrap">
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                   alt.tone === 'red' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
-                  • {alt.status}
+                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span> {alt.status}
                 </span>
               </td>
             </tr>
