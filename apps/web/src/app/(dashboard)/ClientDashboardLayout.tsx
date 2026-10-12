@@ -141,52 +141,52 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
 
         {/* Navigation Links */}
         <div className={`flex-1 min-h-0 overflow-y-auto ${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'}`}>
-            {navGroups.map((group, gIdx) => (
-              <div key={gIdx} className="space-y-1">
-                {group.group && !isSidebarCollapsed && (
-                  <div className="px-3 py-1.5 text-[10px] font-mono font-bold tracking-widest text-zinc-400 uppercase">
-                    {group.group}
-                  </div>
-                )}
-                {group.items.map((item) => {
-                  const isActive = activeHref === item.href;
-                  return (
-                    <Link
-                      key={item.href + item.label}
-                      href={item.href}
-                      title={isSidebarCollapsed ? item.label : undefined}
-                      onClick={() => {
-                        setIsMobileSidebarOpen(false);
-                      }}
-                      className={`flex items-center rounded-full text-xs font-medium transition-all duration-150 ${isSidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5'
-                        } ${isActive
-                          ? 'bg-[#FBEFDB] text-[#855B14] font-semibold shadow-sm'
-                          : 'text-zinc-700 hover:bg-zinc-100 hover:text-black'
-                        }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className={isActive ? 'text-[#855B14]' : 'text-zinc-500'}>
-                          {renderIcon(item.icon)}
-                        </span>
-                        {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
-                      </div>
-                      {!isSidebarCollapsed && (item as any).count !== undefined && (
-                        <span
-                          className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ${(item as any).alert
-                              ? 'bg-red-100 text-red-700'
-                              : isActive
-                                ? 'bg-[#F2D7B4] text-[#704808]'
-                                : 'bg-zinc-200/70 text-zinc-700'
-                            }`}
-                        >
-                          {(item as any).count}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            ))}
+          {navGroups.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-1">
+              {group.group && !isSidebarCollapsed && (
+                <div className="px-3 py-1.5 text-[10px] font-mono font-bold tracking-widest text-zinc-400 uppercase">
+                  {group.group}
+                </div>
+              )}
+              {group.items.map((item) => {
+                const isActive = activeHref === item.href;
+                return (
+                  <Link
+                    key={item.href + item.label}
+                    href={item.href}
+                    title={isSidebarCollapsed ? item.label : undefined}
+                    onClick={() => {
+                      setIsMobileSidebarOpen(false);
+                    }}
+                    className={`flex items-center rounded-full text-xs font-medium transition-all duration-150 ${isSidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5'
+                      } ${isActive
+                        ? 'bg-[#FBEFDB] text-[#855B14] font-semibold shadow-sm'
+                        : 'text-zinc-700 hover:bg-zinc-100 hover:text-black'
+                      }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={isActive ? 'text-[#855B14]' : 'text-zinc-500'}>
+                        {renderIcon(item.icon)}
+                      </span>
+                      {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
+                    </div>
+                    {!isSidebarCollapsed && (item as any).count !== undefined && (
+                      <span
+                        className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ${(item as any).alert
+                          ? 'bg-red-100 text-red-700'
+                          : isActive
+                            ? 'bg-[#F2D7B4] text-[#704808]'
+                            : 'bg-zinc-200/70 text-zinc-700'
+                          }`}
+                      >
+                        {(item as any).count}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         {/* Footer Profile Chip */}
@@ -241,15 +241,9 @@ export default function ClientDashboardLayout({ children }: { children: React.Re
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
-<<<<<<< HEAD
-            <div className="flex flex-col">
-              <h1 className="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-black leading-tight truncate max-w-[150px] sm:max-w-none">
-                {routeMeta ? routeMeta.breadcrumb.toUpperCase() : pathname.split('/').filter(Boolean).join(' / ').toUpperCase()}
-=======
             <div className="flex flex-col min-w-0">
               <h1 className="text-sm sm:text-base md:text-lg font-extrabold tracking-tight text-black leading-tight truncate">
                 {pathname === '/dashboard' ? 'Dashboard Overview' : pathname.split('/').filter(Boolean).join(' / ').toUpperCase()}
->>>>>>> 67c851494c400ce0ac64e0e4716f5f82068b5e55
               </h1>
               <span className="text-[10px] sm:text-[11px] font-mono text-zinc-500">Live Workspace Status</span>
             </div>

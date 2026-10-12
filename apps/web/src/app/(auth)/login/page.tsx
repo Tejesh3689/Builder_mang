@@ -134,15 +134,6 @@ function LoginFormContent() {
           </button>
         </div>
       </form>
-
-      <div className="pt-4 border-t border-zinc-100 text-center">
-        <p className="text-xs text-zinc-500">
-          Don't have an account?{' '}
-          <Link href="/register" className="text-amber-800 font-semibold hover:underline">
-            Register New User
-          </Link>
-        </p>
-      </div>
     </div>
   );
 }

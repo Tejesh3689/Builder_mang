@@ -1,7 +1,14 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/db';
 import { buildScopedWhere } from '@/lib/authorization';
-import { notFound } from '@/lib/http/errors';
+import { badRequest, notFound } from '@/lib/http/errors';
+
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isValidUuid(id: string | null | undefined): boolean {
+  if (typeof id !== 'string') return false;
+  return UUID_REGEX.test(id.trim());
+}
 
 /**
  * Resource-level scope checks. Every route that touches a single venture or
@@ -34,16 +41,20 @@ export async function requireVentureInScope<I extends Prisma.VentureInclude | un
   return venture as Prisma.VentureGetPayload<{ include: I }>;
 }
 
-/** Resolves an employee by id or employeeId within the user's scope, or throws 404. */
+/** Resolves an employee by primary key id (UUID) within the user's scope, or throws 400/404. */
 export async function requireEmployeeInScope<I extends Prisma.EmployeeInclude | undefined = undefined>(
   user: ScopedUser,
-  idOrEmpId: string,
+  id: string,
   include?: I
 ) {
+  if (!id || !isValidUuid(id)) {
+    throw badRequest('Invalid employee id', 'id');
+  }
+  const cleanId = id.trim();
   const where = await scopedWhere(user, 'employee');
   const employee = where
     ? await prisma.employee.findFirst({
-        where: { AND: [{ OR: [{ id: idOrEmpId }, { employeeId: idOrEmpId }] }, where as Prisma.EmployeeWhereInput] },
+        where: { AND: [{ id: cleanId }, where as Prisma.EmployeeWhereInput] },
         include,
       })
     : null;
@@ -57,14 +68,19 @@ export async function requireEmployeeInScope<I extends Prisma.EmployeeInclude | 
  * MANAGER staff their venture from the unassigned pool without being able to
  * pull people off ventures they do not manage.
  */
-export async function requireAssignableEmployee(user: ScopedUser, idOrEmpId: string) {
+export async function requireAssignableEmployee(user: ScopedUser, id: string) {
+  if (!id || !isValidUuid(id)) {
+    throw badRequest('Invalid employee id', 'id');
+  }
+  const cleanId = id.trim();
   try {
-    return await requireEmployeeInScope(user, idOrEmpId);
-  } catch (e) {
+    return await requireEmployeeInScope(user, cleanId);
+  } catch (e: any) {
+    if (e?.status === 400) throw e;
     const unassigned = await prisma.employee.findFirst({
-      where: { OR: [{ id: idOrEmpId }, { employeeId: idOrEmpId }], assignments: { none: { status: 'ACTIVE' } } },
+      where: { id: cleanId, assignments: { none: { status: 'ACTIVE' } } },
     });
-    if (!unassigned) throw e;
+    if (!unassigned) throw notFound('Employee not found');
     return unassigned;
   }
 }

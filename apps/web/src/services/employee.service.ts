@@ -242,7 +242,12 @@ export async function updateEmployee(actor: Actor, existing: Employee, input: Em
  *  and the eligibility policy stops them being picked as a leader or manager.
  *  Not touched: material requests / issues (owned by the materials module).
  */
-async function terminateInTx(tx: Tx, actor: Actor, employee: Employee) {
+async function terminateInTx(tx: Tx, actor: Actor, employee: Employee, reason: string) {
+  if (!reason || typeof reason !== 'string' || reason.trim() === '') {
+    throw badRequest('Termination reason is required', 'reason');
+  }
+  const cleanReason = reason.trim();
+
   const [ledVentures, activeReports] = await Promise.all([
     tx.venture.findMany({
       where: {
@@ -268,7 +273,14 @@ async function terminateInTx(tx: Tx, actor: Actor, employee: Employee) {
   }
 
   const now = new Date();
-  const updated = await tx.employee.update({ where: { id: employee.id }, data: { status: EmployeeStatus.TERMINATED } });
+  const updated = await tx.employee.update({
+    where: { id: employee.id },
+    data: {
+      status: EmployeeStatus.TERMINATED,
+      terminatedAt: now,
+      terminationReason: cleanReason,
+    },
+  });
   const endedAssignments = await tx.employeeVentureAssignment.updateMany({
     where: { employeeId: employee.id, status: 'ACTIVE' },
     data: { status: 'COMPLETED', endDate: now },
@@ -290,6 +302,8 @@ async function terminateInTx(tx: Tx, actor: Actor, employee: Employee) {
     details: {
       employeeId: employee.id,
       previousStatus: employee.status,
+      terminatedAt: now.toISOString(),
+      reason: cleanReason,
       endedAssignments: endedAssignments.count,
       cancelledLeaveRequests: cancelledLeaves.count,
       userDeactivated: !!employee.userId,
@@ -298,7 +312,7 @@ async function terminateInTx(tx: Tx, actor: Actor, employee: Employee) {
   return updated;
 }
 
-export async function terminateEmployee(actor: Actor, employee: Employee) {
+export async function terminateEmployee(actor: Actor, employee: Employee, reason: string) {
   if (employee.status === EmployeeStatus.TERMINATED) throw conflict('Employee is already terminated.');
-  return prisma.$transaction((tx) => terminateInTx(tx, actor, employee));
+  return prisma.$transaction((tx) => terminateInTx(tx, actor, employee, reason));
 }

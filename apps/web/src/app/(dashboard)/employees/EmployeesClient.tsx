@@ -242,12 +242,6 @@ export default function EmployeesClient({
         {!isSupervisor && (
           <div className="flex items-center gap-2">
             <Link
-              href="/employees/dashboard"
-              className="px-4 py-2 border border-zinc-200 rounded-lg hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-colors"
-            >
-              Dashboard View
-            </Link>
-            <Link
               href="/employees/new"
               className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
             >

@@ -192,6 +192,8 @@ model Employee {
   designation        String
   department         String
   status             EmployeeStatus              @default(ACTIVE)
+  terminatedAt       DateTime?
+  terminationReason  String?
   onboardingStage    String                      @default("Active")
   onboardingStatus   String                      @default("Active")
   phone              String?                     @unique

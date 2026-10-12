@@ -33,20 +33,16 @@ export const ROUTE_METADATA: RouteMetadata[] = [
   { pattern: /^\/admin\/settings$/, title: 'Company Settings', parentHref: '/admin/settings', breadcrumb: 'System Settings / Company Settings' },
   { pattern: /^\/admin$/, title: 'System Administration', parentHref: '/admin', breadcrumb: 'System Settings' },
 
-  // Employees & HR
-  { pattern: /^\/employees\/dashboard$/, title: 'HR Dashboard', parentHref: '/employees/dashboard', breadcrumb: 'Human Resources / HR Dashboard' },
-  { pattern: /^\/employees\/new$/, title: 'Add Employee', parentHref: '/employees', breadcrumb: 'Human Resources / Employee Master / Add Employee' },
-  { pattern: /^\/employees\/managers$/, title: 'Managers', parentHref: '/employees/team', breadcrumb: 'Human Resources / Managers' },
-  { pattern: /^\/employees\/supervisors$/, title: 'Supervisors', parentHref: '/employees/supervisors', breadcrumb: 'Human Resources / Supervisors' },
-  { pattern: /^\/employees\/team$/, title: 'Organization Tree', parentHref: '/employees/team', breadcrumb: 'Human Resources / Organization Tree' },
-  { pattern: /^\/employees\/[^/]+\/documents$/, title: 'Employee Documents', parentHref: '/employees', breadcrumb: 'Human Resources / Employee Master / Documents' },
-  { pattern: /^\/employees\/[^/]+\/edit$/, title: 'Edit Employee', parentHref: '/employees', breadcrumb: 'Human Resources / Employee Master / Edit Employee' },
-  { pattern: /^\/employees\/[^/]+$/, title: 'Employee Profile', parentHref: '/employees', breadcrumb: 'Human Resources / Employee Master / Employee Profile' },
-  { pattern: /^\/employees$/, title: 'Employee Master', parentHref: '/employees', breadcrumb: 'Human Resources / Employee Master' },
-  { pattern: /^\/workforce$/, title: 'Workforce Assignments', parentHref: '/workforce', breadcrumb: 'Human Resources / Workforce Assignments' },
-  { pattern: /^\/attendance\/mark$/, title: 'Mark Attendance', parentHref: '/attendance', breadcrumb: 'Human Resources / Attendance / Mark Attendance' },
-  { pattern: /^\/attendance$/, title: 'Global Attendance', parentHref: '/attendance', breadcrumb: 'Human Resources / Attendance' },
-  { pattern: /^\/leave$/, title: 'Leave & Holidays', parentHref: '/leave', breadcrumb: 'Human Resources / Leave & Holidays' },
+  // Employees
+  { pattern: /^\/employees\/new$/, title: 'Add Employee', parentHref: '/employees', breadcrumb: 'Employees / Add Employee' },
+  { pattern: /^\/employees\/managers$/, title: 'Managers', parentHref: '/employees', breadcrumb: 'Employees / Managers' },
+  { pattern: /^\/employees\/supervisors$/, title: 'Supervisors', parentHref: '/employees/supervisors', breadcrumb: 'Employees / Supervisors' },
+  { pattern: /^\/employees\/[^/]+\/documents$/, title: 'Employee Documents', parentHref: '/employees', breadcrumb: 'Employees / Documents' },
+  { pattern: /^\/employees\/[^/]+\/edit$/, title: 'Edit Employee', parentHref: '/employees', breadcrumb: 'Employees / Edit Employee' },
+  { pattern: /^\/employees\/[^/]+$/, title: 'Employee Profile', parentHref: '/employees', breadcrumb: 'Employees / Profile' },
+  { pattern: /^\/employees$/, title: 'Employee Master', parentHref: '/employees', breadcrumb: 'Employees' },
+  { pattern: /^\/workforce$/, title: 'Workforce Assignments', parentHref: '/workforce', breadcrumb: 'Workforce Assignments' },
+  { pattern: /^\/leave$/, title: 'Leave & Holidays', parentHref: '/leave', breadcrumb: 'Leave & Holidays' },
 
   // Ventures (Corporate)
   { pattern: /^\/ventures\/[^/]+\/announcements$/, title: 'Venture Announcements', parentHref: '/ventures', breadcrumb: 'Corporate / Ventures / Announcements' },
@@ -54,7 +50,6 @@ export const ROUTE_METADATA: RouteMetadata[] = [
   { pattern: /^\/ventures$/, title: 'Ventures', parentHref: '/ventures', breadcrumb: 'Corporate / Ventures' },
   { pattern: /^\/onboarding$/, title: 'Onboarding Pipeline', parentHref: '/onboarding', breadcrumb: 'Corporate / Onboarding Pipeline' },
   { pattern: /^\/approvals$/, title: 'Pending Approvals', parentHref: '/approvals', breadcrumb: 'Corporate / Pending Approvals' },
-  { pattern: /^\/compliance$/, title: 'Compliance & Permits', parentHref: '/compliance', breadcrumb: 'Corporate / Compliance & Permits' },
 
   // Materials & Inventory
   { pattern: /^\/materials\/new$/, title: 'Add Material', parentHref: '/materials/list', breadcrumb: 'Resource Management / Material Catalog / Add Material' },
@@ -65,7 +60,6 @@ export const ROUTE_METADATA: RouteMetadata[] = [
   { pattern: /^\/materials\/requests$/, title: 'Material Requests', parentHref: '/materials', breadcrumb: 'Resource Management / Inventory Overview / Requests' },
   { pattern: /^\/materials\/transactions$/, title: 'Material Transactions', parentHref: '/materials', breadcrumb: 'Resource Management / Inventory Overview / Transactions' },
   { pattern: /^\/materials$/, title: 'Inventory Overview', parentHref: '/materials', breadcrumb: 'Resource Management / Inventory Overview' },
-  { pattern: /^\/assets$/, title: 'Asset Management', parentHref: '/assets', breadcrumb: 'Resource Management / Asset Management' },
 
   // Others
   { pattern: /^\/chat\/[^/]+$/, title: 'Venture Chat', parentHref: '/chat', breadcrumb: 'Enterprise / Chat / Venture' },
@@ -75,7 +69,6 @@ export const ROUTE_METADATA: RouteMetadata[] = [
   { pattern: /^\/meetings$/, title: 'Meetings', parentHref: '/meetings', breadcrumb: 'Operations / Meetings' },
   { pattern: /^\/notifications$/, title: 'Notifications', parentHref: '/notifications', breadcrumb: 'System / Notifications' },
   { pattern: /^\/profile$/, title: 'Profile', parentHref: '/profile', breadcrumb: 'System / Profile' },
-  { pattern: /^\/demo$/, title: 'Component Demo', parentHref: '/demo', breadcrumb: 'Enterprise / Component Demo' },
   { pattern: /^\/unauthorized$/, title: 'Unauthorized', parentHref: '/dashboard', breadcrumb: 'Unauthorized' },
 
   // Reports
@@ -110,8 +103,6 @@ export function getNavGroups(role: string): NavGroup[] {
       {
         group: 'Team Management',
         items: [
-          { href: '/employees/team', label: 'My Team', icon: 'users' },
-          { href: '/attendance', label: 'Attendance', icon: 'check' },
           { href: '/leave', label: 'Leave Management', icon: 'activity' },
         ],
       },
@@ -122,7 +113,6 @@ export function getNavGroups(role: string): NavGroup[] {
           { href: '/approvals', label: 'Approvals', icon: 'check' },
           { href: '/reports/team', label: 'Reports', icon: 'file' },
           { href: '/meetings', label: 'Meetings', icon: 'users' },
-          { href: '/assets', label: 'Assets', icon: 'box' },
         ],
       },
       {
@@ -167,8 +157,6 @@ export function getNavGroups(role: string): NavGroup[] {
       {
         group: 'Team & HR',
         items: [
-          { href: '/employees/team', label: 'Extended Team', icon: 'users' },
-          { href: '/attendance', label: 'Global Attendance', icon: 'check' },
           { href: '/leave', label: 'Leave Requests', icon: 'activity' },
         ],
       },
@@ -203,18 +191,14 @@ export function getNavGroups(role: string): NavGroup[] {
         { href: '/ventures', label: 'Ventures', icon: 'layers' },
         { href: '/onboarding', label: 'Onboarding Pipeline', icon: 'activity' },
         { href: '/approvals', label: 'Pending Approvals', icon: 'check', alert: true },
-        { href: '/compliance', label: 'Compliance & Permits', icon: 'shield' },
       ],
     },
     {
-      group: 'Human Resources',
+      group: null,
       items: [
-        { href: '/employees/dashboard', label: 'HR Dashboard', icon: 'building' },
         { href: '/employees', label: 'Employee Master', icon: 'users' },
         { href: '/workforce', label: 'Workforce Assignments', icon: 'tasks' },
         { href: '/employees/supervisors', label: 'Supervisors', icon: 'users' },
-        { href: '/employees/team', label: 'Organization Tree', icon: 'users' },
-        { href: '/attendance', label: 'Global Attendance', icon: 'check' },
         { href: '/leave', label: 'Leave & Holidays', icon: 'activity' },
       ],
     },
@@ -224,7 +208,6 @@ export function getNavGroups(role: string): NavGroup[] {
         { href: '/materials', label: 'Inventory Overview', icon: 'box' },
         { href: '/materials/list', label: 'Material Catalog', icon: 'cube' },
         { href: '/materials/stock', label: 'Stock Movements', icon: 'stack' },
-        { href: '/assets', label: 'Asset Management', icon: 'truck' },
       ],
     },
     {
@@ -232,7 +215,6 @@ export function getNavGroups(role: string): NavGroup[] {
       items: [
         { href: '/chat', label: 'Enterprise Chat', icon: 'chat' },
         { href: '/reports/team', label: 'Analytics & Reports', icon: 'file' },
-        { href: '/demo', label: 'Component Demo', icon: 'package' },
       ],
     }
   ];

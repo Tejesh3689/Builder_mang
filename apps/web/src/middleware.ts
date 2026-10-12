@@ -37,7 +37,6 @@ export const config = {
     '/chat/:path*',
     '/admin/:path*',
     '/api/:path*',
-    '/compliance/:path*',
     '/workforce/:path*',
     '/onboarding/:path*'
   ],

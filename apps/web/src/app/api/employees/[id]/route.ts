@@ -6,6 +6,8 @@ import { withCurrentStatus } from '@/lib/validation/certification';
 import { employeeUpdateSchema } from '@/lib/validation/employee';
 import { terminateEmployee, updateEmployee } from '@/services/employee.service';
 
+import { badRequest } from '@/lib/http/errors';
+
 type Ctx = { params: Promise<{ id: string }> };
 
 export const GET = apiHandler<Ctx>(async (_req, { params }) => {
@@ -33,11 +35,25 @@ export const PATCH = apiHandler<Ctx>(async (req, { params }) => {
 }, { resource: 'employee', context: 'employee PATCH' });
 
 /** Termination (soft delete) — see terminate policy in employee.service. */
-export const DELETE = apiHandler<Ctx>(async (_req, { params }) => {
+export const DELETE = apiHandler<Ctx>(async (req, { params }) => {
   const user = await requireAuth();
   assertPermission(user, 'employees:terminate'); // ADMIN only
   const { id } = await params;
   const employee = await requireEmployeeInScope(user, id);
-  const terminated = await terminateEmployee(user, employee);
+
+  let reason = '';
+  try {
+    const body = await req.json();
+    reason = body?.reason || '';
+  } catch {
+    const url = new URL(req.url);
+    reason = url.searchParams.get('reason') || '';
+  }
+
+  if (!reason || typeof reason !== 'string' || reason.trim() === '') {
+    throw badRequest('Termination reason is required', 'reason');
+  }
+
+  const terminated = await terminateEmployee(user, employee, reason);
   return ok(terminated);
 }, { resource: 'employee', context: 'employee DELETE' });

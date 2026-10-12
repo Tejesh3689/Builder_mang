@@ -18,6 +18,17 @@ export const assignmentCreateSchema = z.object({
   reportingManager: z.preprocess((v) => (v === '—' ? undefined : v), optionalId('reportingManager')),
 });
 
+/** POST /api/assignments — direct assignment creation accepting employeeId in the body */
+export const directAssignmentCreateSchema = z.object({
+  employeeId: requiredId('employeeId'),
+  ventureId: requiredId('ventureId'),
+  roleAtSite: optionalText('roleAtSite', 100),
+  accessLevel: accessLevel.default('STANDARD'),
+  startDate: optionalDate('startDate'),
+  reportingManagerId: optionalId('reportingManagerId'),
+  reportingManager: z.preprocess((v) => (v === '—' ? undefined : v), optionalId('reportingManager')),
+});
+
 /** POST /api/ventures/:id/members — venture comes from the URL. */
 export const memberCreateSchema = z.object({
   employeeId: requiredId('employeeId'),

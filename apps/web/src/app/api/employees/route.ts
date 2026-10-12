@@ -9,14 +9,17 @@ import { employeeCreateSchema } from '@/lib/validation/employee';
 import { createEmployee } from '@/services/employee.service';
 import { buildSearchConditions } from '@/lib/search';
 
+import { activeEmployeeWhere } from '@/lib/employees/scope';
+
 export const GET = apiHandler(async (req) => {
   const user = await requireAuth();
   const scopedWhere = await buildScopedWhere(user, 'employee');
   if ((scopedWhere as any).id === 'DENY_ALL') return ok([]);
 
   const { skip, take } = getPaginationParams(req);
+  const url = new URL(req.url);
   // Optional server-side search so rows beyond the current page are findable.
-  const search = new URL(req.url).searchParams.get('search')?.trim().slice(0, 100);
+  const search = url.searchParams.get('search')?.trim().slice(0, 100);
   const searchWhere: Prisma.EmployeeWhereInput = search
     ? {
         AND: buildSearchConditions(search, [
@@ -30,7 +33,16 @@ export const GET = apiHandler(async (req) => {
         ])
       }
     : {};
-  const where: Prisma.EmployeeWhereInput = { AND: [scopedWhere as Prisma.EmployeeWhereInput, searchWhere, { status: { not: 'TERMINATED' } }] };
+
+  const statusParam = url.searchParams.get('status')?.trim().toUpperCase();
+  const statusWhere: Prisma.EmployeeWhereInput =
+    user.role === 'ADMIN' && statusParam === 'TERMINATED'
+      ? { status: 'TERMINATED' }
+      : activeEmployeeWhere;
+
+  const where: Prisma.EmployeeWhereInput = {
+    AND: [scopedWhere as Prisma.EmployeeWhereInput, searchWhere, statusWhere],
+  };
 
   const [employees, total] = await Promise.all([
     prisma.employee.findMany({
