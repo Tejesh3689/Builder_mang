@@ -1,5 +1,13 @@
 'use client';
 
+<<<<<<< HEAD
+import React from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
+
+import Link from 'next/link';
+
+export default function ExportProjectReportPage() {
+=======
 import React, { useState } from 'react';
 import { Select, SelectOption } from '@/components/ui/Select';
 import Link from 'next/link';
@@ -62,6 +70,7 @@ export default function ExportProjectReportPage() {
     }
   };
 
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
@@ -71,6 +80,15 @@ export default function ExportProjectReportPage() {
         <h1 className="text-2xl font-bold text-zinc-900">Export Project Report</h1>
       </div>
 
+<<<<<<< HEAD
+      <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
+        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Date Range</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <input type="date" className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+              <input type="date" className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+=======
       {statusMessage && (
         <div className={`p-4 rounded-xl border text-sm flex items-center justify-between ${
           statusMessage.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'
@@ -97,11 +115,18 @@ export default function ExportProjectReportPage() {
                 onChange={(e) => setEndDate(e.target.value)}
                 className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
               />
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
             </div>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">Format</label>
+<<<<<<< HEAD
+            <Select className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+              <SelectOption>PDF Document (.pdf)</SelectOption>
+              <SelectOption>Excel Spreadsheet (.xlsx)</SelectOption>
+              <SelectOption>CSV Data (.csv)</SelectOption>
+=======
             <Select
               value={format}
               onChange={(e) => setFormat(e.target.value)}
@@ -110,11 +135,15 @@ export default function ExportProjectReportPage() {
               <SelectOption value="xlsx">Excel Spreadsheet (.xlsx)</SelectOption>
               <SelectOption value="csv">CSV Data (.csv)</SelectOption>
               <SelectOption value="pdf">PDF Document (.pdf)</SelectOption>
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
             </Select>
           </div>
 
           <div className="pt-4 border-t border-zinc-100 flex justify-end gap-3">
             <Link href="/reports/projects" className="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-200">Cancel</Link>
+<<<<<<< HEAD
+            <button type="button" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Generate Export</button>
+=======
             <button
               type="submit"
               disabled={isGenerating}
@@ -129,6 +158,7 @@ export default function ExportProjectReportPage() {
                 'Generate Export'
               )}
             </button>
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
           </div>
         </form>
       </div>

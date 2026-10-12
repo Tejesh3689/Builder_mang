@@ -1,7 +1,14 @@
 'use client';
+<<<<<<< HEAD
+
+import React, { useState, useEffect } from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
+
+=======
 
 import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
 
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
 import { EmployeeProfile } from '@/lib/types';
 import { api } from '@/lib/api';
 
@@ -106,6 +113,18 @@ export default function ReportsPage() {
       );
     }
 
+<<<<<<< HEAD
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Naprocs_BMS_${reportType}_Report.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+=======
     const bom = '\uFEFF';
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
     const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -117,6 +136,7 @@ export default function ReportsPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
   };
 
   const projectOptions = React.useMemo(() => {
@@ -152,6 +172,8 @@ export default function ReportsPage() {
           <h1 className="text-xl font-extrabold text-black tracking-tight">Reports & Analytics</h1>
           <p className="text-xs text-zinc-500 mt-1">Export personnel registries, crew site allocations, and compliance audit spreadsheets</p>
         </div>
+<<<<<<< HEAD
+=======
         <button
           onClick={() => handleExport(activeTab)}
           className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
@@ -159,6 +181,7 @@ export default function ReportsPage() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           Generate Report
         </button>
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
       </div>
 
       {/* Filters Row */}
@@ -215,10 +238,16 @@ export default function ReportsPage() {
             </h3>
             <button
               onClick={() => handleExport(activeTab)}
+<<<<<<< HEAD
+              className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+            >
+              Export CSV
+=======
               className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
               Generate Report (CSV)
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
             </button>
           </div>
 

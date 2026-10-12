@@ -95,20 +95,34 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
       
       if (search) {
         and.push(...buildSearchConditions(search, [
+<<<<<<< HEAD
+          term => ({ transferNumber: { contains: term, mode: 'insensitive' } }),
+          term => ({ items: { some: { material: { name: { contains: term, mode: 'insensitive' } } } } }),
+          term => ({ fromLocation: { name: { contains: term, mode: 'insensitive' } } }),
+          term => ({ toLocation: { name: { contains: term, mode: 'insensitive' } } })
+=======
           term => ({ transactionNumber: { contains: term, mode: 'insensitive' } }),
           term => ({ material: { name: { contains: term, mode: 'insensitive' } } }),
           term => ({ stockLocation: { name: { contains: term, mode: 'insensitive' } } }),
           term => ({ venture: { name: { contains: term, mode: 'insensitive' } } })
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         ]));
       }
 
       const rows = await prisma.materialTransaction.findMany({
         where: { AND: and },
         include: {
+<<<<<<< HEAD
+          fromLocation: true,
+          toLocation: true,
+          items: { include: { material: true } },
+          dispatchedBy: true
+=======
           material: true,
           stockLocation: true,
           venture: true,
           performedBy: true
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -128,6 +142,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
 
       rows.forEach(r => {
         worksheet.addRow({
+<<<<<<< HEAD
+          ref: (r as any).transferNumber || '',
+          date: r.createdAt.toISOString(),
+          type: (r as any).type || r.status,
+          status: r.status,
+          from: r.fromLocation ? r.fromLocation.name : '',
+          to: r.toLocation ? r.toLocation.name : '',
+          reqBy: r.dispatchedBy ? `${(r as any).dispatchedBy.firstName} ${(r as any).dispatchedBy.lastName}` : '',
+          items: r.items.length
+=======
           txNo: r.transactionNumber,
           date: r.createdAt.toISOString().split('T')[0],
           type: r.transactionType,
@@ -138,6 +162,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
           qtyOut: Number(r.quantityOut) || 0,
           balance: Number(r.balanceAfter) || 0,
           performedBy: r.performedBy?.name || ''
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         });
       });
     } else if (module === 'project-report') {
@@ -219,8 +244,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
         where: and.length > 0 ? { AND: and } : undefined,
         include: {
           material: { include: { category: true, unitOfMeasure: true } },
+<<<<<<< HEAD
+          stockLocation: true
+=======
           stockLocation: true,
           venture: true
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         },
         orderBy: { updatedAt: 'desc' }
       });
@@ -229,10 +258,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
         { header: 'Material', key: 'name', width: 30 },
         { header: 'Code', key: 'code', width: 15 },
         { header: 'Category', key: 'category', width: 20 },
+<<<<<<< HEAD
+        { header: 'Location', key: 'location', width: 30 },
+        { header: 'Physical Qty', key: 'physicalQty', width: 15 },
+        { header: 'Available Qty', key: 'availableQty', width: 15 },
+=======
         { header: 'Venture', key: 'venture', width: 25 },
         { header: 'Location', key: 'location', width: 25 },
         { header: 'Available Qty', key: 'qty', width: 16 },
         { header: 'Physical Qty', key: 'physicalQty', width: 16 },
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         { header: 'UOM', key: 'uom', width: 15 }
       ];
 
@@ -241,10 +276,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
           name: r.material.name,
           code: r.material.code,
           category: r.material.category ? r.material.category.name : '',
+<<<<<<< HEAD
+          location: r.stockLocation ? r.stockLocation.name : '',
+          physicalQty: Number(r.physicalQuantity),
+          availableQty: Number(r.availableQuantity),
+=======
           venture: r.venture ? r.venture.name : '',
           location: r.stockLocation?.name || '',
           qty: Number(r.availableQuantity) || 0,
           physicalQty: Number(r.physicalQuantity) || 0,
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
           uom: r.material.unitOfMeasure ? r.material.unitOfMeasure.name : ''
         });
       });

@@ -178,7 +178,7 @@ export async function createEmployee(actor: Actor, input: EmployeeCreateInput) {
 }
 
 export async function updateEmployee(actor: Actor, existing: Employee, input: EmployeeUpdateInput) {
-  const { status, joiningDate, reportingManagerId, ...fields } = input;
+  const { status, joiningDate, reportingManagerId, terminationReason, ...fields } = input;
   const terminating = status === EmployeeStatus.TERMINATED && existing.status !== EmployeeStatus.TERMINATED;
   const reactivating = !!status && status !== EmployeeStatus.TERMINATED && existing.status === EmployeeStatus.TERMINATED;
 
@@ -211,7 +211,18 @@ export async function updateEmployee(actor: Actor, existing: Employee, input: Em
     };
     let updated = await tx.employee.update({ where: { id: existing.id }, data });
 
+<<<<<<< HEAD
+    if (terminating) {
+      updated = await terminateInTx(
+        tx,
+        actor,
+        updated,
+        terminationReason || 'Terminated via employee status update'
+      );
+    }
+=======
     if (terminating) updated = await terminateInTx(tx, actor, updated, 'Status updated to TERMINATED');
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
     // Reactivation restores the login that termination disabled (sessions stay revoked).
     if (reactivating && existing.userId) await tx.user.update({ where: { id: existing.userId }, data: { isActive: true } });
 

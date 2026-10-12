@@ -169,35 +169,32 @@ export default function TeamReportsClient({
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
           <div className="text-xs text-zinc-400 font-medium">Avg Attendance Rate</div>
           <div className="text-2xl font-black text-zinc-800 tracking-tight">{avgAttendanceRate}</div>
-          <div className={`text-[10px] font-bold ${totalAtt > 0 ? 'text-emerald-600' : 'text-zinc-400'}`}>
-            {attendanceSubtitle}
-          </div>
+          <div className="text-[10px] text-zinc-500 font-medium">{attendanceSubtitle}</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
-          <div className="text-xs text-zinc-400 font-medium">Total Leave Days</div>
-          <div className="text-2xl font-black text-amber-600 tracking-tight">{totalLeaveDays}</div>
-          <div className="text-[10px] text-zinc-500">{leaveSubtitle}</div>
+          <div className="text-xs text-zinc-400 font-medium">Total Leave Taken</div>
+          <div className="text-2xl font-black text-zinc-800 tracking-tight">{totalLeaveDays} <span className="text-sm font-semibold text-zinc-400">Days</span></div>
+          <div className="text-[10px] text-zinc-500 font-medium">{leaveSubtitle}</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
-          <div className="text-xs text-zinc-400 font-medium">Field Work Hours</div>
-          <div className="text-2xl font-black text-blue-600 tracking-tight">{totalFieldHours}h</div>
-          <div className="text-[10px] text-zinc-500">{fieldWorkSubtitle}</div>
+          <div className="text-xs text-zinc-400 font-medium">Total Field Work</div>
+          <div className="text-2xl font-black text-zinc-800 tracking-tight">{totalFieldHours} <span className="text-sm font-semibold text-zinc-400">Hours</span></div>
+          <div className="text-[10px] text-zinc-500 font-medium">{fieldWorkSubtitle}</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs space-y-1">
-          <div className="text-xs text-zinc-400 font-medium">Active Team Members</div>
-          <div className="text-2xl font-black text-purple-600 tracking-tight">{teamCount}</div>
-          <div className="text-[10px] text-zinc-500">{teamSubtitle}</div>
+          <div className="text-xs text-zinc-400 font-medium">Active Personnel</div>
+          <div className="text-2xl font-black text-zinc-800 tracking-tight">{teamCount}</div>
+          <div className="text-[10px] text-zinc-500 font-medium">{teamSubtitle}</div>
         </div>
       </div>
 
-      {/* Filters Row */}
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-xs p-4 flex flex-wrap items-center gap-3">
-        <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider font-mono">Filters:</span>
-        
+      {/* Filters Bar */}
+      <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs flex flex-wrap gap-3 items-center">
+        {/* Date Range Selector */}
         <Select
           value={dateRange}
           onChange={(e) => setDateRange(e.target.value)}
-          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+          className="border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:border-zinc-400 bg-white"
         >
           <SelectOption value="All Time">All Time</SelectOption>
           <SelectOption value="Today">Today</SelectOption>
@@ -206,21 +203,23 @@ export default function TeamReportsClient({
           <SelectOption value="Last Month">Last Month</SelectOption>
         </Select>
 
+        {/* Dynamic Personnel Selector */}
         <Select
           value={employeeFilter}
           onChange={(e) => setEmployeeFilter(e.target.value)}
-          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+          className="border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:border-zinc-400 bg-white"
         >
-          <SelectOption value="All">All Employees</SelectOption>
-          {employees.map(e => (
-            <SelectOption key={e.id} value={e.name}>{e.name}</SelectOption>
+          <SelectOption value="All">All Personnel ({employees.length})</SelectOption>
+          {employees.map((emp) => (
+            <SelectOption key={emp.id} value={emp.name}>{emp.name}</SelectOption>
           ))}
         </Select>
 
+        {/* Dynamic Status Filter */}
         <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+          className="border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-zinc-700 focus:outline-none focus:border-zinc-400 bg-white"
         >
           <SelectOption value="All">All Statuses</SelectOption>
           {activeTab === 'Team Attendance' && (
@@ -242,6 +241,7 @@ export default function TeamReportsClient({
           )}
           {activeTab === 'Field Work' && (
             <>
+              <SelectOption value="Approved">Approved</SelectOption>
               <SelectOption value="Completed">Completed</SelectOption>
             </>
           )}
@@ -250,7 +250,7 @@ export default function TeamReportsClient({
 
       {/* Main Container Card */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs overflow-hidden">
-        <div className="flex border-b border-zinc-200 bg-zinc-50/30 overflow-x-auto">
+        <div className="flex border-b border-zinc-200 bg-zinc-50/30 overflow-x-auto scrollbar-hide">
           {(['Team Attendance', 'Leave', 'Field Work'] as const).map((tab) => (
             <button
               key={tab}
@@ -261,12 +261,11 @@ export default function TeamReportsClient({
                   : 'border-transparent text-zinc-400 hover:text-black'
               }`}
             >
-              {tab} Report
+              {tab}
             </button>
           ))}
         </div>
 
-        {/* Tab Panel */}
         <div className="p-6">
           <div className="flex flex-wrap gap-4 justify-between items-center mb-4">
             <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">
@@ -285,11 +284,11 @@ export default function TeamReportsClient({
             </button>
           </div>
 
-          <div className="overflow-x-auto border border-zinc-200 rounded-xl">
+          <div className="overflow-x-auto scrollbar-hide border border-zinc-200 rounded-xl">
             {activeTab === 'Team Attendance' && (
               <>
                 {filteredAttendance.length > 0 ? (
-                  <table className="w-full text-left text-xs min-w-[700px]">
+                  <table className="w-full text-left text-xs table-auto">
                     <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
                       <tr>
                         <th className="py-2.5 px-4">Date</th>
@@ -335,7 +334,7 @@ export default function TeamReportsClient({
             {activeTab === 'Leave' && (
               <>
                 {filteredLeave.length > 0 ? (
-                  <table className="w-full text-left text-xs min-w-[700px]">
+                  <table className="w-full text-left text-xs table-auto">
                     <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
                       <tr>
                         <th className="py-2.5 px-4">Employee</th>
@@ -379,7 +378,7 @@ export default function TeamReportsClient({
             {activeTab === 'Field Work' && (
               <>
                 {filteredFieldWork.length > 0 ? (
-                  <table className="w-full text-left text-xs min-w-[700px]">
+                  <table className="w-full text-left text-xs table-auto">
                     <thead className="bg-zinc-50 text-zinc-500 uppercase font-mono text-[10px] border-b border-zinc-200">
                       <tr>
                         <th className="py-2.5 px-4">Date</th>
