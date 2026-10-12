@@ -211,7 +211,7 @@ export async function updateEmployee(actor: Actor, existing: Employee, input: Em
     };
     let updated = await tx.employee.update({ where: { id: existing.id }, data });
 
-    if (terminating) updated = await terminateInTx(tx, actor, updated);
+    if (terminating) updated = await terminateInTx(tx, actor, updated, 'Status updated to TERMINATED');
     // Reactivation restores the login that termination disabled (sessions stay revoked).
     if (reactivating && existing.userId) await tx.user.update({ where: { id: existing.userId }, data: { isActive: true } });
 
