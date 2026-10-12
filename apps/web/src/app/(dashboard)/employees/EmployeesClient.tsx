@@ -18,6 +18,8 @@ export default function EmployeesClient({
   const isManager = userRole === 'MANAGER';
   const isSupervisorOrManager = isSupervisor || isManager;
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
+  const [initialLoaded, setInitialLoaded] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -29,11 +31,28 @@ export default function EmployeesClient({
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+
+  // Preserved master filter options so dropdown choices never vanish while searching
+  const [departmentsList, setDepartmentsList] = useState<string[]>(['All']);
+  const [designationsList, setDesignationsList] = useState<string[]>(['All']);
+  const [projectsList, setProjectsList] = useState<string[]>(['All']);
+  const [sitesList, setSitesList] = useState<string[]>(['All']);
+  const [employmentTypesList, setEmploymentTypesList] = useState<string[]>(['All']);
+  const [managersList, setManagersList] = useState<string[]>(['All']);
+  const [skillsListState, setSkillsListState] = useState<string[]>(['All']);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
     async function fetchEmployees() {
-      setLoading(true);
+      setIsFetching(true);
       setLoadError(null);
       try {
         const query = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
@@ -83,12 +102,26 @@ export default function EmployeesClient({
             };
           });
           setEmployees(mapped);
+
+          // Accumulate filter values
+          setDepartmentsList((prev) => Array.from(new Set([...prev, ...mapped.map((e) => e.department).filter(Boolean)])));
+          setDesignationsList((prev) => Array.from(new Set([...prev, ...mapped.map((e) => e.designation).filter(Boolean)])));
+          setProjectsList((prev) => Array.from(new Set([...prev, ...mapped.map((e) => e.currentProject).filter(Boolean)])));
+          setSitesList((prev) => Array.from(new Set([...prev, ...mapped.map((e) => e.currentSite).filter((s) => s && s !== '—')])));
+          setEmploymentTypesList((prev) => Array.from(new Set([...prev, ...mapped.map((e) => e.employmentType).filter(Boolean)])));
+          setManagersList((prev) => Array.from(new Set([...prev, ...mapped.map((e) => e.reportingManager).filter((m) => m && m !== '—')])));
+          const newSkills = mapped.flatMap((e) => e.skills.map((s: any) => s.skill)).filter(Boolean);
+          setSkillsListState((prev) => Array.from(new Set([...prev, ...newSkills])));
         }
       } catch (err: any) {
         console.error('Failed to fetch employees:', err);
         if (!cancelled && err?.status !== 401) setLoadError(err?.message || 'Failed to load employees.');
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setIsFetching(false);
+          setLoading(false);
+          setInitialLoaded(true);
+        }
       }
     }
     fetchEmployees();
@@ -113,51 +146,61 @@ export default function EmployeesClient({
   const [selectedSkill, setSelectedSkill] = useState('All');
   const [selectedCertStatus, setSelectedCertStatus] = useState('All');
 
-  // Available filter options (computed dynamically)
-  const departments = useMemo(() => ['All', ...Array.from(new Set(employees.map((e) => e.department)))], [employees]);
-  const designations = useMemo(() => ['All', ...Array.from(new Set(employees.map((e) => e.designation)))], [employees]);
-  const projects = useMemo(() => ['All', ...Array.from(new Set(employees.map((e) => e.currentProject)))], [employees]);
-  const sites = useMemo(() => ['All', ...Array.from(new Set(employees.map((e) => e.currentSite)))], [employees]);
-  const employmentTypes = useMemo(() => ['All', ...Array.from(new Set(employees.map((e) => e.employmentType)))], [employees]);
+  // Available filter options (combined master + current)
+  const departments = departmentsList;
+  const designations = designationsList;
+  const projects = projectsList;
+  const sites = sitesList;
+  const employmentTypes = employmentTypesList;
   const statuses = ['All', 'Active', 'On Leave', 'Terminated'];
-  const managers = useMemo(() => ['All', ...Array.from(new Set(employees.map((e) => e.reportingManager).filter((m) => m !== '—')))], [employees]);
-  
-  // Flat list of unique skills
-  const skillsList = useMemo(() => {
-    const allSkills = employees.flatMap((e) => e.skills.map((s) => s.skill));
-    return ['All', ...Array.from(new Set(allSkills))];
-  }, [employees]);
-
-  // Certifications statuses
+  const managers = managersList;
+  const skillsList = skillsListState;
   const certStatuses = ['All', 'Valid', 'Expiring Soon', 'Expired', 'None'];
 
-  // 2. Search and Filtering Logic
+    // 2. Search and Filtering Logic
   const filteredEmployees = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
     return employees.filter((e) => {
-      // Only display active employees in directory (candidates belong to onboarding)
-      const isActiveInDirectory = e.onboardingStage === 'Active';
-      if (!isActiveInDirectory) return false;
+      // Show non-terminated employees by default unless Terminated filter is specifically selected
+      if (selectedStatus === 'Terminated') {
+        if (e.status !== 'Terminated') return false;
+      } else if (selectedStatus !== 'All') {
+        if (!e.status || e.status.toLowerCase() !== selectedStatus.toLowerCase()) return false;
+      } else {
+        if (e.status === 'Terminated') return false;
+      }
 
-      // Search and role scoping happen on the server (GET /api/employees); the dropdowns below
-      // refine the rows already loaded for this page.
+      // Instant text search filter across multiple fields
+      if (term) {
+        const fullName = `${e.firstName || ''} ${e.lastName || ''}`.toLowerCase();
+        const matchesText =
+          fullName.includes(term) ||
+          (e.employeeId && e.employeeId.toLowerCase().includes(term)) ||
+          (e.designation && e.designation.toLowerCase().includes(term)) ||
+          (e.department && e.department.toLowerCase().includes(term)) ||
+          (e.email && e.email.toLowerCase().includes(term)) ||
+          (e.phone && e.phone.toLowerCase().includes(term)) ||
+          (e.currentProject && e.currentProject.toLowerCase().includes(term)) ||
+          (e.currentSite && e.currentSite.toLowerCase().includes(term)) ||
+          (e.reportingManager && e.reportingManager.toLowerCase().includes(term));
+        if (!matchesText) return false;
+      }
 
-      const matchesDept = selectedDept === 'All' || e.department === selectedDept;
-      const matchesDesignation = selectedDesignation === 'All' || e.designation === selectedDesignation;
-      const matchesProject = selectedProject === 'All' || e.currentProject === selectedProject;
-      const matchesSite = selectedSite === 'All' || e.currentSite === selectedSite;
-      const matchesEmpType = selectedEmpType === 'All' || e.employmentType === selectedEmpType;
-      const matchesStatus = selectedStatus === 'All' ? e.status !== 'Terminated' : e.status === selectedStatus;
-      const matchesManager = selectedManager === 'All' || e.reportingManager === selectedManager;
+      // Dropdown filters (case-insensitive & null-safe)
+      const matchesDept = selectedDept === 'All' || (e.department && e.department.toLowerCase() === selectedDept.toLowerCase());
+      const matchesDesignation = selectedDesignation === 'All' || (e.designation && e.designation.toLowerCase() === selectedDesignation.toLowerCase());
+      const matchesProject = selectedProject === 'All' || (e.currentProject && e.currentProject.toLowerCase() === selectedProject.toLowerCase());
+      const matchesSite = selectedSite === 'All' || (e.currentSite && e.currentSite.toLowerCase() === selectedSite.toLowerCase());
+      const matchesEmpType = selectedEmpType === 'All' || (e.employmentType && e.employmentType.toLowerCase() === selectedEmpType.toLowerCase());
+      const matchesManager = selectedManager === 'All' || (e.reportingManager && e.reportingManager.toLowerCase() === selectedManager.toLowerCase());
+      const matchesSkill = selectedSkill === 'All' || (Array.isArray(e.skills) && e.skills.some((s) => s?.skill && s.skill.toLowerCase() === selectedSkill.toLowerCase()));
 
-      const matchesSkill = selectedSkill === 'All' || e.skills.some((s) => s.skill === selectedSkill);
-
-      // Certification status logic
       let matchesCert = true;
       if (selectedCertStatus !== 'All') {
         if (selectedCertStatus === 'None') {
-          matchesCert = e.certifications.length === 0;
+          matchesCert = !e.certifications || e.certifications.length === 0;
         } else {
-          matchesCert = e.certifications.some((c) => c.status === selectedCertStatus);
+          matchesCert = Array.isArray(e.certifications) && e.certifications.some((c) => c?.status && c.status.toLowerCase() === selectedCertStatus.toLowerCase());
         }
       }
 
@@ -167,7 +210,6 @@ export default function EmployeesClient({
         matchesProject &&
         matchesSite &&
         matchesEmpType &&
-        matchesStatus &&
         matchesManager &&
         matchesSkill &&
         matchesCert
@@ -175,6 +217,7 @@ export default function EmployeesClient({
     });
   }, [
     employees,
+    searchTerm,
     selectedDept,
     selectedDesignation,
     selectedProject,
@@ -223,10 +266,16 @@ export default function EmployeesClient({
     return colors[char];
   };
 
-  if (loading) {
+  if (!initialLoaded && loading) {
     return (
       <div className="flex items-center justify-center py-20 text-zinc-400 text-xs font-semibold">
-        Loading directory...
+        <div className="flex items-center gap-2">
+          <svg className="animate-spin h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <span>Loading directory...</span>
+        </div>
       </div>
     );
   }
@@ -271,6 +320,19 @@ export default function EmployeesClient({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-xs w-full text-zinc-800 placeholder-zinc-400"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="p-1 text-zinc-400 hover:text-black rounded-md hover:bg-zinc-100 transition-colors shrink-0"
+                title="Clear search"
+                aria-label="Clear search"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Department Filter */}
@@ -387,14 +449,18 @@ export default function EmployeesClient({
       <div className="bg-white rounded-xl border border-zinc-200 shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
           <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">Active Personnel Directory</h3>
-          <span className="text-xs text-zinc-400 font-mono font-medium" aria-live="polite">
-            {loading
-              ? 'Loading…'
-              : `Showing ${firstRow}–${lastRow} of ${total} profiles${filteredEmployees.length !== employees.length ? ` · ${filteredEmployees.length} match filters on this page` : ''}`}
+          <span className="text-xs text-zinc-400 font-mono font-medium flex items-center gap-2" aria-live="polite">
+            {isFetching && (
+              <span className="inline-flex items-center gap-1.5 text-amber-600 font-sans font-semibold text-[11px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse"></span>
+                Updating…
+              </span>
+            )}
+            {`Showing ${firstRow}–${lastRow} of ${total} profiles${filteredEmployees.length !== employees.length ? ` · ${filteredEmployees.length} match filters on this page` : ''}`}
           </span>
         </div>
 
-        <div className="overflow-x-auto scrollbar-hide">
+        <div className={`overflow-x-auto scrollbar-hide transition-opacity duration-150 ${isFetching ? 'opacity-70' : 'opacity-100'}`}>
           <table className="w-full text-left text-xs table-auto">
             <thead>
               <tr className="border-b border-zinc-200 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/20">
@@ -534,14 +600,14 @@ export default function EmployeesClient({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || loading}
+              disabled={page <= 1 || isFetching}
               className="px-4 py-2.5 rounded-lg border border-zinc-200 bg-white font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Previous
             </button>
             <button
               onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-              disabled={page >= pageCount || loading}
+              disabled={page >= pageCount || isFetching}
               className="px-4 py-2.5 rounded-lg border border-zinc-200 bg-white font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next

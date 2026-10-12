@@ -40,7 +40,7 @@ export default function DashboardTableCard({
               <thead>
                 <tr className="border-b border-zinc-100 text-zinc-400 uppercase font-mono text-[10px]">
                   {headers.map((h, i) => (
-                    <th key={i} className="pb-2.5 pr-4 whitespace-nowrap tracking-wider font-semibold">{h}</th>
+                    <th key={i} className={`pb-2.5 ${i === headers.length - 1 ? 'pr-0' : 'pr-2 sm:pr-2.5'} whitespace-nowrap tracking-wider font-semibold`}>{h}</th>
                   ))}
                 </tr>
               </thead>

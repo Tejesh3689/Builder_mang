@@ -53,7 +53,7 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
             position="popper"
             sideOffset={4}
           >
-            <SelectPrimitive.Viewport className="p-1 max-h-64 h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]">
+            <SelectPrimitive.Viewport className="p-1 max-h-64 w-full min-w-[var(--radix-select-trigger-width)]">
               {children}
             </SelectPrimitive.Viewport>
           </SelectPrimitive.Content>

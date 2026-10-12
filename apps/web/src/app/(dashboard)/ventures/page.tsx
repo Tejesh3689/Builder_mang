@@ -89,6 +89,79 @@ export default function VenturesPage() {
 
   const handleVentureCreated = (newVenture: any) => { setReloadKey(k => k + 1); };
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const query = new URLSearchParams({ page: '1', limit: '1000' });
+      if (debouncedSearch) query.append('search', debouncedSearch);
+      if (statusFilter !== 'ALL') query.append('status', statusFilter);
+      if (typeFilter !== 'ALL') query.append('type', typeFilter);
+
+      const res = await api.get<{ success: boolean; data: any[] }>(`/api/ventures?${query.toString()}`);
+      const listToExport = (res.success && Array.isArray(res.data) && res.data.length > 0) ? res.data : ventures;
+
+      if (!listToExport || listToExport.length === 0) {
+        alert('No ventures available to export.');
+        return;
+      }
+
+      const headers = ['Venture Name', 'Code', 'Type', 'City', 'State', 'Project Manager', 'Site Manager', 'Estimated Budget (INR)', 'Progress (%)', 'Status'];
+      const rows = listToExport.map((v: any) => [
+        `"${(v.name || '').replace(/"/g, '""')}"`,
+        `"${(v.code || '').replace(/"/g, '""')}"`,
+        `"${(v.type || '').replace(/"/g, '""')}"`,
+        `"${(v.siteCity || v.regCity || '').replace(/"/g, '""')}"`,
+        `"${(v.siteState || v.regState || '').replace(/"/g, '""')}"`,
+        `"${(v.projectManager ? `${v.projectManager.firstName} ${v.projectManager.lastName}` : 'Unassigned').replace(/"/g, '""')}"`,
+        `"${(v.siteManager ? `${v.siteManager.firstName} ${v.siteManager.lastName}` : 'Unassigned').replace(/"/g, '""')}"`,
+        v.estimatedBudget || 0,
+        `"${v.progressPercentage || 0}%"`,
+        `"${v.status || ''}"`
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ventures-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Export failed:', err);
+      if (ventures.length > 0) {
+        const headers = ['Venture Name', 'Code', 'Type', 'City', 'Project Manager', 'Progress (%)', 'Status'];
+        const rows = ventures.map((v: any) => [
+          `"${(v.name || '').replace(/"/g, '""')}"`,
+          `"${(v.code || '').replace(/"/g, '""')}"`,
+          `"${(v.type || '').replace(/"/g, '""')}"`,
+          `"${(v.siteCity || v.regCity || '').replace(/"/g, '""')}"`,
+          `"${(v.projectManager ? `${v.projectManager.firstName} ${v.projectManager.lastName}` : 'Unassigned').replace(/"/g, '""')}"`,
+          `"${v.progressPercentage || 0}%"`,
+          `"${v.status || ''}"`
+        ]);
+        const csvContent = [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ventures-export-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        alert('Failed to export ventures.');
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header & Quick Actions */}
@@ -115,8 +188,13 @@ export default function VenturesPage() {
             </button>
           )}
 
-          <button className="px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs">
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" /> Export Data
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            {isExporting ? 'Exporting...' : 'Export Data'}
           </button>
         </div>
       </div>

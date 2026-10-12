@@ -48,7 +48,6 @@ export const ROUTE_METADATA: RouteMetadata[] = [
   { pattern: /^\/ventures\/[^/]+\/announcements$/, title: 'Venture Announcements', parentHref: '/ventures', breadcrumb: 'Corporate / Ventures / Announcements' },
   { pattern: /^\/ventures\/[^/]+$/, title: 'Venture Workspace', parentHref: '/ventures', breadcrumb: 'Corporate / Ventures / Workspace' },
   { pattern: /^\/ventures$/, title: 'Ventures', parentHref: '/ventures', breadcrumb: 'Corporate / Ventures' },
-  { pattern: /^\/onboarding$/, title: 'Onboarding Pipeline', parentHref: '/onboarding', breadcrumb: 'Corporate / Onboarding Pipeline' },
   { pattern: /^\/approvals$/, title: 'Pending Approvals', parentHref: '/approvals', breadcrumb: 'Corporate / Pending Approvals' },
 
   // Materials & Inventory
@@ -189,7 +188,6 @@ export function getNavGroups(role: string): NavGroup[] {
       group: 'Corporate',
       items: [
         { href: '/ventures', label: 'Ventures', icon: 'layers' },
-        { href: '/onboarding', label: 'Onboarding Pipeline', icon: 'activity' },
         { href: '/approvals', label: 'Pending Approvals', icon: 'check', alert: true },
       ],
     },

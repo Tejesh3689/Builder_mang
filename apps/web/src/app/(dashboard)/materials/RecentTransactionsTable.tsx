@@ -51,12 +51,12 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
         <table className="w-full text-xs text-left table-auto">
           <thead>
             <tr className="border-b border-zinc-100 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/50">
-              <th className="py-2.5 px-3 xl:px-4 font-semibold whitespace-nowrap">Date</th>
-              <th className="py-2.5 px-3 xl:px-4 font-semibold whitespace-nowrap">Type</th>
-              <th className="py-2.5 px-3 xl:px-4 font-semibold whitespace-nowrap">Qty</th>
-              <th className="py-2.5 px-3 xl:px-4 font-semibold">From → To</th>
-              <th className="py-2.5 px-3 xl:px-4 font-semibold whitespace-nowrap">By</th>
-              <th className="py-2.5 px-3 xl:px-4 font-semibold text-right whitespace-nowrap">Ref</th>
+              <th className="py-2.5 px-2 xl:px-3 font-semibold whitespace-nowrap">Date</th>
+              <th className="py-2.5 px-2 xl:px-3 font-semibold whitespace-nowrap">Type</th>
+              <th className="py-2.5 px-2 xl:px-3 font-semibold whitespace-nowrap">Qty</th>
+              <th className="py-2.5 px-2 xl:px-3 font-semibold">From → To</th>
+              <th className="py-2.5 px-2 xl:px-3 font-semibold whitespace-nowrap">By</th>
+              <th className="py-2.5 px-2 xl:px-3 font-semibold text-right whitespace-nowrap">Ref</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
@@ -64,23 +64,25 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
               const { label, cls } = getTxTypeStyle(tx.type);
               return (
                 <tr key={tx.id} className="hover:bg-zinc-50/30 transition-colors">
-                  <td className="py-2.5 px-3 xl:px-4 font-mono text-zinc-500 whitespace-nowrap text-[11px]">
+                  <td className="py-2.5 px-2 xl:px-3 font-mono text-zinc-500 whitespace-nowrap text-[10px] xl:text-[11px]" title={tx.date}>
                     {tx.date}
                   </td>
-                  <td className="py-2.5 px-3 xl:px-4 whitespace-nowrap">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${cls}`}>{label}</span>
+                  <td className="py-2.5 px-2 xl:px-3 whitespace-nowrap">
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap ${cls}`}>{label}</span>
                   </td>
-                  <td className={`py-2.5 px-3 xl:px-4 font-extrabold whitespace-nowrap ${tx.qty?.startsWith('+') ? 'text-emerald-500' : 'text-amber-700'}`}>
+                  <td className={`py-2.5 px-2 xl:px-3 font-extrabold whitespace-nowrap text-xs ${tx.qty?.startsWith('+') ? 'text-emerald-500' : 'text-amber-700'}`}>
                     {tx.qty} <span className="text-zinc-400 font-normal text-[10px]">{tx.uom}</span>
                   </td>
-                  <td className="py-2.5 px-3 xl:px-4 text-zinc-600 max-w-[120px] xl:max-w-[170px] truncate" title={tx.fromTo}>
+                  <td className="py-2.5 px-2 xl:px-3 text-zinc-600 max-w-[100px] xl:max-w-[140px] truncate" title={tx.fromTo}>
                     {tx.fromTo}
                   </td>
-                  <td className="py-2.5 px-3 xl:px-4 text-zinc-700 font-medium whitespace-nowrap max-w-[90px] xl:max-w-[110px] truncate" title={tx.by}>
+                  <td className="py-2.5 px-2 xl:px-3 text-zinc-700 font-medium whitespace-nowrap max-w-[75px] xl:max-w-[95px] truncate" title={tx.by}>
                     {tx.by}
                   </td>
-                  <td className="py-2.5 px-3 xl:px-4 font-mono text-zinc-400 text-[10px] text-right whitespace-nowrap">
-                    {tx.ref}
+                  <td className="py-2.5 px-2 xl:px-3 text-right whitespace-nowrap">
+                    <span className="font-mono text-zinc-400 text-[10px] max-w-[85px] xl:max-w-[105px] truncate block ml-auto" title={tx.ref}>
+                      {tx.ref}
+                    </span>
                   </td>
                 </tr>
               );

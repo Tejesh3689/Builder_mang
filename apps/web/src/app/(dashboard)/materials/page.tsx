@@ -251,23 +251,29 @@ export default async function InventoryOverviewPage() {
               <table className="w-full text-xs text-left table-auto">
                 <thead>
                   <tr className="border-b border-zinc-100 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/50">
-                    <th className="py-2 px-3 xl:px-4 font-semibold">Material</th>
-                    <th className="py-2 px-3 xl:px-4 font-semibold">Available</th>
-                    <th className="py-2 px-3 xl:px-4 font-semibold">Min Level</th>
-                    <th className="py-2 px-3 xl:px-4 font-semibold">Status</th>
+                    <th className="py-2 px-2.5 xl:px-3 font-semibold">Material</th>
+                    <th className="py-2 px-2.5 xl:px-3 font-semibold">Available</th>
+                    <th className="py-2 px-2.5 xl:px-3 font-semibold">Min Level</th>
+                    <th className="py-2 px-2.5 xl:px-3 font-semibold text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
                   {displayLowStock.map((item: any) => (
                     <tr key={item.id} className="hover:bg-zinc-50/20">
-                      <td className="py-2 px-3 xl:px-4 font-bold text-black">{item.name}</td>
-                      <td className="py-2 px-3 xl:px-4 text-zinc-700 font-mono">{item.available} <span className="text-zinc-400">{item.uom}</span></td>
-                      <td className="py-2 px-3 xl:px-4 text-zinc-500 font-mono">{item.minLevel}</td>
-                      <td className="py-2 px-3 xl:px-4">
+                      <td className="py-2 px-2.5 xl:px-3 font-bold text-black">{item.name}</td>
+                      <td className="py-2 px-2.5 xl:px-3 text-zinc-700 font-mono">{item.available} <span className="text-zinc-400">{item.uom}</span></td>
+                      <td className="py-2 px-2.5 xl:px-3 text-zinc-500 font-mono">{item.minLevel}</td>
+                      <td className="py-2 px-2.5 xl:px-3 text-right whitespace-nowrap">
                         {item.level === 'CRITICAL' ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">● Critical</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
+                            <span>Critical</span>
+                          </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">● Low Stock</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
+                            <span>Low Stock</span>
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -297,23 +303,24 @@ export default async function InventoryOverviewPage() {
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full text-xs text-left table-auto">
                 <thead>
                   <tr className="border-b border-zinc-100 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/50">
-                    <th className="py-2.5 px-4 font-semibold">Request</th>
-                    <th className="py-2.5 px-4 font-semibold">Material</th>
-                    <th className="py-2.5 px-4 font-semibold">Priority</th>
+                    <th className="py-2 px-2.5 font-semibold whitespace-nowrap text-left">Request</th>
+                    <th className="py-2 px-2 font-semibold text-left">Material</th>
+                    <th className="py-2 px-2.5 font-semibold text-right whitespace-nowrap">Priority</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
                   {displayPending.map((req: any) => (
                     <tr key={req.id} className="hover:bg-zinc-50/20">
-                      <td className="py-3 px-4 font-mono font-bold text-zinc-900">{req.number}</td>
-                      <td className="py-3 px-4 text-zinc-700 font-medium">{req.material}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${getPriorityStyle(req.priority)}`}>
-                          ● {req.priority}
+                      <td className="py-2 px-2.5 font-mono font-bold text-zinc-900 text-[10px] sm:text-[11px] whitespace-nowrap">{req.number}</td>
+                      <td className="py-2 px-2 text-zinc-700 font-medium text-xs max-w-[95px] xl:max-w-[120px] truncate" title={req.material}>{req.material}</td>
+                      <td className="py-2 px-2.5 text-right whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold border whitespace-nowrap ${getPriorityStyle(req.priority)}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
+                          <span>{req.priority}</span>
                         </span>
                       </td>
                     </tr>

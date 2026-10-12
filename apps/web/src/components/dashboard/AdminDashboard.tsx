@@ -81,7 +81,7 @@ export default function AdminDashboard({
       {/* Row 1: Venture Progress + Venture Status breakdown */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Venture Progress Card */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-sm flex flex-col justify-between">
+        <div className="sm:col-span-2 lg:col-span-2 bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-extrabold text-black">Completion by venture</h2>
@@ -91,7 +91,7 @@ export default function AdminDashboard({
             </Link>
           </div>
           <div className="space-y-4">
-            {activeVentures.map((v) => (
+            {activeVentures.slice(0, 4).map((v) => (
               <div key={v.id} className="space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-bold text-black">{v.name}</span>
@@ -107,6 +107,9 @@ export default function AdminDashboard({
                 </div>
               </div>
             ))}
+            {activeVentures.length === 0 && (
+              <p className="text-xs text-zinc-400 py-4 text-center">No ventures found.</p>
+            )}
           </div>
         </div>
 
@@ -122,7 +125,7 @@ export default function AdminDashboard({
           subtitle={`${pendingCount} material request${pendingCount === 1 ? '' : 's'} awaiting decision`}
           viewAllLink="/materials/requests"
           headers={['REQUEST', 'VENTURE', 'REQUESTED BY', 'TYPE', 'DATE', 'PRIORITY', 'STATUS']}
-          colSpanClass="lg:col-span-2"
+          colSpanClass="sm:col-span-2 lg:col-span-2"
           footer={
             pendingRequests.length > pageSize ? (
               <Pagination
@@ -139,20 +142,28 @@ export default function AdminDashboard({
           )}
           {paginatedPending.map((r, i) => (
             <tr key={i} className="hover:bg-zinc-50/80">
-              <td className="py-3.5 pr-4 whitespace-nowrap font-mono font-medium text-xs text-zinc-700">{r.id}</td>
-              <td className="py-3.5 pr-4 font-bold text-black max-w-[200px] truncate">{r.company}</td>
-              <td className="py-3.5 pr-4 whitespace-nowrap text-zinc-700">{r.requestedBy}</td>
-              <td className="py-3.5 pr-4 text-zinc-600 max-w-[180px] truncate">{r.material}</td>
-              <td className="py-3.5 pr-4 whitespace-nowrap font-mono text-zinc-500 text-xs">{r.date}</td>
-              <td className="py-3.5 pr-4 whitespace-nowrap">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+              <td className="py-3 pr-2 sm:pr-2.5 font-mono font-medium text-[11px] text-zinc-700 whitespace-nowrap">
+                <span className="max-w-[105px] truncate block" title={r.id}>{r.id}</span>
+              </td>
+              <td className="py-3 pr-2 sm:pr-2.5 font-bold text-black text-xs">
+                <span className="max-w-[115px] xl:max-w-[140px] truncate block" title={r.company}>{r.company}</span>
+              </td>
+              <td className="py-3 pr-2 sm:pr-2.5 text-zinc-700 text-xs">
+                <span className="max-w-[85px] xl:max-w-[105px] truncate block" title={r.requestedBy}>{r.requestedBy}</span>
+              </td>
+              <td className="py-3 pr-2 sm:pr-2.5 text-zinc-600 text-xs">
+                <span className="max-w-[95px] xl:max-w-[125px] truncate block" title={r.material}>{r.material}</span>
+              </td>
+              <td className="py-3 pr-2 sm:pr-2.5 whitespace-nowrap font-mono text-zinc-500 text-[11px]">{r.date}</td>
+              <td className="py-3 pr-2 sm:pr-2.5 whitespace-nowrap">
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                   r.priority === 'Critical' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current"></span> {r.priority}
                 </span>
               </td>
-              <td className="py-3.5 whitespace-nowrap">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+              <td className="py-3 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-current"></span> {r.status}
                 </span>
               </td>
@@ -182,21 +193,14 @@ export default function AdminDashboard({
         </div>
       </div>
 
-      {/* Row 3: Site Activity + Inventory Alerts */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Site Activity Card */}
-        <DashboardActivityFeed 
-          title="Site Activity" 
-          subtitle="Across all ventures" 
-          activities={siteActivities} 
-          colSpanClass="lg:col-span-2"
-        />
-
+      {/* Row 3: Inventory Alerts + Site Activity */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
         {/* Inventory Alerts Card */}
         <DashboardTableCard 
           title="Inventory Alerts"
           viewAllLink="/materials/alerts"
           headers={['MATERIAL', 'LOCATION', 'STATUS']}
+          colSpanClass="sm:col-span-2 lg:col-span-2"
           footer={
             inventoryAlerts.length > pageSize ? (
               <Pagination
@@ -213,7 +217,7 @@ export default function AdminDashboard({
           )}
           {paginatedAlerts.map((alt, idx) => (
             <tr key={idx}>
-              <td className="py-3.5 pr-4 font-bold text-black max-w-[160px] truncate">{alt.name}</td>
+              <td className="py-3.5 pr-4 font-bold text-black max-w-[200px] truncate">{alt.name}</td>
               <td className="py-3.5 pr-4 text-zinc-500 font-mono text-[11px] whitespace-nowrap">{alt.location}</td>
               <td className="py-3.5 whitespace-nowrap">
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
@@ -225,6 +229,13 @@ export default function AdminDashboard({
             </tr>
           ))}
         </DashboardTableCard>
+
+        {/* Site Activity Card */}
+        <DashboardActivityFeed 
+          title="Site Activity" 
+          subtitle="Across all ventures" 
+          activities={siteActivities} 
+        />
       </div>
     </div>
   );
