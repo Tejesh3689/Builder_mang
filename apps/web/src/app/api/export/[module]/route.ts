@@ -95,7 +95,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
       
       if (search) {
         and.push(...buildSearchConditions(search, [
-          term => ({ referenceNo: { contains: term, mode: 'insensitive' } }),
+          term => ({ transferNumber: { contains: term, mode: 'insensitive' } }),
           term => ({ items: { some: { material: { name: { contains: term, mode: 'insensitive' } } } } }),
           term => ({ fromLocation: { name: { contains: term, mode: 'insensitive' } } }),
           term => ({ toLocation: { name: { contains: term, mode: 'insensitive' } } })
@@ -108,7 +108,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
           fromLocation: true,
           toLocation: true,
           items: { include: { material: true } },
-          requestedBy: true
+          dispatchedBy: true
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -126,13 +126,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
 
       rows.forEach(r => {
         worksheet.addRow({
-          ref: r.referenceNo,
+          ref: (r as any).transferNumber || '',
           date: r.createdAt.toISOString(),
-          type: r.type,
+          type: (r as any).type || r.status,
           status: r.status,
           from: r.fromLocation ? r.fromLocation.name : '',
           to: r.toLocation ? r.toLocation.name : '',
-          reqBy: r.requestedBy ? `${r.requestedBy.firstName} ${r.requestedBy.lastName}` : '',
+          reqBy: r.dispatchedBy ? `${(r as any).dispatchedBy.firstName} ${(r as any).dispatchedBy.lastName}` : '',
           items: r.items.length
         });
       });
@@ -196,27 +196,29 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
       const rows = await prisma.materialStock.findMany({
         include: {
           material: { include: { category: true, unitOfMeasure: true } },
-          location: true
+          stockLocation: true
         },
         orderBy: { updatedAt: 'desc' }
       });
 
       worksheet.columns = [
         { header: 'Material', key: 'name', width: 30 },
-        { header: 'SKU', key: 'sku', width: 15 },
+        { header: 'Code', key: 'code', width: 15 },
         { header: 'Category', key: 'category', width: 20 },
         { header: 'Location', key: 'location', width: 30 },
-        { header: 'Quantity', key: 'qty', width: 15 },
+        { header: 'Physical Qty', key: 'physicalQty', width: 15 },
+        { header: 'Available Qty', key: 'availableQty', width: 15 },
         { header: 'UOM', key: 'uom', width: 15 }
       ];
 
       rows.forEach(r => {
         worksheet.addRow({
           name: r.material.name,
-          sku: r.material.sku,
+          code: r.material.code,
           category: r.material.category ? r.material.category.name : '',
-          location: r.location.name,
-          qty: r.quantity,
+          location: r.stockLocation ? r.stockLocation.name : '',
+          physicalQty: Number(r.physicalQuantity),
+          availableQty: Number(r.availableQuantity),
           uom: r.material.unitOfMeasure ? r.material.unitOfMeasure.name : ''
         });
       });

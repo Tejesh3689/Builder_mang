@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+import React, { useState, useEffect } from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
 
 import Link from 'next/link';
 import { MessageSquare, Building2, Plus, Sparkles } from 'lucide-react';

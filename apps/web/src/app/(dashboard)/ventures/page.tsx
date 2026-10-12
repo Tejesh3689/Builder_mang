@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+import React, { useState, useEffect } from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
 
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -196,7 +197,7 @@ export default function VenturesPage() {
           <ShieldAlert className="w-10 h-10 text-red-500 mx-auto" />
           <h3 className="text-sm font-bold text-zinc-800">Couldn&apos;t load ventures</h3>
           <p className="text-xs text-zinc-500">{loadError}</p>
-          <button onClick={fetchVentures} className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold">
+          <button onClick={() => setReloadKey(k => k + 1)} className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold">
             Try again
           </button>
         </div>

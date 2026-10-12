@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+import React from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
 
 import Link from 'next/link';
 

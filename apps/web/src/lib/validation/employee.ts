@@ -151,6 +151,7 @@ export const employeeUpdateSchema = z.object({
   reportingManagerId: fields.reportingManagerId,
   employmentType: fields.employmentType,
   status: status.optional(),
+  terminationReason: z.string().optional(),
   onboardingStage: onboardingStage.optional(),
   onboardingStatus: onboardingStatus.optional(),
 });

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
 
 import { X, Building2, MapPin, Calendar, Users, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';

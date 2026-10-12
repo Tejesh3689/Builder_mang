@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
 
 import Link from 'next/link';
 import { EmployeeProfile } from '@/lib/types';
