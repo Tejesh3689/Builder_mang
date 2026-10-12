@@ -91,41 +91,58 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
     } else if (module === 'transactions') {
       const and: any[] = [];
       const typeFilter = url.searchParams.get('type');
-      if (typeFilter && typeFilter !== 'ALL') and.push({ type: typeFilter });
+      if (typeFilter && typeFilter !== 'ALL') and.push({ transactionType: typeFilter });
       
       if (search) {
         and.push(...buildSearchConditions(search, [
+<<<<<<< HEAD
           term => ({ transferNumber: { contains: term, mode: 'insensitive' } }),
           term => ({ items: { some: { material: { name: { contains: term, mode: 'insensitive' } } } } }),
           term => ({ fromLocation: { name: { contains: term, mode: 'insensitive' } } }),
           term => ({ toLocation: { name: { contains: term, mode: 'insensitive' } } })
+=======
+          term => ({ transactionNumber: { contains: term, mode: 'insensitive' } }),
+          term => ({ material: { name: { contains: term, mode: 'insensitive' } } }),
+          term => ({ stockLocation: { name: { contains: term, mode: 'insensitive' } } }),
+          term => ({ venture: { name: { contains: term, mode: 'insensitive' } } })
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         ]));
       }
 
-      const rows = await prisma.materialTransfer.findMany({
+      const rows = await prisma.materialTransaction.findMany({
         where: { AND: and },
         include: {
+<<<<<<< HEAD
           fromLocation: true,
           toLocation: true,
           items: { include: { material: true } },
           dispatchedBy: true
+=======
+          material: true,
+          stockLocation: true,
+          venture: true,
+          performedBy: true
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         },
         orderBy: { createdAt: 'desc' }
       });
 
       worksheet.columns = [
-        { header: 'Reference', key: 'ref', width: 20 },
-        { header: 'Date', key: 'date', width: 20 },
-        { header: 'Type', key: 'type', width: 15 },
-        { header: 'Status', key: 'status', width: 15 },
-        { header: 'From', key: 'from', width: 25 },
-        { header: 'To', key: 'to', width: 25 },
-        { header: 'Requested By', key: 'reqBy', width: 25 },
-        { header: 'Total Items', key: 'items', width: 15 }
+        { header: 'Transaction #', key: 'txNo', width: 22 },
+        { header: 'Date', key: 'date', width: 16 },
+        { header: 'Type', key: 'type', width: 20 },
+        { header: 'Material', key: 'material', width: 25 },
+        { header: 'Venture', key: 'venture', width: 25 },
+        { header: 'Location', key: 'location', width: 25 },
+        { header: 'Qty In', key: 'qtyIn', width: 12 },
+        { header: 'Qty Out', key: 'qtyOut', width: 12 },
+        { header: 'Balance', key: 'balance', width: 14 },
+        { header: 'Performed By', key: 'performedBy', width: 22 }
       ];
 
       rows.forEach(r => {
         worksheet.addRow({
+<<<<<<< HEAD
           ref: (r as any).transferNumber || '',
           date: r.createdAt.toISOString(),
           type: (r as any).type || r.status,
@@ -134,10 +151,27 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
           to: r.toLocation ? r.toLocation.name : '',
           reqBy: r.dispatchedBy ? `${(r as any).dispatchedBy.firstName} ${(r as any).dispatchedBy.lastName}` : '',
           items: r.items.length
+=======
+          txNo: r.transactionNumber,
+          date: r.createdAt.toISOString().split('T')[0],
+          type: r.transactionType,
+          material: r.material?.name || '',
+          venture: r.venture?.name || '',
+          location: r.stockLocation?.name || '',
+          qtyIn: Number(r.quantityIn) || 0,
+          qtyOut: Number(r.quantityOut) || 0,
+          balance: Number(r.balanceAfter) || 0,
+          performedBy: r.performedBy?.name || ''
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         });
       });
     } else if (module === 'project-report') {
+      const and: any[] = [];
+      const statusFilter = url.searchParams.get('status');
+      if (statusFilter && statusFilter !== 'ALL') and.push({ status: statusFilter });
+
       const rows = await prisma.venture.findMany({
+        where: and.length > 0 ? { AND: and } : undefined,
         include: {
           projectManager: true,
           _count: { select: { assignments: true, documents: true, stocks: true } }
@@ -167,6 +201,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
     } else if (module === 'employee-report') {
       const scopedWhere = await buildScopedWhere(user, 'employee');
       const and: any[] = [scopedWhere, { status: { not: 'TERMINATED' } }];
+      const deptFilter = url.searchParams.get('department');
+      if (deptFilter && deptFilter !== 'All' && deptFilter !== 'ALL' && deptFilter !== 'All Departments') {
+        and.push({ department: deptFilter });
+      }
+
       const rows = await prisma.employee.findMany({
         where: { AND: and },
         include: { reportingManager: true },
@@ -177,6 +216,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
         { header: 'ID', key: 'empId', width: 15 },
         { header: 'Name', key: 'name', width: 30 },
         { header: 'Role', key: 'role', width: 20 },
+        { header: 'Department', key: 'department', width: 25 },
         { header: 'Email', key: 'email', width: 30 },
         { header: 'Phone', key: 'phone', width: 20 },
         { header: 'Manager', key: 'manager', width: 30 }
@@ -187,16 +227,29 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
           empId: r.employeeId,
           name: `${r.firstName} ${r.lastName}`,
           role: r.designation,
+          department: r.department || '',
           email: r.email,
           phone: r.phone,
           manager: r.reportingManager ? `${r.reportingManager.firstName} ${r.reportingManager.lastName}` : ''
         });
       });
     } else if (module === 'inventory-report') {
+      const and: any[] = [];
+      const catFilter = url.searchParams.get('category');
+      if (catFilter && catFilter !== 'All' && catFilter !== 'ALL' && catFilter !== 'All Categories') {
+        and.push({ material: { category: { name: { contains: catFilter, mode: 'insensitive' } } } });
+      }
+
       const rows = await prisma.materialStock.findMany({
+        where: and.length > 0 ? { AND: and } : undefined,
         include: {
           material: { include: { category: true, unitOfMeasure: true } },
+<<<<<<< HEAD
           stockLocation: true
+=======
+          stockLocation: true,
+          venture: true
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         },
         orderBy: { updatedAt: 'desc' }
       });
@@ -205,9 +258,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
         { header: 'Material', key: 'name', width: 30 },
         { header: 'Code', key: 'code', width: 15 },
         { header: 'Category', key: 'category', width: 20 },
+<<<<<<< HEAD
         { header: 'Location', key: 'location', width: 30 },
         { header: 'Physical Qty', key: 'physicalQty', width: 15 },
         { header: 'Available Qty', key: 'availableQty', width: 15 },
+=======
+        { header: 'Venture', key: 'venture', width: 25 },
+        { header: 'Location', key: 'location', width: 25 },
+        { header: 'Available Qty', key: 'qty', width: 16 },
+        { header: 'Physical Qty', key: 'physicalQty', width: 16 },
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
         { header: 'UOM', key: 'uom', width: 15 }
       ];
 
@@ -216,9 +276,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ module: 
           name: r.material.name,
           code: r.material.code,
           category: r.material.category ? r.material.category.name : '',
+<<<<<<< HEAD
           location: r.stockLocation ? r.stockLocation.name : '',
           physicalQty: Number(r.physicalQuantity),
           availableQty: Number(r.availableQuantity),
+=======
+          venture: r.venture ? r.venture.name : '',
+          location: r.stockLocation?.name || '',
+          qty: Number(r.availableQuantity) || 0,
+          physicalQty: Number(r.physicalQuantity) || 0,
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
           uom: r.material.unitOfMeasure ? r.material.unitOfMeasure.name : ''
         });
       });

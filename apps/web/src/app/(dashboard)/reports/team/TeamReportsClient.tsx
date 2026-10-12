@@ -1,8 +1,14 @@
 'use client';
+<<<<<<< HEAD
 
 import React, { useState } from 'react';
 import { Select, SelectOption } from '@/components/ui/Select';
 
+=======
+
+import React, { useState } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
+
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
 
 interface TeamReportsClientProps {
   userRole?: string;
@@ -58,12 +64,31 @@ export default function TeamReportsClient({
       rows = filteredFieldWork.map(f => [f.date, f.employeeName, f.client, f.location, f.duration.toString(), f.status]);
     }
 
+<<<<<<< HEAD
     const csvString = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `Team_${activeTab.replace(' ', '_')}_Report.csv`);
+=======
+    const escapeCsv = (val: any) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const bom = '\uFEFF';
+    const csvString = [headers.map(escapeCsv).join(','), ...rows.map(r => r.map(escapeCsv).join(','))].join('\r\n');
+    const blob = new Blob([bom + csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Team_${activeTab.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.csv`);
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -78,6 +103,16 @@ export default function TeamReportsClient({
           <h1 className="text-xl font-extrabold text-black tracking-tight">{isManager ? 'Extended Team Reports' : isSupervisor ? 'Team Reports' : 'Global Reports'}</h1>
           <p className="text-xs text-zinc-500 mt-1">{isManager ? 'Analytics and exported logs for your extended hierarchy' : isSupervisor ? 'Analytics and exported logs for your assigned crew' : 'View analytics for all teams'}</p>
         </div>
+<<<<<<< HEAD
+=======
+        <button
+          onClick={handleExport}
+          className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          Generate Report
+        </button>
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
       </div>
 
       {/* KPI Stats */}
@@ -171,9 +206,16 @@ export default function TeamReportsClient({
             </h3>
             <button
               onClick={handleExport}
+<<<<<<< HEAD
               className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
             >
               Export CSV
+=======
+              className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Generate Report (CSV)
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
             </button>
           </div>
 

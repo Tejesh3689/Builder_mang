@@ -1,11 +1,76 @@
 'use client';
 
+<<<<<<< HEAD
 import React from 'react';
 import { Select, SelectOption } from '@/components/ui/Select';
 
 import Link from 'next/link';
 
 export default function ExportProjectReportPage() {
+=======
+import React, { useState } from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
+import Link from 'next/link';
+
+export default function ExportProjectReportPage() {
+  const [format, setFormat] = useState('xlsx');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const handleGenerateExport = async () => {
+    setIsGenerating(true);
+    setStatusMessage(null);
+    try {
+      if (format === 'pdf') {
+        window.print();
+        setStatusMessage({ text: 'Print dialog opened for PDF export.', type: 'success' });
+        setIsGenerating(false);
+        return;
+      }
+
+      const q = new URLSearchParams();
+      q.set('format', format);
+      if (startDate) q.set('startDate', startDate);
+      if (endDate) q.set('endDate', endDate);
+
+      const response = await fetch(`/api/export/project-report?${q.toString()}`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        let message = 'Failed to generate project report export.';
+        try {
+          const json = JSON.parse(text);
+          message = json.error || message;
+        } catch {}
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `naprocs-project-report-${dateStr}.${format}`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setStatusMessage({ text: `Report exported successfully as ${filename}`, type: 'success' });
+    } catch (err: any) {
+      console.error('Export error:', err);
+      setStatusMessage({ text: err.message || 'Export generation failed.', type: 'error' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
@@ -15,6 +80,7 @@ export default function ExportProjectReportPage() {
         <h1 className="text-2xl font-bold text-zinc-900">Export Project Report</h1>
       </div>
 
+<<<<<<< HEAD
       <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
         <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           <div>
@@ -22,21 +88,77 @@ export default function ExportProjectReportPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input type="date" className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
               <input type="date" className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+=======
+      {statusMessage && (
+        <div className={`p-4 rounded-xl border text-sm flex items-center justify-between ${
+          statusMessage.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+        }`}>
+          <span>{statusMessage.text}</span>
+          <button onClick={() => setStatusMessage(null)} className="ml-3 font-bold hover:opacity-75">✕</button>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
+        <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleGenerateExport(); }}>
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Date Range</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+              />
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+              />
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
             </div>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">Format</label>
+<<<<<<< HEAD
             <Select className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white">
               <SelectOption>PDF Document (.pdf)</SelectOption>
               <SelectOption>Excel Spreadsheet (.xlsx)</SelectOption>
               <SelectOption>CSV Data (.csv)</SelectOption>
+=======
+            <Select
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white"
+            >
+              <SelectOption value="xlsx">Excel Spreadsheet (.xlsx)</SelectOption>
+              <SelectOption value="csv">CSV Data (.csv)</SelectOption>
+              <SelectOption value="pdf">PDF Document (.pdf)</SelectOption>
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
             </Select>
           </div>
 
           <div className="pt-4 border-t border-zinc-100 flex justify-end gap-3">
             <Link href="/reports/projects" className="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold hover:bg-zinc-200">Cancel</Link>
+<<<<<<< HEAD
             <button type="button" className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800">Generate Export</button>
+=======
+            <button
+              type="submit"
+              disabled={isGenerating}
+              className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {isGenerating ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                  Generating...
+                </>
+              ) : (
+                'Generate Export'
+              )}
+            </button>
+>>>>>>> 9ee82ba8af33e218ce4eed118ba4876ff1520296
           </div>
         </form>
       </div>
