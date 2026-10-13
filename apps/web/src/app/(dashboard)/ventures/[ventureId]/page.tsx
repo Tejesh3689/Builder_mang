@@ -11,6 +11,127 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
+function formatActivityLog(log: any) {
+  let parsed: any = null;
+  let isJson = false;
+
+  if (typeof log.details === 'string') {
+    try {
+      parsed = JSON.parse(log.details);
+      isJson = typeof parsed === 'object' && parsed !== null;
+    } catch {
+      parsed = log.details;
+    }
+  } else if (typeof log.details === 'object' && log.details !== null) {
+    parsed = log.details;
+    isJson = true;
+  }
+
+  const actionRaw = String(log.action || 'ACTIVITY');
+
+  let actionTitle = actionRaw
+    .replace(/^CREATE_VENTURE_ANNOUNCEMENT$/, 'Announcement Posted')
+    .replace(/^CREATE_ANNOUNCEMENT$/, 'Announcement Posted')
+    .replace(/^STOCK_TRANSFER$/, 'Stock Transfer')
+    .replace(/^TRANSFER_DISPATCHED$/, 'Transfer Dispatched')
+    .replace(/^TRANSFER_RECEIVED$/, 'Transfer Received')
+    .replace(/^CREATE_MATERIAL_REQUEST$/, 'Material Request')
+    .replace(/^APPROVE_MATERIAL_REQUEST$/, 'Request Approved')
+    .replace(/^REJECT_MATERIAL_REQUEST$/, 'Request Rejected')
+    .replace(/^CREATE_MATERIAL_ISSUE$/, 'Material Issued')
+    .replace(/^CREATE_MATERIAL_RECEIPT$/, 'Material Received')
+    .replace(/^STOCK_ADJUSTMENT$/, 'Stock Adjusted')
+    .replace(/^MATERIAL_CONSUMPTION$/, 'Material Consumed')
+    .replace(/^CREATE_VENTURE$/, 'Venture Created')
+    .replace(/^UPDATE_VENTURE$/, 'Venture Updated')
+    .replace(/^UPDATE_VENTURE_SETTINGS$/, 'Settings Updated')
+    .replace(/^UPLOAD_DOCUMENT$/, 'Document Uploaded')
+    .replace(/^ASSIGN_EMPLOYEE$/, 'Employee Assigned')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+  let badgeTone = 'bg-zinc-100 text-zinc-700 border-zinc-200';
+  let dotColor = 'bg-amber-500';
+  if (/ANNOUNCEMENT/i.test(actionRaw)) {
+    badgeTone = 'bg-blue-50 text-blue-700 border-blue-200';
+    dotColor = 'bg-blue-500';
+  } else if (/RECEIVED|APPROVE/i.test(actionRaw)) {
+    badgeTone = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    dotColor = 'bg-emerald-500';
+  } else if (/REJECT|SHORTFALL|DAMAGE/i.test(actionRaw) || (isJson && /SHORTFALL|DAMAGE/i.test(parsed?.status || ''))) {
+    badgeTone = 'bg-rose-50 text-rose-700 border-rose-200';
+    dotColor = 'bg-rose-500';
+  } else if (/TRANSFER|DISPATCH/i.test(actionRaw)) {
+    badgeTone = 'bg-purple-50 text-purple-700 border-purple-200';
+    dotColor = 'bg-purple-500';
+  }
+
+  let title = '';
+  const subText: string[] = [];
+
+  if (isJson) {
+    if (parsed.title) {
+      title = String(parsed.title);
+    } else if (parsed.status) {
+      title = `Status: ${String(parsed.status).replace(/_/g, ' ')}`;
+    } else if (parsed.name) {
+      title = typeof parsed.name === 'string' ? parsed.name : 'Updated details';
+    }
+
+    if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+      const summaryItems: string[] = [];
+      parsed.items.forEach((item: any) => {
+        const segs: string[] = [];
+        if (item.receivedQuantity) segs.push(`${item.receivedQuantity} received`);
+        if (item.damagedQuantity && Number(item.damagedQuantity) > 0) segs.push(`${item.damagedQuantity} damaged`);
+        if (item.dispatched) segs.push(`${item.dispatched} dispatched`);
+        if (item.quantity) segs.push(`Qty: ${item.quantity}`);
+        if (segs.length > 0) summaryItems.push(segs.join(', '));
+      });
+      if (summaryItems.length > 0) {
+        subText.push(summaryItems.join(' • '));
+      }
+    }
+
+    if (!title && !subText.length) {
+      const meaningfulKeys = Object.keys(parsed).filter((k) => !k.toLowerCase().endsWith('id'));
+      if (meaningfulKeys.length > 0) {
+        title = meaningfulKeys
+          .map((k) => {
+            const v = parsed[k];
+            if (v && typeof v === 'object' && 'new' in v) return `${k}: ${v.new}`;
+            return `${k}: ${v}`;
+          })
+          .join(', ');
+      }
+    }
+
+    if (!title) {
+      if (parsed.transferId) title = `Transfer #${parsed.transferId.slice(0, 8)}`;
+      else if (parsed.announcementId) title = 'Announcement notice';
+      else title = actionTitle;
+    }
+  } else {
+    title = String(log.details || actionTitle);
+  }
+
+  const userName = log.user?.name || 'System';
+  const timeFormatted = log.createdAt
+    ? new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '10:42 AM';
+
+  return {
+    actionTitle,
+    badgeTone,
+    dotColor,
+    title,
+    subText,
+    userName,
+    timeFormatted,
+  };
+}
+
 export default function VentureDetailPage({ params }: { params: Promise<{ ventureId: string }> }) {
   const resolvedParams = use(params);
   const { ventureId } = resolvedParams;
@@ -443,18 +564,51 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
               </div>
 
               {/* Activity Timeline Snapshot */}
-              <div className="p-5 rounded-2xl bg-white border border-zinc-200 space-y-3.5">
-                <h3 className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-amber-700" /> Recent Site Activity
-                </h3>
-                <div className="space-y-3 border-l-2 border-zinc-200 pl-3">
-                  {(venture.auditLogs || []).map((log: any) => (
-                    <div key={log.id} className="text-xs space-y-0.5">
-                      <span className="text-zinc-500 text-[10px] font-mono block">{log.createdAt ? new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:42 AM'}</span>
-                      <p className="text-zinc-800 font-medium">{log.details}</p>
-                    </div>
-                  ))}
+              <div className="p-5 rounded-2xl bg-white border border-zinc-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-amber-700" /> Recent Site Activity
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab('activity')}
+                    className="text-[11px] font-semibold text-amber-800 hover:text-amber-900 transition-colors"
+                  >
+                    View All
+                  </button>
                 </div>
+                {(!venture.auditLogs || venture.auditLogs.length === 0) ? (
+                  <p className="text-xs text-zinc-400 py-3 italic text-center">No recent activity logged for this venture.</p>
+                ) : (
+                  <div className="space-y-3.5 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[1.5px] before:bg-zinc-200">
+                    {(venture.auditLogs || []).slice(0, 8).map((log: any) => {
+                      const item = formatActivityLog(log);
+                      return (
+                        <div key={log.id} className="relative pl-6 text-xs space-y-1">
+                          <span className={`absolute left-1 top-1 w-2.5 h-2.5 rounded-full border-2 border-white ${item.dotColor}`} />
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${item.badgeTone}`}>
+                              {item.actionTitle}
+                            </span>
+                            <span className="text-zinc-400 text-[10px] font-mono shrink-0">
+                              {item.timeFormatted}
+                            </span>
+                          </div>
+                          <p className="text-zinc-800 font-semibold text-xs leading-snug">
+                            {item.title}
+                          </p>
+                          {item.subText.length > 0 && (
+                            <p className="text-zinc-500 text-[11px] font-mono">
+                              {item.subText.join(' ')}
+                            </p>
+                          )}
+                          <span className="text-[10px] text-zinc-400 block">
+                            by {item.userName}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -751,20 +905,44 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
         {/* 7. ACTIVITY LOG TAB */}
         {activeTab === 'activity' && (
           <div className="p-6 rounded-2xl bg-white border border-zinc-200 space-y-4">
-            <h3 className="text-base font-bold text-black">Full Venture Activity & Audit Timeline</h3>
-            <div className="space-y-3">
-              {(venture.auditLogs || []).map((log: any) => (
-                <div key={log.id} className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 text-xs flex justify-between items-center">
-                  <div>
-                    <span className="font-bold text-amber-700 block">{log.action}</span>
-                    <span className="text-zinc-800">{log.details}</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-400 font-mono">
-                    {log.createdAt ? new Date(log.createdAt).toLocaleString() : 'Today 10:42 AM'}
-                  </span>
-                </div>
-              ))}
+            <div>
+              <h3 className="text-base font-bold text-black">Full Venture Activity & Audit Timeline</h3>
+              <p className="text-xs text-zinc-500">Chronological history of operations, materials, announcements, and assignments.</p>
             </div>
+            {(!venture.auditLogs || venture.auditLogs.length === 0) ? (
+              <p className="text-xs text-zinc-400 py-8 italic text-center">No audit logs available for this venture.</p>
+            ) : (
+              <div className="space-y-3">
+                {venture.auditLogs.map((log: any) => {
+                  const item = formatActivityLog(log);
+                  return (
+                    <div key={log.id} className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-zinc-100/50 transition-colors">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${item.badgeTone}`}>
+                            {item.actionTitle}
+                          </span>
+                          <span className="text-zinc-500 text-[11px]">
+                            by <span className="font-semibold text-zinc-700">{item.userName}</span>
+                          </span>
+                        </div>
+                        <p className="text-zinc-800 font-semibold text-xs">
+                          {item.title}
+                        </p>
+                        {item.subText.length > 0 && (
+                          <p className="text-zinc-500 text-[11px] font-mono">
+                            {item.subText.join(' ')}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-zinc-400 font-mono whitespace-nowrap self-start sm:self-center">
+                        {log.createdAt ? new Date(log.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : item.timeFormatted}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

@@ -344,14 +344,21 @@ export default function VenturesPage() {
                       ₹{((v.estimatedBudget || 0) / 10000000).toFixed(2)} Cr
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${
                         v.status === 'ACTIVE'
                           ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-200'
                           : v.status === 'ON_HOLD'
                           ? 'bg-amber-500/10 text-amber-700 border border-amber-200'
                           : 'bg-zinc-100 text-zinc-600 border border-zinc-200'
                       }`}>
-                        ● {v.status}
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          v.status === 'ACTIVE'
+                            ? 'bg-emerald-600'
+                            : v.status === 'ON_HOLD'
+                            ? 'bg-amber-600'
+                            : 'bg-zinc-400'
+                        }`} />
+                        {v.status}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-right">
@@ -384,11 +391,14 @@ export default function VenturesPage() {
                       <Link href={`/ventures/${v.id}`}>{v.name}</Link>
                     </h3>
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
                     v.status === 'ACTIVE'
                       ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-200'
                       : 'bg-amber-500/10 text-amber-700 border border-amber-200'
                   }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      v.status === 'ACTIVE' ? 'bg-emerald-600' : 'bg-amber-600'
+                    }`} />
                     {v.status}
                   </span>
                 </div>

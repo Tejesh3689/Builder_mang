@@ -11,6 +11,7 @@ export default function SupervisorsDirectoryPage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('+91 ');
   const [selectedVentureId, setSelectedVentureId] = useState('');
+  const [reportingManagerId, setReportingManagerId] = useState('');
 
   const inFlight = React.useRef(false);
 
@@ -35,7 +36,8 @@ export default function SupervisorsDirectoryPage() {
         onboardingStage: 'Active',
         onboardingStatus: 'Active',
         joiningDate: new Date().toISOString().split('T')[0],
-        ventureId: selectedVentureId || 'none'
+        ventureId: selectedVentureId || 'none',
+        ...(reportingManagerId ? { reportingManagerId } : {})
       };
 
       const data = await api.post<any>('/api/employees', payload);
@@ -43,6 +45,7 @@ export default function SupervisorsDirectoryPage() {
         setFullName('');
         setPhone('+91 ');
         setSelectedVentureId('');
+        setReportingManagerId('');
         onSuccess();
       }
     } catch (err: any) {
@@ -53,7 +56,7 @@ export default function SupervisorsDirectoryPage() {
     }
   };
 
-  const renderAddModal = (show: boolean, onClose: () => void, ventures: any[], onAddSuccess: () => void) => {
+  const renderAddModal = (show: boolean, onClose: () => void, ventures: any[], onAddSuccess: () => void, allEmployees: any[] = []) => {
     if (!show) return null;
     return (
       <ModalPortal>
@@ -101,6 +104,23 @@ export default function SupervisorsDirectoryPage() {
                     {v.name}
                   </SelectOption>
                 ))}
+              </Select>
+            </div>
+            <div>
+              <label className="block font-bold text-zinc-700 mb-1">Reporting Manager</label>
+              <Select
+                value={reportingManagerId}
+                onChange={(e) => setReportingManagerId(e.target.value)}
+                className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
+              >
+                <SelectOption value="">None / Direct Report</SelectOption>
+                {allEmployees
+                  .filter((emp) => emp.status !== 'TERMINATED')
+                  .map((emp) => (
+                    <SelectOption key={emp.id} value={emp.id}>
+                      {emp.firstName} {emp.lastName} ({emp.designation || 'Staff'})
+                    </SelectOption>
+                  ))}
               </Select>
             </div>
           </div>
@@ -156,6 +176,11 @@ export default function SupervisorsDirectoryPage() {
             <div>
               <div className="font-bold text-zinc-900">{fullNameStr}</div>
               <div className="text-[10px] text-zinc-400 font-mono">{s.phone}</div>
+              {s.reportingManager && (
+                <div className="text-[10px] text-amber-700 font-medium">
+                  Reports to: {s.reportingManager.firstName} {s.reportingManager.lastName}
+                </div>
+              )}
             </div>
           </div>
         </td>
