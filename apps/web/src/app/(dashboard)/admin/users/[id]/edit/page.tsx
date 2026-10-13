@@ -5,12 +5,20 @@ import { Select, SelectOption } from '@/components/ui/Select';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 
+interface RoleOption {
+  id: string;
+  name: string;
+  baseRole: string;
+  isCustom?: boolean;
+}
+
 export default function EditUserPage() {
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
 
   const [user, setUser] = useState<any>(null);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -18,19 +26,26 @@ export default function EditUserPage() {
   useEffect(() => {
     if (!id) return;
     let isMounted = true;
-    fetch(`/api/admin/users/${id}`)
-      .then(async (res) => {
-        const data = await res.json();
+
+    Promise.all([
+      fetch(`/api/admin/users/${id}`).then((res) => res.json()),
+      fetch('/api/admin/roles').then((res) => res.json()),
+    ])
+      .then(([userData, rolesData]) => {
         if (!isMounted) return;
-        if (data.success && data.data) {
-          setUser(data.data);
+        if (userData.success && userData.data) {
+          setUser(userData.data);
         } else {
-          setErrorMsg(data.error || 'Failed to load user');
+          setErrorMsg(userData.error || 'Failed to load user');
+        }
+
+        if (rolesData.success && Array.isArray(rolesData.data)) {
+          setRoles(rolesData.data);
         }
       })
       .catch(() => {
         if (!isMounted) return;
-        setErrorMsg('Network error loading user');
+        setErrorMsg('Network error loading user data');
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -163,11 +178,21 @@ export default function EditUserPage() {
                 defaultValue={user.role}
                 className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white"
               >
-                <SelectOption value="MANAGER">Operations Manager</SelectOption>
-                <SelectOption value="SITE_ENGINEER">Site Engineer</SelectOption>
-                <SelectOption value="SUPERVISOR">Site Supervisor</SelectOption>
-                <SelectOption value="ADMIN">System Administrator</SelectOption>
-                <SelectOption value="PROCUREMENT_MANAGER">Procurement Manager</SelectOption>
+                {roles.length > 0 ? (
+                  roles.map((r) => (
+                    <SelectOption key={r.id} value={r.baseRole || r.id}>
+                      {r.name} {r.isCustom ? `(Custom - ${r.baseRole.replace(/_/g, ' ')})` : ''}
+                    </SelectOption>
+                  ))
+                ) : (
+                  <>
+                    <SelectOption value="MANAGER">Operations Manager</SelectOption>
+                    <SelectOption value="SITE_ENGINEER">Site Engineer</SelectOption>
+                    <SelectOption value="SUPERVISOR">Site Supervisor</SelectOption>
+                    <SelectOption value="ADMIN">System Administrator</SelectOption>
+                    <SelectOption value="PROCUREMENT_MANAGER">Procurement Manager</SelectOption>
+                  </>
+                )}
               </Select>
             </div>
             <div>

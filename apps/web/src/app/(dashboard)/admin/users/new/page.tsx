@@ -1,16 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Select, SelectOption } from '@/components/ui/Select';
-
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FieldError, useFieldErrors } from '@/lib/form-errors';
+
+interface RoleOption {
+  id: string;
+  name: string;
+  baseRole: string;
+  isCustom?: boolean;
+}
 
 export default function NewUserPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [roles, setRoles] = useState<RoleOption[]>([]);
   const fe = useFieldErrors();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -21,6 +28,21 @@ export default function NewUserPage() {
   });
 
   const inFlight = React.useRef(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/admin/roles')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success && Array.isArray(data.data)) {
+          setRoles(data.data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,11 +160,21 @@ export default function NewUserPage() {
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white"
             >
-              <SelectOption value="MANAGER">Project Manager</SelectOption>
-              <SelectOption value="SITE_ENGINEER">Site Engineer</SelectOption>
-              <SelectOption value="SUPERVISOR">Site Supervisor</SelectOption>
-              <SelectOption value="ADMIN">Admin</SelectOption>
-              <SelectOption value="PROCUREMENT_MANAGER">Procurement Manager</SelectOption>
+              {roles.length > 0 ? (
+                roles.map((r) => (
+                  <SelectOption key={r.id} value={r.baseRole || r.id}>
+                    {r.name} {r.isCustom ? `(Custom - ${r.baseRole.replace(/_/g, ' ')})` : ''}
+                  </SelectOption>
+                ))
+              ) : (
+                <>
+                  <SelectOption value="MANAGER">Operations Manager</SelectOption>
+                  <SelectOption value="SITE_ENGINEER">Site Engineer</SelectOption>
+                  <SelectOption value="SUPERVISOR">Site Supervisor</SelectOption>
+                  <SelectOption value="ADMIN">System Administrator</SelectOption>
+                  <SelectOption value="PROCUREMENT_MANAGER">Procurement Manager</SelectOption>
+                </>
+              )}
             </Select>
             <FieldError id="role" errors={fe.errors} />
           </div>
@@ -154,7 +186,7 @@ export default function NewUserPage() {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 disabled:opacity-50"
+              className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors"
             >
               {loading ? 'Creating...' : 'Create User'}
             </button>

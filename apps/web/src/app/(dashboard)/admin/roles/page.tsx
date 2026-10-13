@@ -2,34 +2,31 @@ import React from 'react';
 import Link from 'next/link';
 import prisma from '@/lib/db';
 import { requireAuth } from '@/lib/authorization';
-import { Shield, Plus, ArrowRight } from 'lucide-react';
+import { getAllRoles } from '@/services/role.service';
+import { Shield, Plus, ArrowRight, UserCheck, Trash2 } from 'lucide-react';
+import DeleteRoleButton from './DeleteRoleButton';
 
 export default async function RolesPermissionsPage() {
   await requireAuth();
 
-  const userRoles = await prisma.user.groupBy({
-    by: ['role'],
-    _count: {
-      role: true
-    }
-  });
-
-  const allSystemRoles = [
-    { id: 'ADMIN', name: 'System Administrator', description: 'Full access to all system settings, user governance, branches, and audit logs.' },
-    { id: 'MANAGER', name: 'Operations Manager', description: 'Manages construction ventures, approvals, field reports, and materials workflow.' },
-    { id: 'SITE_ENGINEER', name: 'Site Engineer', description: 'Oversees site execution, daily progress reports, and inventory consumption.' },
-    { id: 'SUPERVISOR', name: 'Site Supervisor', description: 'Monitors ground workforce, daily labor attendance, and site logs.' },
-    { id: 'PROCUREMENT_MANAGER', name: 'Procurement Manager', description: 'Manages purchase requests, material orders, supplier receipts, and stock.' },
-  ];
+  const [userRoles, allRoles] = await Promise.all([
+    prisma.user.groupBy({
+      by: ['role'],
+      _count: {
+        role: true,
+      },
+    }),
+    getAllRoles(),
+  ]);
 
   const roleCounts: Record<string, number> = {};
   userRoles.forEach((r) => {
     roleCounts[r.role] = r._count.role;
   });
 
-  const roles = allSystemRoles.map((r) => ({
+  const roles = allRoles.map((r) => ({
     ...r,
-    users: roleCounts[r.id] || 0,
+    users: r.isCustom ? (roleCounts[r.baseRole] || 0) : (roleCounts[r.id] || 0),
   }));
 
   return (
@@ -39,7 +36,9 @@ export default async function RolesPermissionsPage() {
           <h1 className="text-xl font-extrabold text-black tracking-tight flex items-center gap-2">
             <Shield className="w-5 h-5 text-amber-600" /> Roles & Permissions
           </h1>
-          <p className="text-xs text-zinc-500 mt-1">Configure role permissions, access levels, and assign users across functional areas.</p>
+          <p className="text-xs text-zinc-500 mt-1">
+            Configure role permissions, access levels, base operational authorities, and assign users across functional areas.
+          </p>
         </div>
         <Link
           href="/admin/roles/new"
@@ -56,17 +55,39 @@ export default async function RolesPermissionsPage() {
             className="bg-white rounded-xl border border-zinc-200 p-6 shadow-xs hover:border-amber-500/50 hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-base font-bold text-zinc-900">{role.name}</h3>
-                <span className="bg-amber-100 text-amber-800 text-xs font-mono font-bold px-2.5 py-0.5 rounded-full">
-                  {role.users} {role.users === 1 ? 'User' : 'Users'}
-                </span>
+              <div className="flex justify-between items-start mb-3 gap-2">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-zinc-900">{role.name}</h3>
+                    {role.isCustom && (
+                      <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase">
+                        Custom Role
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] font-mono text-zinc-500 mt-0.5 flex items-center gap-1.5">
+                    <span className="text-zinc-400">Authority:</span>
+                    <span className="font-semibold text-zinc-700 bg-zinc-100 px-1.5 py-0.2 rounded">
+                      {role.baseRole.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="bg-amber-100 text-amber-800 text-xs font-mono font-bold px-2.5 py-0.5 rounded-full">
+                    {role.users} {role.users === 1 ? 'User' : 'Users'}
+                  </span>
+                  {role.isCustom && <DeleteRoleButton roleId={role.id} roleName={role.name} />}
+                </div>
               </div>
+
               <p className="text-xs text-zinc-500 leading-relaxed mb-4">{role.description}</p>
             </div>
 
             <div className="pt-4 border-t border-zinc-100 flex justify-between items-center">
-              <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Access: Configurable</span>
+              <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
+                ID: {role.id}
+              </span>
               <Link
                 href={`/admin/roles/${role.id}/manage`}
                 className="text-xs font-semibold text-amber-700 hover:text-amber-800 inline-flex items-center gap-1 hover:translate-x-0.5 transition-transform"

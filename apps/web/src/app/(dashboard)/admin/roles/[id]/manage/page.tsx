@@ -1,29 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Shield, Check } from 'lucide-react';
+import { ArrowLeft, Shield, Check, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function ManageRolePage() {
   const router = useRouter();
   const params = useParams();
   const roleId = (params?.id as string) || 'ROLE';
 
-  const roleLabels: Record<string, string> = {
-    ADMIN: 'System Administrator',
-    MANAGER: 'Operations Manager',
-    SITE_ENGINEER: 'Site Engineer',
-    SUPERVISOR: 'Site Supervisor',
-    PROCUREMENT_MANAGER: 'Procurement Manager',
-  };
-
-  const displayName = roleLabels[roleId.toUpperCase()] || roleId.replace(/_/g, ' ');
-
+  const [roleData, setRoleData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Initial matrix permissions state
+  // Matrix permissions state
   const [permissions, setPermissions] = useState<Record<string, Record<string, boolean>>>({
     Ventures: { View: true, Create: roleId !== 'SUPERVISOR', Edit: roleId !== 'SUPERVISOR', Delete: roleId === 'ADMIN' },
     Inventory: { View: true, Create: true, Edit: roleId !== 'SUPERVISOR', Delete: roleId === 'ADMIN' },
@@ -31,6 +24,42 @@ export default function ManageRolePage() {
     Chat: { View: true, Create: true, Edit: true, Delete: roleId === 'ADMIN' },
     System: { View: roleId === 'ADMIN', Create: roleId === 'ADMIN', Edit: roleId === 'ADMIN', Delete: roleId === 'ADMIN' },
   });
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchRole() {
+      try {
+        const res = await fetch(`/api/admin/roles/${roleId}`);
+        const data = await res.json();
+        if (isMounted && data.success && data.data) {
+          setRoleData(data.data);
+          if (data.data.matrix) {
+            setPermissions(data.data.matrix);
+          } else {
+            // Apply sensible default matrix based on baseRole
+            const base = data.data.baseRole || roleId;
+            setPermissions({
+              Ventures: { View: true, Create: base !== 'SUPERVISOR', Edit: base !== 'SUPERVISOR', Delete: base === 'ADMIN' },
+              Inventory: { View: true, Create: true, Edit: base !== 'SUPERVISOR', Delete: base === 'ADMIN' },
+              Workforce: { View: true, Create: base === 'ADMIN' || base === 'MANAGER', Edit: true, Delete: base === 'ADMIN' },
+              Chat: { View: true, Create: true, Edit: true, Delete: base === 'ADMIN' },
+              System: { View: base === 'ADMIN', Create: base === 'ADMIN', Edit: base === 'ADMIN', Delete: base === 'ADMIN' },
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load role details:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    fetchRole();
+    return () => {
+      isMounted = false;
+    };
+  }, [roleId]);
+
+  const displayName = roleData?.name || roleId.replace(/_/g, ' ');
 
   const toggle = (module: string, action: string) => {
     setPermissions((prev) => ({
@@ -42,15 +71,35 @@ export default function ManageRolePage() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    setErrorMsg(null);
+    setSaved(false);
+
+    try {
+      const res = await fetch(`/api/admin/roles/${roleId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matrix: permissions,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to save permissions');
+      }
+
       setSaved(true);
       setTimeout(() => {
         router.push('/admin/roles');
-      }, 600);
-    }, 400);
+        router.refresh();
+      }, 700);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error saving role permissions');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -64,26 +113,47 @@ export default function ManageRolePage() {
             <ArrowLeft className="w-5 h-5 text-zinc-600" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
-              <Shield className="w-6 h-6 text-amber-600" /> Manage Role: {displayName}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
+                <Shield className="w-6 h-6 text-amber-600" /> Manage Role: {displayName}
+              </h1>
+              {roleData?.isCustom && (
+                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase">
+                  Custom
+                </span>
+              )}
+            </div>
             <p className="text-xs text-zinc-500 mt-0.5">
               Granular access control matrix for role <span className="font-mono uppercase font-bold text-zinc-700">{roleId}</span>
+              {roleData?.baseRole && (
+                <span className="ml-2 font-mono text-zinc-400">
+                  (Base Authority: <strong className="text-zinc-700">{roleData.baseRole}</strong>)
+                </span>
+              )}
             </p>
           </div>
         </div>
         <button
           onClick={handleSave}
-          disabled={saving}
-          className="px-4 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-xs self-start sm:self-auto shrink-0 transition-colors"
+          disabled={saving || loading}
+          className="px-5 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-xs self-start sm:self-auto shrink-0 transition-colors flex items-center gap-1.5"
         >
+          {saving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
 
+      {errorMsg && (
+        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       {saved && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-fadeIn">
-          <Check className="w-4 h-4 text-emerald-600" /> Permissions updated successfully!
+          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>Permissions updated successfully! Redirecting...</span>
         </div>
       )}
 
