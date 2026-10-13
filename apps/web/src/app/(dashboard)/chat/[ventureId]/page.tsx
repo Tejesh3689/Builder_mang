@@ -38,15 +38,8 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
       const res = await fetch('/api/employees');
       const data = await res.json();
       if (data.success && data.data) {
-        const emps = data.data.filter((e: any) => {
-          if (!e.user?.id) return false;
-          const desig = e.designation?.toLowerCase() || '';
-          return desig.includes('manager') || 
-                 desig.includes('director') || 
-                 desig.includes('supervisor') ||
-                 desig.includes('lead') ||
-                 desig.includes('engineer');
-        });
+        // Any active personnel who has an associated user account can participate in chat
+        const emps = data.data.filter((e: any) => e.user?.id && e.status !== 'Terminated' && e.status !== 'TERMINATED');
         setEmployees(emps);
         if (emps.length > 0) setSelectedUserId(emps[0].user.id);
       }
@@ -94,14 +87,14 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`/api/chat/rooms/${ventureId}/messages`);
+      const res = await fetch(`/api/chat/rooms/${ventureId}/messages?limit=100`);
       if (res.status === 403) {
         setAccessDenied(true);
         setLoading(false);
         return;
       }
       const data = await res.json();
-      if (data.success) {
+      if (data.success && Array.isArray(data.data)) {
         setAccessDenied(false);
         setMessages(data.data);
       }

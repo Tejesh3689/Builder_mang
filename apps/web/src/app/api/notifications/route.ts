@@ -40,8 +40,14 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
+    const userRole = (session?.user as any)?.role;
     if (!session || !userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Security: Only ADMIN can dispatch arbitrary notifications directly to users
+    if (userRole !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required to send notifications' }, { status: 403 });
     }
 
     const body = await req.json();

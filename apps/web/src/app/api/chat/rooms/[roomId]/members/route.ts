@@ -68,6 +68,32 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'userId is required' }, { status: 400 });
     }
 
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
+      select: { id: true, ventureId: true }
+    });
+
+    if (!room) {
+      return NextResponse.json({ success: false, error: 'Chat room not found' }, { status: 404 });
+    }
+
+    // Security: If room belongs to a venture, non-ADMIN must be actively assigned to that venture
+    if (room.ventureId && userRole !== 'ADMIN') {
+      const callerAssignment = await prisma.employee.findFirst({
+        where: {
+          userId: sessionUserId,
+          assignments: { some: { ventureId: room.ventureId, status: 'ACTIVE' } }
+        }
+      });
+
+      if (!callerAssignment) {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden: You are not assigned to the venture for this chat room' },
+          { status: 403 }
+        );
+      }
+    }
+
     const member = await prisma.chatMember.upsert({
       where: { roomId_userId: { roomId, userId } },
       update: {},
@@ -106,6 +132,32 @@ export async function DELETE(
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'userId query param is required' }, { status: 400 });
+    }
+
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
+      select: { id: true, ventureId: true }
+    });
+
+    if (!room) {
+      return NextResponse.json({ success: false, error: 'Chat room not found' }, { status: 404 });
+    }
+
+    // Security: If room belongs to a venture, non-ADMIN must be actively assigned to that venture
+    if (room.ventureId && userRole !== 'ADMIN') {
+      const callerAssignment = await prisma.employee.findFirst({
+        where: {
+          userId: sessionUserId,
+          assignments: { some: { ventureId: room.ventureId, status: 'ACTIVE' } }
+        }
+      });
+
+      if (!callerAssignment) {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden: You are not assigned to the venture for this chat room' },
+          { status: 403 }
+        );
+      }
     }
 
     await prisma.chatMember.delete({

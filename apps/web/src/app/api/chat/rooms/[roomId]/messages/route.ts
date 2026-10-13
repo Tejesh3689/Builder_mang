@@ -38,19 +38,69 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
     }
 
-    const { skip, take } = getPaginationParams(req);
-    const messages = await prisma.chatMessage.findMany({
-      skip,
-      take,
-      where: { roomId },
-      include: {
-        sender: {
-          select: { id: true, name: true, email: true, role: true }
+    const { searchParams } = new URL(req.url);
+    const afterId = searchParams.get('after');
+    const order = searchParams.get('order')?.toLowerCase();
+
+    // If 'after' cursor is provided, fetch all messages newer than that cursor
+    if (afterId) {
+      const cursorMessage = await prisma.chatMessage.findUnique({
+        where: { id: afterId },
+        select: { createdAt: true }
+      });
+
+      if (cursorMessage) {
+        const newerMessages = await prisma.chatMessage.findMany({
+          where: {
+            roomId,
+            createdAt: { gt: cursorMessage.createdAt }
+          },
+          include: {
+            sender: {
+              select: { id: true, name: true, email: true, role: true }
+            },
+            reads: true
+          },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }]
+        });
+        return NextResponse.json({ success: true, data: newerMessages });
+      }
+    }
+
+    const { skip, take } = getPaginationParams(req, 50, 100);
+
+    // Default behavior for live chat: return the latest `take` messages in chronological (asc) order.
+    // If order === 'desc', return directly desc.
+    let messages;
+    if (order === 'desc') {
+      messages = await prisma.chatMessage.findMany({
+        skip,
+        take,
+        where: { roomId },
+        include: {
+          sender: {
+            select: { id: true, name: true, email: true, role: true }
+          },
+          reads: true
         },
-        reads: true
-      },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }]
-    });
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]
+      });
+    } else {
+      // Fetch latest messages (desc), then reverse to ascending so chat displays in natural reading order
+      const latestDesc = await prisma.chatMessage.findMany({
+        skip,
+        take,
+        where: { roomId },
+        include: {
+          sender: {
+            select: { id: true, name: true, email: true, role: true }
+          },
+          reads: true
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]
+      });
+      messages = latestDesc.reverse();
+    }
 
     return NextResponse.json({ success: true, data: messages });
   } catch (error: any) {
