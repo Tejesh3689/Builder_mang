@@ -65,7 +65,7 @@ export default function ExportProjectReportPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/reports/projects" className="p-2 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50">
+        <Link href="/reports/projects" aria-label="Back to Project Reports" className="p-2 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50">
           <svg className="w-5 h-5 text-zinc-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
         </Link>
         <h1 className="text-2xl font-bold text-zinc-900">Export Project Report</h1>
@@ -83,20 +83,30 @@ export default function ExportProjectReportPage() {
       <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
         <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleGenerateExport(); }}>
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Date Range</label>
+            <span className="block text-sm font-medium text-zinc-700 mb-1">Date Range</span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-              />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-              />
+              <div>
+                <label htmlFor="export-start-date" className="sr-only">Start Date</label>
+                <input
+                  id="export-start-date"
+                  type="date"
+                  aria-label="Start Date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="export-end-date" className="sr-only">End Date</label>
+                <input
+                  id="export-end-date"
+                  type="date"
+                  aria-label="End Date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
             </div>
           </div>
           

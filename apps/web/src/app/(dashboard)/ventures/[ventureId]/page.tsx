@@ -359,7 +359,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
       {/* Top Navigation & Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 pb-4">
         <div className="flex items-center gap-3">
-          <Link href="/ventures" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
+          <Link href="/ventures" aria-label="Back to Ventures" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>

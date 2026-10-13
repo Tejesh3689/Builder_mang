@@ -344,7 +344,7 @@ export default function CompanySettingsPage() {
             <h2 className="text-base font-bold text-zinc-900">Organization & Legal Information</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="legalName" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   Legal Registered Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -359,7 +359,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="displayName" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   Brand Display Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -374,7 +374,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="supportEmail" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   Support Email <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -389,7 +389,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="phone" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   Primary Phone
                 </label>
                 <input
@@ -405,7 +405,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="website" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   Official Website
                 </label>
                 <input
@@ -421,7 +421,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="gstin" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   GSTIN
                 </label>
                 <input
@@ -437,7 +437,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="pan" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   PAN
                 </label>
                 <input
@@ -453,7 +453,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="pincode" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   Postal Pincode
                 </label>
                 <input
@@ -469,7 +469,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="addressLine" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   Registered Address
                 </label>
                 <input
@@ -483,7 +483,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="city" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   City
                 </label>
                 <input
@@ -496,7 +496,7 @@ export default function CompanySettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
+                <label htmlFor="state" className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
                   State
                 </label>
                 <input

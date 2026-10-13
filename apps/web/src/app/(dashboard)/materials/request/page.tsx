@@ -100,7 +100,7 @@ export default function MaterialRequestPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto py-6">
       <div className="flex items-center gap-3">
-        <Link href={returnTo} className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
+        <Link href={returnTo} aria-label="Go back" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div>

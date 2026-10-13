@@ -476,7 +476,7 @@ export default function EmployeesClient({
           </span>
         </div>
 
-        <div className={`overflow-x-auto scrollbar-hide transition-opacity duration-150 ${isFetching ? 'opacity-70' : 'opacity-100'}`}>
+        <div tabIndex={0} role="region" aria-label="Employees Directory Table" className={`overflow-x-auto scrollbar-hide transition-opacity duration-150 focus:outline-none focus:ring-1 focus:ring-amber-500 ${isFetching ? 'opacity-70' : 'opacity-100'}`}>
           <table className="w-full text-left text-xs table-auto">
             <thead>
               <tr className="border-b border-zinc-200 text-zinc-400 font-mono uppercase text-[10px] bg-zinc-50/20">
@@ -556,6 +556,7 @@ export default function EmployeesClient({
                           {/* View Profile */}
                           <Link
                             href={`/employees/${e.id}`}
+                            aria-label={`View Profile of ${e.firstName} ${e.lastName}`}
                             className="p-1.5 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors"
                             title="View Profile"
                           >
@@ -569,6 +570,7 @@ export default function EmployeesClient({
                           {(!isSupervisor) && (
                             <Link
                               href={`/employees/${e.id}/edit`}
+                              aria-label={`Edit Profile of ${e.firstName} ${e.lastName}`}
                               className="p-1.5 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors"
                               title="Edit Profile"
                             >

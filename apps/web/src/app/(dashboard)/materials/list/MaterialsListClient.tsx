@@ -128,7 +128,7 @@ export default function MaterialsListClient({ initialData, error }: { initialDat
       </div>
 
       {/* Materials Table */}
-      <div className="overflow-x-auto">
+      <div tabIndex={0} role="region" aria-label="Materials Table" className="overflow-x-auto focus:outline-none focus:ring-1 focus:ring-amber-500">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/70 text-[11px] font-bold text-zinc-500 uppercase tracking-wider font-mono">

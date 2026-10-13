@@ -9,10 +9,12 @@ export interface SelectProps extends Omit<React.ComponentPropsWithoutRef<typeof 
   className?: string;
   id?: string;
   'aria-invalid'?: boolean | 'true' | 'false';
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
 }
 
 export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
-  ({ children, className, id, 'aria-invalid': ariaInvalid, value, defaultValue, onChange, disabled, required, name, ...props }, ref) => {
+  ({ children, className, id, 'aria-invalid': ariaInvalid, 'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledby, value, defaultValue, onChange, disabled, required, name, ...props }, ref) => {
     
     const handleValueChange = (val: string) => {
       if (onChange) {
@@ -39,6 +41,8 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           id={id}
           ref={ref}
           aria-invalid={ariaInvalid}
+          aria-label={ariaLabel || (props as any)['placeholder'] || (name ? `${name} selector` : 'Select option')}
+          aria-labelledby={ariaLabelledby}
           className={`flex h-10 w-full items-center justify-between rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm ring-offset-white focus:outline-none focus:ring-1 focus:ring-black focus:border-black disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-red-600 aria-[invalid=true]:ring-red-600 aria-[invalid=true]:bg-red-50 ${className || ''}`}
           {...props}
         >

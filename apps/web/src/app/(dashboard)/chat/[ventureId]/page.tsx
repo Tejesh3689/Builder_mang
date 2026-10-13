@@ -162,7 +162,7 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
       {/* Room Header */}
       <div className="h-14 sm:h-16 border-b border-zinc-200 px-3 sm:px-6 flex justify-between items-center gap-3 bg-zinc-50/50">
         <div className="flex items-center gap-3 min-w-0">
-          <Link href="/chat" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
+          <Link href="/chat" aria-label="Back to Channels" className="p-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-black transition-colors border border-zinc-200 shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="min-w-0">

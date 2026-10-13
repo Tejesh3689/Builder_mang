@@ -288,7 +288,7 @@ export default function VenturesPage() {
       ) : viewMode === 'table' ? (
         /* TABLE VIEW */
         <div className="rounded-xl bg-white border border-zinc-200 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+          <div tabIndex={0} role="region" aria-label="Ventures Table" className="overflow-x-auto focus:outline-none focus:ring-1 focus:ring-amber-500">
             <table className="w-full text-left text-xs text-zinc-700">
               <thead className="bg-zinc-50/50 text-zinc-400 font-mono uppercase text-[10px] border-b border-zinc-200 tracking-wider">
                 <tr>

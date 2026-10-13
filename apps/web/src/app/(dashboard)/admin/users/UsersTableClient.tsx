@@ -57,7 +57,7 @@ export default function UsersTableClient({ users }: { users: UserItem[] }) {
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto scrollbar-hide">
+        <div tabIndex={0} role="region" aria-label="Users Table" className="overflow-x-auto scrollbar-hide focus:outline-none focus:ring-1 focus:ring-amber-500">
           <table className="w-full text-left text-xs table-auto">
             <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 font-mono text-[10px] uppercase">
               <tr>
