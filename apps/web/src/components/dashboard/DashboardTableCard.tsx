@@ -1,11 +1,17 @@
 import React from 'react';
 import Link from 'next/link';
 
+interface HeaderItem {
+  label: string;
+  align?: 'left' | 'center' | 'right';
+  className?: string;
+}
+
 interface DashboardTableCardProps {
   title: string;
   subtitle?: string;
   viewAllLink?: string;
-  headers: string[];
+  headers: (string | HeaderItem)[];
   children: React.ReactNode;
   colSpanClass?: string;
   footer?: React.ReactNode;
@@ -36,12 +42,24 @@ export default function DashboardTableCard({
             )}
           </div>
           <div className="overflow-x-auto scrollbar-hide">
-            <table className="w-full text-left text-xs table-auto">
+            <table className="w-full text-xs table-auto">
               <thead>
                 <tr className="border-b border-zinc-100 text-zinc-400 uppercase font-mono text-[10px]">
-                  {headers.map((h, i) => (
-                    <th key={i} className={`pb-2.5 ${i === headers.length - 1 ? 'pr-0' : 'pr-2 sm:pr-2.5'} whitespace-nowrap tracking-wider font-semibold`}>{h}</th>
-                  ))}
+                  {headers.map((h, i) => {
+                    const label = typeof h === 'string' ? h : h.label;
+                    const align = typeof h === 'string' ? 'left' : (h.align || 'left');
+                    const customClass = typeof h === 'string' ? '' : (h.className || '');
+                    const alignClass = align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left';
+
+                    return (
+                      <th
+                        key={i}
+                        className={`pb-2.5 ${i === headers.length - 1 ? 'pr-0' : 'pr-2 sm:pr-2.5'} whitespace-nowrap tracking-wider font-semibold ${alignClass} ${customClass}`}
+                      >
+                        {label}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">

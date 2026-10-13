@@ -62,16 +62,22 @@ export default function ManagerDashboard() {
         <DashboardTableCard 
           title="Action Required"
           viewAllLink="/approvals"
-          headers={['TYPE', 'REQUEST', 'DATE', 'STATUS']}
+          headers={[
+            { label: 'TYPE', align: 'left', className: 'w-24' },
+            { label: 'REQUEST', align: 'left' },
+            { label: 'DATE', align: 'center', className: 'w-36' },
+            { label: 'STATUS', align: 'right', className: 'w-28' }
+          ]}
         >
           {pendingRequests.map((r, i) => (
             <tr key={i} className="hover:bg-zinc-50/80">
-              <td className="py-3 font-bold text-black">{r.type}</td>
-              <td className="py-3 text-zinc-600">{r.req}</td>
-              <td className="py-3 font-mono text-zinc-500">{r.dates}</td>
-              <td className="py-3">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                  • {r.status}
+              <td className="py-3 font-bold text-black text-left">{r.type}</td>
+              <td className="py-3 text-zinc-600 text-left">{r.req}</td>
+              <td className="py-3 font-mono text-zinc-500 text-center">{r.dates}</td>
+              <td className="py-3 text-right">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
+                  <span>{r.status}</span>
                 </span>
               </td>
             </tr>
@@ -81,20 +87,25 @@ export default function ManagerDashboard() {
         <DashboardTableCard 
           title="Venture Health Snapshot"
           viewAllLink="/ventures"
-          headers={['VENTURE', 'HEALTH', 'PROGRESS']}
+          headers={[
+            { label: 'VENTURE', align: 'left' },
+            { label: 'HEALTH', align: 'center', className: 'w-36' },
+            { label: 'PROGRESS', align: 'center', className: 'w-28' }
+          ]}
         >
           {ventureHealth.map((v, i) => (
             <tr key={i} className="hover:bg-zinc-50/80">
-              <td className="py-3 font-bold text-black">{v.name}</td>
-              <td className="py-3">
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+              <td className="py-3 font-bold text-black text-left">{v.name}</td>
+              <td className="py-3 text-center">
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                   v.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
                   'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
-                  • {v.health}
+                  <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0"></span>
+                  <span>{v.health}</span>
                 </span>
               </td>
-              <td className="py-3 text-zinc-600 font-mono">{v.progress}%</td>
+              <td className="py-3 text-zinc-700 font-mono font-semibold text-center">{v.progress}%</td>
             </tr>
           ))}
         </DashboardTableCard>
