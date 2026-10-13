@@ -72,8 +72,12 @@ export async function fetchApi<T>(url: string, options: RequestInit = {}): Promi
     // Return the parsed JSON directly so callers can check .success and .data
 
     return data as T;
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof ApiError) {
+      throw error;
+    }
+    // If request was aborted by AbortController, rethrow as-is so callers can check err.name === 'AbortError'
+    if (error?.name === 'AbortError') {
       throw error;
     }
     // Network or parsing errors

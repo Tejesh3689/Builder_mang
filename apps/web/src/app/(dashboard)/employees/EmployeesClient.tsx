@@ -114,8 +114,9 @@ export default function EmployeesClient({
           setSkillsListState((prev) => Array.from(new Set([...prev, ...newSkills])));
         }
       } catch (err: any) {
+        if (cancelled || err?.name === 'AbortError') return;
         console.error('Failed to fetch employees:', err);
-        if (!cancelled && err?.status !== 401) setLoadError(err?.message || 'Failed to load employees.');
+        if (err?.status !== 401) setLoadError(err?.message || 'Failed to load employees.');
       } finally {
         if (!cancelled) {
           setIsFetching(false);
