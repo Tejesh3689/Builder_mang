@@ -16,7 +16,8 @@ interface SharedDirectoryClientProps {
     show: boolean,
     onClose: () => void,
     ventures: any[],
-    onAddSuccess: () => void
+    onAddSuccess: () => void,
+    allEmployees?: any[]
   ) => React.ReactNode;
 }
 
@@ -148,7 +149,7 @@ export default function SharedDirectoryClient({
         />
       </div>
 
-      {renderAddModal(showAddModal, () => setShowAddModal(false), ventures, fetchData)}
+      {renderAddModal(showAddModal, () => setShowAddModal(false), ventures, fetchData, employees)}
     </div>
   );
 }

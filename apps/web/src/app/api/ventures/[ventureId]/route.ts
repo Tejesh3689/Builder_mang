@@ -28,7 +28,13 @@ export const GET = apiHandler<Ctx>(async (_request, { params }) => {
     chatRooms: true,
     settings: true,
     requests: { select: { status: true } },
-    auditLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
+    auditLogs: {
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+      include: {
+        user: { select: { id: true, name: true, role: true } },
+      },
+    },
   });
   return ok(venture);
 }, { resource: 'venture', context: 'venture GET' });
