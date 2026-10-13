@@ -44,7 +44,7 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
         >
           <SelectPrimitive.Value />
           <SelectPrimitive.Icon asChild>
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </SelectPrimitive.Icon>
         </SelectPrimitive.Trigger>
         <SelectPrimitive.Portal>

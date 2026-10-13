@@ -444,7 +444,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
       {/* Project Health Bar */}
       <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-emerald-400" />
+          <ShieldCheck className="w-5 h-5 shrink-0 text-emerald-400" />
           <span className="text-xs font-bold text-black uppercase tracking-wider">Project Health Command Matrix:</span>
         </div>
         <div className="flex items-center gap-4 text-xs">
@@ -529,7 +529,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
               <div className="p-6 rounded-2xl bg-white border border-zinc-200 space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-base font-bold text-black flex items-center gap-2">
-                    <Package className="w-5 h-5 text-amber-700" /> Scoped Material Inventory
+                    <Package className="w-5 h-5 shrink-0 text-amber-700" /> Scoped Material Inventory
                   </h3>
                   <button onClick={() => setActiveTab('operations')} className="text-xs text-amber-700 hover:underline font-semibold">
                     View All Materials →

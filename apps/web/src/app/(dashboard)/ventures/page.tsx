@@ -366,7 +366,7 @@ export default function VenturesPage() {
                         href={`/ventures/${v.id}`}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-black text-xs font-semibold shadow-xs transition-colors"
                       >
-                        Open Workspace <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400" />
+                        Open Workspace <ArrowUpRight className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
                       </Link>
                     </td>
                   </tr>
@@ -440,7 +440,7 @@ export default function VenturesPage() {
                   href={`/ventures/${v.id}`}
                   className="px-3 py-1.5 rounded-xl bg-[#d97706] text-white hover:bg-amber-700 font-semibold text-xs transition-colors flex items-center gap-1 shadow-xs"
                 >
-                  Workspace <ArrowUpRight className="w-3.5 h-3.5 text-zinc-450" />
+                  Workspace <ArrowUpRight className="w-3.5 h-3.5 shrink-0 text-zinc-450" />
                 </Link>
               </div>
             </div>
