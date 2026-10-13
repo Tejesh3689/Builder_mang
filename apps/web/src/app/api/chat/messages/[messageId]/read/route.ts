@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { handleApiError } from '@/lib/api-errors';
 
 export async function POST(
   req: Request,
@@ -10,6 +11,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
+    const userRole = (session?.user as any)?.role;
     if (!session || !userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
@@ -19,24 +21,25 @@ export async function POST(
 
     const message = await prisma.chatMessage.findUnique({
       where: { id: messageId },
-      include: { room: true }
+      select: { id: true, roomId: true }
     });
 
     if (!message) {
       return NextResponse.json({ success: false, error: 'Message not found' }, { status: 404 });
     }
 
-    // Check if user is a member of the room
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { chatMembers: { where: { roomId: message.roomId } } }
-    });
+    // Check if user is a member of the room (unless ADMIN)
+    if (userRole !== 'ADMIN') {
+      const isMember = await prisma.chatMember.findUnique({
+        where: { roomId_userId: { roomId: message.roomId, userId } }
+      });
 
-    if ((session?.user as any)?.role !== 'ADMIN' && (!user?.chatMembers || user.chatMembers.length === 0)) {
-      return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
+      if (!isMember) {
+        return NextResponse.json({ success: false, error: 'Not a member of this room' }, { status: 403 });
+      }
     }
 
-    // Using nested upsert because there is a unique constraint on [messageId, userId]
+    // Idempotent upsert — re-marking an already-read message is a no-op that succeeds
     const read = await prisma.messageRead.upsert({
       where: {
         messageId_userId: {
@@ -55,7 +58,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, data: read });
   } catch (error: any) {
-    console.error('Failed to mark message as read:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }

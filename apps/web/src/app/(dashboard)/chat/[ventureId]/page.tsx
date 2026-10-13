@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, useRef, use, useCallback, useId } from 'react';
 import { Select, SelectOption } from '@/components/ui/Select';
 
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Send, ArrowLeft, Building2, User, MessageSquare, UserPlus } from 'lucide-react';
+import { Send, ArrowLeft, Building2, MessageSquare } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { api } from '@/lib/api';
 
@@ -22,6 +22,9 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
   const [accessDenied, setAccessDenied] = useState(false);
   const [sendError, setSendError] = useState('');
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputId = useId();
+
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role || 'USER';
   const canAddMember = userRole === 'ADMIN' || userRole === 'MANAGER';
@@ -31,6 +34,19 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
   const [selectedUserId, setSelectedUserId] = useState('');
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
+
+  // Scroll to the latest message
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+  }, []);
+
+  // Close modal with Escape key
+  useEffect(() => {
+    if (!showAddModal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowAddModal(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showAddModal]);
 
   const handleOpenAddModal = async () => {
     setShowAddModal(true);
@@ -71,9 +87,8 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
     }
   };
 
-  const fetchRoomDetails = async () => {
+  const fetchRoomDetails = useCallback(async () => {
     try {
-      // Find room by matching the rooms list
       const res = await fetch('/api/chat/rooms');
       const data = await res.json();
       if (data.success) {
@@ -83,11 +98,11 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
     } catch (err) {
       console.error('Error fetching room details:', err);
     }
-  };
+  }, [ventureId]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch(`/api/chat/rooms/${ventureId}/messages?limit=100`);
+      const res = await fetch(`/api/chat/rooms/${ventureId}/messages?limit=100`, { signal });
       if (res.status === 403) {
         setAccessDenied(true);
         setLoading(false);
@@ -96,23 +111,43 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setAccessDenied(false);
-        setMessages(data.data);
+        setMessages(prev => {
+          // Only update state (and trigger re-render + scroll) when content actually changed
+          if (prev.length !== data.data.length || (data.data.length > 0 && prev[prev.length - 1]?.id !== data.data[data.data.length - 1]?.id)) {
+            return data.data;
+          }
+          return prev;
+        });
       }
-    } catch (err) {
-      console.error('Error fetching messages:', err);
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.error('Error fetching messages:', err);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [ventureId]);
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToBottom('smooth');
+  }, [messages, scrollToBottom]);
 
   useEffect(() => {
+    const controller = new AbortController();
     fetchRoomDetails();
-    fetchMessages();
+    fetchMessages(controller.signal);
 
-    // Auto-refresh chat feed every 8 seconds for a lively experience
-    const interval = setInterval(fetchMessages, 8000);
-    return () => clearInterval(interval);
-  }, [ventureId]);
+    // Auto-refresh chat feed every 8 seconds using AbortController to cancel stale in-flight requests
+    const interval = setInterval(() => {
+      const c = new AbortController();
+      fetchMessages(c.signal);
+    }, 8000);
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, [ventureId, fetchRoomDetails, fetchMessages]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,11 +157,14 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
     setSending(true);
     setSendError('');
 
+    const content = newMsg.trim();
+    setNewMsg(''); // Optimistic clear
+
     try {
-      await api.post(`/api/chat/rooms/${ventureId}/messages`, { content: newMsg });
-      setNewMsg('');
-      fetchMessages();
+      await api.post(`/api/chat/rooms/${ventureId}/messages`, { content });
+      await fetchMessages();
     } catch (err: any) {
+      setNewMsg(content); // Restore on error
       if (err?.status === 403) {
         setSendError('You are not a member of this room and cannot send messages.');
       } else if (err?.status !== 401) {
@@ -166,9 +204,9 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="min-w-0">
-            <h3 className="font-extrabold text-zinc-950 flex items-center gap-1.5 min-w-0">
+            <h1 className="font-extrabold text-zinc-950 flex items-center gap-1.5 min-w-0 text-sm">
               <MessageSquare className="w-4 h-4 text-amber-700 shrink-0" /> <span className="truncate">#{room?.name || 'Venture Channel'}</span>
-            </h3>
+            </h1>
             {room?.venture && (
               <span className="text-[10px] text-zinc-400 font-mono flex items-center gap-1 min-w-0">
                 <Building2 className="w-3 h-3 text-amber-600 shrink-0" /> <span className="truncate">Scoped to {room.venture.name}</span>
@@ -180,6 +218,7 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
           {canAddMember && (
             <button
               onClick={handleOpenAddModal}
+              aria-label="Add member to this chat room"
               className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-semibold rounded-lg shrink-0 border border-zinc-200"
             >
               + Add Member
@@ -190,21 +229,21 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-zinc-50/20">
+      <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-zinc-50/20" aria-live="polite" aria-label="Chat messages">
         {messages.map((msg) => {
           const senderName = msg.sender?.name || 'Anonymous';
           const senderInitials = senderName.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
-          const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:42 AM';
+          const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
           return (
             <div key={msg.id} className="flex items-start space-x-3">
-              <div className="w-8 h-8 rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div aria-hidden="true" className="w-8 h-8 rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                 {senderInitials}
               </div>
               <div className="p-3.5 rounded-2xl rounded-tl-none bg-zinc-50 border border-zinc-200 text-xs max-w-md space-y-1 break-words">
                 <div className="flex justify-between items-center gap-8 border-b border-zinc-200/50 pb-0.5 mb-1 text-[9px] font-mono text-zinc-400">
                   <span className="font-bold text-amber-700">{senderName} ({msg.sender?.role || 'Staff'})</span>
-                  <span>{msgTime}</span>
+                  <time dateTime={msg.createdAt}>{msgTime}</time>
                 </div>
                 <p className="text-zinc-800 leading-normal font-medium break-words">{msg.content}</p>
               </div>
@@ -217,24 +256,31 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
             No messages sent yet. Send the first message to initialize channel dialogue!
           </div>
         )}
+        {/* Scroll anchor */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input panel */}
       <form onSubmit={handleSend} className="p-4 border-t border-zinc-200 bg-zinc-50/30 flex flex-col gap-2">
         {sendError && (
-          <div className="text-xs text-red-600 font-medium px-1">{sendError}</div>
+          <div role="alert" className="text-xs text-red-600 font-medium px-1">{sendError}</div>
         )}
         <div className="flex items-center space-x-3">
+          <label htmlFor={messageInputId} className="sr-only">Message</label>
           <input
+            id={messageInputId}
             type="text"
-            placeholder="Type a message..."
+            placeholder="Type a message…"
             value={newMsg}
             onChange={(e) => setNewMsg(e.target.value)}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-zinc-50 border border-zinc-200 text-black focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs"
+            disabled={sending}
+            autoComplete="off"
+            className="flex-1 px-4 py-2.5 rounded-lg bg-zinc-50 border border-zinc-200 text-black focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={!newMsg.trim() || sending}
+            aria-label="Send message"
             className="px-4 py-2.5 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg font-semibold text-xs flex items-center gap-1 shadow-xs transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -248,26 +294,37 @@ export default function StandaloneChatRoomPage({ params }: { params: Promise<{ v
       {/* Add Member Modal */}
       {showAddModal && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleAddMemberSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-sm w-full space-y-4">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Member to Room</h3>
-            {addError && <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{addError}</p>}
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-zinc-700 mb-1">Select Employee</label>
-                <Select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="w-full border border-zinc-200 p-2 rounded-lg bg-white">
-                  {employees.map((e) => (
-                    <SelectOption key={e.id} value={e.user.id}>{e.firstName} {e.lastName} ({e.designation})</SelectOption>
-                  ))}
-                  {employees.length === 0 && <SelectOption value="">Loading...</SelectOption>}
-                </Select>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add member to chat room"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAddModal(false); }}
+          >
+            <form onSubmit={handleAddMemberSubmit} className="bg-white rounded-xl border border-zinc-200 shadow-lg p-5 max-w-sm w-full space-y-4">
+              <h2 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Add Member to Room</h2>
+              {addError && <p role="alert" className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{addError}</p>}
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-bold text-zinc-700 mb-1" htmlFor="add-member-select">Select Employee</label>
+                  <Select
+                    id="add-member-select"
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    className="w-full border border-zinc-200 p-2 rounded-lg bg-white"
+                  >
+                    {employees.map((e) => (
+                      <SelectOption key={e.id} value={e.user.id}>{e.firstName} {e.lastName} ({e.designation})</SelectOption>
+                    ))}
+                    {employees.length === 0 && <SelectOption value="">Loading...</SelectOption>}
+                  </Select>
+                </div>
               </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
-              <button type="button" onClick={() => setShowAddModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
-              <button type="submit" disabled={addLoading || !selectedUserId} className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg">Add Member</button>
-            </div>
-          </form>
+              <div className="flex justify-end gap-2 pt-2 text-xs font-semibold">
+                <button type="button" onClick={() => setShowAddModal(false)} className="px-3.5 py-1.5 border border-zinc-200 rounded-lg">Cancel</button>
+                <button type="submit" disabled={addLoading || !selectedUserId} className="px-4 py-1.5 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg">Add Member</button>
+              </div>
+            </form>
           </div>
         </ModalPortal>
       )}

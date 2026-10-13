@@ -825,6 +825,7 @@ model ChatMember {
   joinedAt DateTime @default(now())
 
   @@unique([roomId, userId])
+  @@index([userId])
   @@map("chat_members")
 }
 
@@ -839,6 +840,7 @@ model ChatMessage {
   attachments MessageAttachment[]
   reads       MessageRead[]
 
+  @@index([roomId, createdAt])
   @@map("chat_messages")
 }
 
@@ -863,6 +865,7 @@ model MessageRead {
   readAt    DateTime    @default(now())
 
   @@unique([messageId, userId])
+  @@index([userId])
   @@map("message_reads")
 }
 
@@ -875,6 +878,8 @@ model Notification {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 

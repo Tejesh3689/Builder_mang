@@ -4,7 +4,7 @@ import { getRoleById, updateRolePermissions, deleteCustomRole } from '@/services
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const actor = await requireAuth();
@@ -12,8 +12,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const resolvedParams = await Promise.resolve(params);
-    const role = await getRoleById(resolvedParams.id);
+    const { id } = await params;
+    const role = await getRoleById(id);
     if (!role) {
       return NextResponse.json({ success: false, error: 'Role not found' }, { status: 404 });
     }
@@ -27,7 +27,7 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const actor = await requireAuth();
@@ -35,7 +35,7 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const resolvedParams = await Promise.resolve(params);
+    const { id } = await params;
     let body: any;
     try {
       body = await req.json();
@@ -43,7 +43,7 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Malformed JSON payload' }, { status: 400 });
     }
 
-    const updated = await updateRolePermissions(actor.id, resolvedParams.id, body);
+    const updated = await updateRolePermissions(actor.id, id, body);
     return NextResponse.json({ success: true, data: updated });
   } catch (err: any) {
     const status = err.statusCode || err.status || 400;
@@ -53,7 +53,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const actor = await requireAuth();
@@ -61,8 +61,8 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const resolvedParams = await Promise.resolve(params);
-    await deleteCustomRole(actor.id, resolvedParams.id);
+    const { id } = await params;
+    await deleteCustomRole(actor.id, id);
     return NextResponse.json({ success: true });
   } catch (err: any) {
     const status = err.statusCode || err.status || 400;

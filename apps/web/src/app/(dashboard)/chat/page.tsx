@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
-
+import React, { useState, useEffect, useId } from 'react';
+import { Select, SelectOption } from '@/components/ui/Select';
 import Link from 'next/link';
 import { ModalPortal } from '@/components/ui/ModalPortal';
-import { MessageSquare, Building2, Plus, Sparkles } from 'lucide-react';
+import { MessageSquare, Building2, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function ChatRoomsPage() {
@@ -14,6 +14,11 @@ export default function ChatRoomsPage() {
   const [newRoomName, setNewRoomName] = useState('');
   const [selectedVentureId, setSelectedVentureId] = useState('');
   const [ventures, setVentures] = useState<any[]>([]);
+  const [createError, setCreateError] = useState('');
+
+  const createModalTitleId = useId();
+  const channelNameId = useId();
+  const ventureSelectId = useId();
 
   const fetchRooms = async () => {
     try {
@@ -44,12 +49,21 @@ export default function ChatRoomsPage() {
     fetchVentures();
   }, []);
 
+  // Close modal on Escape
+  useEffect(() => {
+    if (!showAddModal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowAddModal(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showAddModal]);
+
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoomName.trim()) return;
+    setCreateError('');
 
     try {
-      const res = await api.post<{success: boolean}>('/api/chat/rooms', {
+      const res = await api.post<{success: boolean; error?: string}>('/api/chat/rooms', {
         name: newRoomName,
         ventureId: selectedVentureId || null
       });
@@ -59,11 +73,11 @@ export default function ChatRoomsPage() {
         setShowAddModal(false);
         fetchRooms();
       } else {
-        alert('Failed to create chat room. Verify permissions.');
+        setCreateError(res.error || 'Failed to create chat room. Verify permissions.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create chat room:', err);
-      alert('Error creating chat room.');
+      setCreateError(err?.message || 'Error creating chat room.');
     }
   };
 
@@ -101,18 +115,18 @@ export default function ChatRoomsPage() {
           >
             <div className="flex justify-between items-start">
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-zinc-900 group-hover:text-amber-700 transition-colors truncate">
+                <h2 className="text-base font-bold text-zinc-900 group-hover:text-amber-700 transition-colors truncate">
                   #{room.name}
-                </h3>
+                </h2>
                 {room.venture && (
                   <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400 font-mono mt-1">
                     <Building2 className="w-3 h-3 text-amber-600 shrink-0" /> <span className="truncate">{room.venture.name}</span>
                   </span>
                 )}
               </div>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 ml-2 mt-1"></span>
+              <span aria-hidden="true" className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 ml-2 mt-1"></span>
             </div>
-            
+
             <div className="flex justify-between items-center text-[11px] text-zinc-400 font-mono pt-3 border-t border-zinc-100">
               <span>{room._count?.messages || 0} messages</span>
               <span className="text-amber-700 font-bold group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5">
@@ -124,7 +138,7 @@ export default function ChatRoomsPage() {
 
         {rooms.length === 0 && (
           <div className="col-span-full text-center py-16 text-zinc-400 text-xs">
-            No active discussion rooms found. Click "Create Channel" to start a new workspace.
+            No active discussion rooms found. Click &quot;Create Channel&quot; to start a new workspace.
           </div>
         )}
       </div>
@@ -132,55 +146,64 @@ export default function ChatRoomsPage() {
       {/* Modal: Create Chat Room */}
       {showAddModal && (
         <ModalPortal>
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAddModal(false); }}>
-          <form onSubmit={handleCreateRoom} className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-xl p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Create Scoped Channel</h3>
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-zinc-700 mb-1">Channel Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Concrete Casting updates"
-                  value={newRoomName}
-                  onChange={(e) => setNewRoomName(e.target.value)}
-                  className="w-full border border-zinc-200 p-2 rounded-lg text-black focus:outline-none focus:border-amber-500"
-                />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={createModalTitleId}
+            className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAddModal(false); }}
+          >
+            <form onSubmit={handleCreateRoom} className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-xl p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto">
+              <h2 id={createModalTitleId} className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Create Scoped Channel</h2>
+              {createError && <p role="alert" className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{createError}</p>}
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label htmlFor={channelNameId} className="block font-bold text-zinc-700 mb-1">Channel Name</label>
+                  <input
+                    id={channelNameId}
+                    type="text"
+                    required
+                    placeholder="e.g. Concrete Casting updates"
+                    value={newRoomName}
+                    onChange={(e) => setNewRoomName(e.target.value)}
+                    className="w-full border border-zinc-200 p-2 rounded-lg text-black focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor={ventureSelectId} className="block font-bold text-zinc-700 mb-1">Venture Association (Optional)</label>
+                  <Select
+                    id={ventureSelectId}
+                    value={selectedVentureId}
+                    onChange={(e) => setSelectedVentureId(e.target.value)}
+                    className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
+                  >
+                    <SelectOption value="">None (Global Channel)</SelectOption>
+                    {ventures.map((v) => (
+                      <SelectOption key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectOption>
+                    ))}
+                  </Select>
+                </div>
               </div>
-              <div>
-                <label className="block font-bold text-zinc-700 mb-1">Venture Association (Optional)</label>
-                <Select
-                  value={selectedVentureId}
-                  onChange={(e) => setSelectedVentureId(e.target.value)}
-                  className="w-full border border-zinc-200 p-2 bg-zinc-50 rounded-lg text-black focus:outline-none"
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="w-full sm:w-auto px-4 py-2 border border-zinc-200 rounded-lg text-zinc-700 hover:bg-zinc-50"
                 >
-                  <SelectOption value="">None (Global Channel)</SelectOption>
-                  {ventures.map((v) => (
-                    <SelectOption key={v.id} value={v.id}>
-                      {v.name}
-                    </SelectOption>
-                  ))}
-                </Select>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newRoomName.trim()}
+                  className="w-full sm:w-auto px-4 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg shadow-xs"
+                >
+                  Create Channel
+                </button>
               </div>
-            </div>
-            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="w-full sm:w-auto px-4 py-2 border border-zinc-200 rounded-lg text-zinc-700 hover:bg-zinc-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={!newRoomName.trim()}
-                className="w-full sm:w-auto px-4 py-2 bg-[#d97706] hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg shadow-xs"
-              >
-                Create Channel
-              </button>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
         </ModalPortal>
       )}
     </div>

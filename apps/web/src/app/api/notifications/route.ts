@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getPaginationParams } from '@/lib/pagination';
+import { handleApiError, parseJsonSafe } from '@/lib/api-errors';
 
 export async function GET(req: Request) {
   try {
@@ -16,23 +17,32 @@ export async function GET(req: Request) {
     const unreadOnly = searchParams.get('unread') === 'true';
 
     const { skip, take } = getPaginationParams(req);
-    
+
     const whereClause: any = { userId };
     if (unreadOnly) {
       whereClause.isRead = false;
     }
 
-    const notifications = await prisma.notification.findMany({
-      where: whereClause,
-      skip,
-      take,
-      orderBy: { createdAt: 'desc' }
-    });
+    const [notifications, total, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where: whereClause,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.notification.count({ where: whereClause }),
+      // Always return total unread count regardless of the `unread` filter
+      prisma.notification.count({ where: { userId, isRead: false } })
+    ]);
 
-    return NextResponse.json({ success: true, data: notifications });
+    return NextResponse.json({
+      success: true,
+      data: notifications,
+      pagination: { skip, take, total },
+      unreadCount
+    });
   } catch (error: any) {
-    console.error('Failed to fetch notifications:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -50,24 +60,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Forbidden: Admin access required to send notifications' }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await parseJsonSafe(req);
     const { title, body: content, targetUserId } = body;
 
-    if (!title || !content || !targetUserId) {
-      return NextResponse.json({ success: false, error: 'Title, body, and targetUserId are required' }, { status: 400 });
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
+    }
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return NextResponse.json({ success: false, error: 'Body is required' }, { status: 400 });
+    }
+    if (!targetUserId || typeof targetUserId !== 'string') {
+      return NextResponse.json({ success: false, error: 'targetUserId is required' }, { status: 400 });
+    }
+
+    // Verify target user actually exists
+    const targetUser = await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true } });
+    if (!targetUser) {
+      return NextResponse.json({ success: false, error: 'Target user not found' }, { status: 404 });
     }
 
     const notification = await prisma.notification.create({
       data: {
-        title,
-        body: content,
+        title: title.trim(),
+        body: content.trim(),
         userId: targetUserId
       }
     });
 
     return NextResponse.json({ success: true, data: notification });
   } catch (error: any) {
-    console.error('Failed to create notification:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }

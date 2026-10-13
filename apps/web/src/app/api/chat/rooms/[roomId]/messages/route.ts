@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getPaginationParams } from '@/lib/pagination';
+import { handleApiError, parseJsonSafe } from '@/lib/api-errors';
 
 export async function GET(
   req: Request,
@@ -20,10 +21,19 @@ export async function GET(
     const resolvedParams = await params;
     const { roomId } = resolvedParams;
 
+    // Verify the room actually exists
+    const roomExists = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
+      select: { id: true }
+    });
+    if (!roomExists) {
+      return NextResponse.json({ success: false, error: 'Chat room not found' }, { status: 404 });
+    }
+
     // Verify active user status and room membership in one query
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { 
+      include: {
         employee: true,
         chatMembers: userRole !== 'ADMIN' ? { where: { roomId } } : false
       }
@@ -63,7 +73,7 @@ export async function GET(
           },
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }]
         });
-        return NextResponse.json({ success: true, data: newerMessages });
+        return NextResponse.json({ success: true, data: newerMessages, pagination: { after: afterId, count: newerMessages.length } });
       }
     }
 
@@ -102,10 +112,11 @@ export async function GET(
       messages = latestDesc.reverse();
     }
 
-    return NextResponse.json({ success: true, data: messages });
+    const total = await prisma.chatMessage.count({ where: { roomId } });
+
+    return NextResponse.json({ success: true, data: messages, pagination: { skip, take, total } });
   } catch (error: any) {
-    console.error('Failed to fetch chat messages:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -114,20 +125,6 @@ export async function POST(
   { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
-    const resolvedParams = await params;
-    const { roomId } = resolvedParams;
-
-    const body = await req.json();
-    const { content } = body;
-
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
-      return NextResponse.json({ success: false, error: 'Message content is required and cannot be empty' }, { status: 400 });
-    }
-    
-    if (content.length > 5000) {
-      return NextResponse.json({ success: false, error: 'Message exceeds maximum length of 5000 characters' }, { status: 400 });
-    }
-
     const session = await getServerSession(authOptions);
     const senderId = (session?.user as any)?.id;
     const userRole = (session?.user as any)?.role;
@@ -136,10 +133,33 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    const resolvedParams = await params;
+    const { roomId } = resolvedParams;
+
+    const body = await parseJsonSafe(req);
+    const { content } = body;
+
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return NextResponse.json({ success: false, error: 'Message content is required and cannot be empty' }, { status: 400 });
+    }
+
+    if (content.length > 5000) {
+      return NextResponse.json({ success: false, error: 'Message exceeds maximum length of 5000 characters' }, { status: 400 });
+    }
+
+    // Verify the room actually exists before writing — prevents phantom messages in non-existent rooms
+    const roomExists = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
+      select: { id: true }
+    });
+    if (!roomExists) {
+      return NextResponse.json({ success: false, error: 'Chat room not found' }, { status: 404 });
+    }
+
     if (userRole !== 'ADMIN') {
       const user = await prisma.user.findUnique({
         where: { id: senderId },
-        include: { 
+        include: {
           employee: true,
           chatMembers: { where: { roomId } }
         }
@@ -169,7 +189,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, data: message });
   } catch (error: any) {
-    console.error('Failed to send chat message:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }

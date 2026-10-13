@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { handleApiError, parseJsonSafe } from '@/lib/api-errors';
 
 export async function PATCH(
   req: Request,
@@ -16,30 +17,36 @@ export async function PATCH(
 
     const resolvedParams = await params;
     const { notificationId } = resolvedParams;
-    const body = await req.json();
-    const { isRead } = body;
 
     const existing = await prisma.notification.findUnique({
-      where: { id: notificationId }
+      where: { id: notificationId },
+      select: { id: true, userId: true }
     });
 
     if (!existing) {
       return NextResponse.json({ success: false, error: 'Notification not found' }, { status: 404 });
     }
 
+    // Users can only update their own notifications
     if (existing.userId !== userId && (session?.user as any)?.role !== 'ADMIN') {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
+    const body = await parseJsonSafe(req);
+    const { isRead } = body;
+
+    if (typeof isRead !== 'boolean') {
+      return NextResponse.json({ success: false, error: 'isRead must be a boolean' }, { status: 400 });
+    }
+
     const updated = await prisma.notification.update({
       where: { id: notificationId },
-      data: { isRead: typeof isRead === 'boolean' ? isRead : undefined }
+      data: { isRead }
     });
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
-    console.error('Failed to update notification:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -58,7 +65,8 @@ export async function DELETE(
     const { notificationId } = resolvedParams;
 
     const existing = await prisma.notification.findUnique({
-      where: { id: notificationId }
+      where: { id: notificationId },
+      select: { id: true, userId: true }
     });
 
     if (!existing) {
@@ -75,7 +83,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Failed to delete notification:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
