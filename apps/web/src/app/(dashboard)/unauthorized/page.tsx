@@ -1,13 +1,12 @@
 import React from 'react';
+import { StatusPage } from '@/components/StatusPage';
 
 export default function UnauthorizedPage() {
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
-      <h1 className="text-4xl font-bold text-red-600 mb-4">403 Forbidden</h1>
-      <p className="text-zinc-600 max-w-md">
-        You do not have the required permissions to view this section of the application. 
-        If you believe this is an error, please contact your system administrator.
-      </p>
-    </div>
+    <StatusPage
+      code="403 Forbidden"
+      title="Access Denied"
+      message="You don't have permission to view this section. If you believe this is an error, please contact your system administrator."
+    />
   );
 }

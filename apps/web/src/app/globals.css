@@ -146,3 +146,9 @@ textarea[aria-invalid="true"] {
     align-items: center;
   }
 }
+
+/* Navigation pending progress bar — ST-BUG-1 */
+@keyframes navslide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}

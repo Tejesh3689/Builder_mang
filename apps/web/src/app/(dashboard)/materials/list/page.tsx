@@ -11,6 +11,7 @@ export default async function MaterialsListPage() {
   const userRole = (session?.user as any)?.role || 'USER';
 
   let materialsData: any[] = [];
+  let fetchError: string | undefined;
 
   try {
     const materials = await prisma.material.findMany({
@@ -86,8 +87,9 @@ export default async function MaterialsListPage() {
         lastMovement: lastMovementStr
       };
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching materials list:', error);
+    fetchError = error?.message || 'An unexpected error occurred while loading materials.';
   }
 
   // Remove fallback dummy data to ensure DB truth
@@ -101,7 +103,7 @@ export default async function MaterialsListPage() {
         <p className="text-[13px] text-zinc-500 font-mono">Master list</p>
       </div>
 
-      <MaterialsListClient initialData={materialsData} />
+      <MaterialsListClient initialData={materialsData} error={fetchError} />
     </div>
   );
 }

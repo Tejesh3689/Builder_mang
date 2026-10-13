@@ -55,3 +55,35 @@ export async function PATCH(req: Request, { params }: { params: any }) {
     return handleApiError(e);
   }
 }
+
+export async function DELETE(_req: Request, { params }: { params: any }) {
+  try {
+    const user = await requireAuth();
+    const materialId = params.id;
+
+    // Only ADMINs can delete materials
+    if ((user as any).role !== 'ADMIN') {
+      throw new ApiError(403, 'Only administrators can delete materials');
+    }
+
+    const material = await prisma.material.findUnique({ where: { id: materialId } });
+    if (!material) throw new ApiError(404, 'Material not found');
+
+    // Guard: refuse deletion if live stock or transaction records exist
+    const stockCount = await prisma.materialStock.count({ where: { materialId } });
+    const txCount = await prisma.materialTransaction.count({ where: { materialId } });
+
+    if (stockCount > 0 || txCount > 0) {
+      throw new ApiError(
+        409,
+        `Cannot delete material: ${stockCount} stock record(s) and ${txCount} transaction(s) exist. Remove all stock and transactions first.`
+      );
+    }
+
+    await prisma.material.delete({ where: { id: materialId } });
+
+    return NextResponse.json({ success: true, message: 'Material deleted successfully' });
+  } catch (e) {
+    return handleApiError(e);
+  }
+}

@@ -33,34 +33,39 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
   // Dummy data
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadLeaves = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // GET /api/leaves returns { success, data: LeaveRequest[] }.
+      const res = await api.get<any>('/api/leaves');
+      const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+      const typeLabel: Record<string, string> = { SICK: 'Sick Leave', CASUAL: 'Casual Leave', PAID: 'Paid Leave', UNPAID: 'Unpaid Leave' };
+      setLeaves(rows.map(l => ({
+        id: l.id,
+        employeeName: l.employee ? `${l.employee.firstName} ${l.employee.lastName}` : 'Unknown',
+        employeeId: l.employee?.employeeId || '-',
+        managerName: '-',
+        type: typeLabel[l.type] ?? l.type,
+        startDate: toCalendarDate(l.startDate),
+        endDate: toCalendarDate(l.endDate),
+        duration: leaveDurationDays(l.startDate, l.endDate),
+        reason: l.reason || '',
+        status: l.status === 'PENDING' ? 'Pending' : l.status === 'APPROVED' ? 'Approved' : 'Rejected'
+      })));
+    } catch (err: any) {
+      console.error('Failed to load leaves', err);
+      setError(err?.message || 'Failed to load leave requests. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadLeaves() {
-      try {
-        // GET /api/leaves returns { success, data: LeaveRequest[] }.
-        const res = await api.get<any>('/api/leaves');
-        const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
-        const typeLabel: Record<string, string> = { SICK: 'Sick Leave', CASUAL: 'Casual Leave', PAID: 'Paid Leave', UNPAID: 'Unpaid Leave' };
-        setLeaves(rows.map(l => ({
-          id: l.id,
-          employeeName: l.employee ? `${l.employee.firstName} ${l.employee.lastName}` : 'Unknown',
-          employeeId: l.employee?.employeeId || '-',
-          managerName: '-',
-          type: typeLabel[l.type] ?? l.type,
-          startDate: toCalendarDate(l.startDate),
-          endDate: toCalendarDate(l.endDate),
-          duration: leaveDurationDays(l.startDate, l.endDate),
-          reason: l.reason || '',
-          status: l.status === 'PENDING' ? 'Pending' : l.status === 'APPROVED' ? 'Approved' : 'Rejected'
-        })));
-      } catch (err) {
-        console.error('Failed to load leaves', err);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadLeaves();
-  }, []);
+  }, [loadLeaves]);
 
   // Modals
   const [viewModal, setViewModal] = useState<LeaveRequest | null>(null);
@@ -142,7 +147,27 @@ export default function LeaveClient({ userRole = 'ADMIN', sessionName = '' }: Le
             <div className="space-y-4">
               <h3 className="text-xs font-extrabold text-black uppercase tracking-wider font-mono">{activeTab} Requests</h3>
               
-              {filteredLeaves.length === 0 ? (
+              {loading ? (
+                <div className="space-y-2">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="h-12 bg-zinc-100 rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="text-center py-12 border border-dashed border-red-200 rounded-xl bg-red-50/50 space-y-3">
+                  <div className="flex items-center justify-center w-10 h-10 mx-auto rounded-full bg-red-100">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                  </div>
+                  <p className="text-xs font-semibold text-red-700">Failed to load leave requests</p>
+                  <p className="text-[11px] text-red-500 max-w-xs mx-auto">{error}</p>
+                  <button
+                    onClick={() => loadLeaves()}
+                    className="mt-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : filteredLeaves.length === 0 ? (
                 <div className="text-center py-12 border border-dashed border-zinc-200 rounded-xl bg-zinc-50/50 text-zinc-400 text-xs">
                   No {activeTab.toLowerCase()} leave requests found.
                 </div>

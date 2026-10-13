@@ -5,7 +5,7 @@ import { Select, SelectOption } from '@/components/ui/Select';
 import Link from 'next/link';
 import { Pagination } from '@/components/ui/Pagination';
 
-export default function MaterialsListClient({ initialData }: { initialData: any[] }) {
+export default function MaterialsListClient({ initialData, error }: { initialData: any[]; error?: string }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -54,6 +54,18 @@ export default function MaterialsListClient({ initialData }: { initialData: any[
 
   return (
     <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
+      {error && (
+        <div className="m-4 p-4 border border-dashed border-red-200 rounded-xl bg-red-50/50 flex items-start gap-3">
+          <div className="shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-red-700">Failed to load materials</p>
+            <p className="text-[11px] text-red-500 mt-0.5">{error}</p>
+            <a href="" className="inline-block mt-2 text-[11px] font-bold text-red-600 underline underline-offset-2">Refresh page to retry</a>
+          </div>
+        </div>
+      )}
       {/* Toolbar */}
       <div className="p-4 sm:p-5 border-b border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-zinc-50/50">
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
