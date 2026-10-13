@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireAuth } from '@/lib/authorization';
 import { handleApiError, ApiError, parseJsonSafe } from '@/lib/api-errors';
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const actor = await requireAuth();
     if ((actor as any).role !== 'ADMIN') throw new ApiError(403, 'Forbidden');
@@ -21,7 +21,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const actor = await requireAuth();
     if ((actor as any).role !== 'ADMIN') throw new ApiError(403, 'Forbidden');
@@ -71,7 +71,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const actor = await requireAuth();
     if ((actor as any).role !== 'ADMIN') throw new ApiError(403, 'Forbidden');

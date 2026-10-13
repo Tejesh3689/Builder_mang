@@ -24,6 +24,17 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     });
   }, [router]);
 
+  useEffect(() => {
+    if (!isMobileSidebarOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileSidebarOpen]);
+
   const currentUser = session?.user;
   const userName = currentUser?.name || currentUser?.email?.split('@')[0] || 'User Account';
   const userRole = (currentUser as any)?.role || 'USER';

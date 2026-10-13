@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';import { Select, Se
 
 import Link from 'next/link';
 import { EmployeeProfile } from '@/lib/types';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import { api } from '@/lib/api';
 
@@ -230,27 +231,41 @@ export default function EmployeesClient({
     selectedCertStatus,
   ]);
 
-  // Handle Deactivation
-  const handleDeactivate = async (id: string, name: string) => {
-    if (confirm(`Are you sure you want to deactivate employee ${name}?`)) {
-      try {
-        const json = await api.delete<{ success: boolean, data?: any, error?: string }>(`/api/employees/${id}`);
-        if (json.success) {
-          setEmployees((prev) =>
-            prev.map((emp) => {
-              if (emp.id === id) {
-                return { ...emp, status: 'Terminated' as const };
-              }
-              return emp;
-            })
-          );
-        } else {
-          alert(json.error || 'Failed to deactivate employee.');
-        }
-      } catch (err: any) {
-        console.error('Failed to deactivate employee:', err);
-        alert(err.message || 'An error occurred while deactivating the employee.');
+  // Deactivation confirmation modal state
+  const [deactivatingEmployee, setDeactivatingEmployee] = useState<{ id: string; name: string } | null>(null);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+
+  // Handle Deactivation Trigger
+  const handleDeactivate = (id: string, name: string) => {
+    setDeactivatingEmployee({ id, name });
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!deactivatingEmployee) return;
+    setIsDeactivating(true);
+    const { id } = deactivatingEmployee;
+    try {
+      const json = await api.delete<{ success: boolean, data?: any, error?: string }>(`/api/employees/${id}`);
+      if (json.success) {
+        setEmployees((prev) =>
+          prev.map((emp) => {
+            if (emp.id === id) {
+              return { ...emp, status: 'Terminated' as const };
+            }
+            return emp;
+          })
+        );
+        setDeactivatingEmployee(null);
+      } else {
+        alert(json.error || 'Failed to deactivate employee.');
+        setDeactivatingEmployee(null);
       }
+    } catch (err: any) {
+      console.error('Failed to deactivate employee:', err);
+      alert(err.message || 'An error occurred while deactivating the employee.');
+      setDeactivatingEmployee(null);
+    } finally {
+      setIsDeactivating(false);
     }
   };
 
@@ -616,6 +631,25 @@ export default function EmployeesClient({
           </div>
         </nav>
       </div>
+
+      {/* Confirmation Dialog: Deactivate Employee */}
+      <ConfirmDialog
+        open={!!deactivatingEmployee}
+        onClose={() => setDeactivatingEmployee(null)}
+        onConfirm={handleConfirmDeactivate}
+        title="Deactivate Employee"
+        description={
+          <span>
+            Are you sure you want to deactivate employee{' '}
+            <strong className="text-zinc-900 font-semibold">{deactivatingEmployee?.name}</strong>?
+            This will mark their profile as terminated.
+          </span>
+        }
+        confirmText="Deactivate"
+        cancelText="Cancel"
+        variant="danger"
+        loading={isDeactivating}
+      />
     </div>
   );
 }

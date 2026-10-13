@@ -1,5 +1,7 @@
 'use client';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { useModalA11y } from '@/components/ui/useModalA11y';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import React, { useState, useEffect, use, useRef } from 'react';import { Select, SelectOption } from '@/components/ui/Select';
 
@@ -154,6 +156,11 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [assignRole, setAssignRole] = useState('Site Engineer');
   const [assignAccess, setAssignAccess] = useState('STANDARD');
+  const assignModalRef = useModalA11y<HTMLFormElement>(showAssignModal, () => setShowAssignModal(false));
+
+  // Delete Venture Confirmation Modal
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingVenture, setIsDeletingVenture] = useState(false);
 
   const [newDocTitle, setNewDocTitle] = useState('');
   const [newDocCategory, setNewDocCategory] = useState('DRAWINGS');
@@ -310,20 +317,23 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
     }
   };
 
-  const handleDeleteVenture = async () => {
-    if (!confirm('Are you sure you want to delete this venture? This action is permanent.')) return;
-    
+  const handleDeleteVentureConfirm = async () => {
+    setIsDeletingVenture(true);
     try {
       const res = await api.delete<{success: boolean}>(`/api/ventures/${venture.id}`);
       if (res.success) {
         window.location.href = '/ventures';
       } else {
         alert('Failed to delete venture.');
+        setShowDeleteConfirm(false);
       }
     } catch (err: any) {
       console.error('Error deleting venture:', err);
       // e.g. 409: ventures with business history must be archived instead of deleted
       alert(err?.message || 'Error deleting venture.');
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeletingVenture(false);
     }
   };
 
@@ -986,7 +996,7 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
                 <h4 className="font-bold text-rose-400 text-xs">Danger Zone</h4>
                 <p className="text-[11px] text-rose-300/80">Deleting a venture is permanent and will remove all associated data.</p>
                 <button 
-                  onClick={handleDeleteVenture}
+                  onClick={() => setShowDeleteConfirm(true)}
                   className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-xs"
                 >
                   Delete Venture
@@ -1001,8 +1011,15 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
       {showAssignModal && (
         <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAssignModal(false); }}>
-          <form onSubmit={handleAssignEmployee} className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-xl p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto">
-            <h3 className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Assign Employee to Venture</h3>
+          <form
+            ref={assignModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="assign-employee-title"
+            onSubmit={handleAssignEmployee}
+            className="bg-white rounded-t-2xl sm:rounded-2xl border border-zinc-200 shadow-xl p-5 sm:p-6 w-full sm:max-w-md space-y-4 max-h-[90dvh] overflow-y-auto"
+          >
+            <h3 id="assign-employee-title" className="text-sm font-extrabold text-black uppercase tracking-wider font-mono">Assign Employee to Venture</h3>
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-zinc-700 mb-1">Select Employee</label>
@@ -1071,6 +1088,19 @@ export default function VentureDetailPage({ params }: { params: Promise<{ ventur
         </div>
         </ModalPortal>
       )}
+
+      {/* Confirmation Dialog: Delete Venture */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteVentureConfirm}
+        title="Delete Venture"
+        description="Are you sure you want to delete this venture? This action is permanent and will remove all associated data."
+        confirmText="Delete Venture"
+        cancelText="Cancel"
+        variant="danger"
+        loading={isDeletingVenture}
+      />
     </div>
   );
 }
